@@ -8,7 +8,14 @@ docker exec sobre una instancia ya existente).
 
 - [`doodba-bootstrap.md`](doodba-bootstrap.md) — provisión del entorno
   doodba en dos modos: **local Docker** (tests, desarrollo) y
-  **gcloud** (producción futura).
+  **gcloud** (producción futura). Versión teórica original.
+- [`local-deployment-guide.md`](local-deployment-guide.md) — **guía
+  corregida y probada** para Modo A (Docker local). Reemplaza la
+  sección Modo A de `doodba-bootstrap.md` cuando haya divergencia.
+  Incorpora las 10 correcciones descubiertas durante el primer
+  despliegue real (`inpr3mium-local`, 2026-05-10): copier
+  no-interactivo, `.empty` bug en macOS, creación de DB vía CLI,
+  cambios de modelo en Odoo 19, etc.
 - [`secrets.md`](secrets.md) — política de gestión de secretos
   (API keys, contraseñas, certificados digitales). Qué va en `.env`,
   qué no se versiona, dónde se almacena la copia maestra.

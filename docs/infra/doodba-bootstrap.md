@@ -39,9 +39,20 @@ pipx install git-aggregator
 
 ## Modo A — Docker local (Mac o Linux)
 
+> ⚠️ **Esta sección está superada por
+> [`local-deployment-guide.md`](local-deployment-guide.md)**, que
+> recoge las correcciones aplicadas tras el primer despliegue real
+> (2026-05-10). Sigue la guía corregida para evitar 10 gotchas
+> conocidas (entre otros: `.empty` placeholder bug en macOS, wizard
+> web 500, creación de DB obligatoriamente por CLI, `groups_id` →
+> `group_ids` en Odoo 19, API key 90-day cap, bug `_json2` del
+> cliente). Los pasos abajo son la versión teórica original; los
+> dejo como referencia hasta que `local-deployment-guide.md`
+> demuestre tener cobertura completa para varios despliegues.
+
 Objetivo: levantar Odoo 19 + PostgreSQL en tu máquina local con un
 proyecto doodba listo para que el agente conecte vía RPC en
-`http://localhost:8069`.
+`http://localhost:19069` (no 8069 — ver guía corregida).
 
 ### A.1 Crear el proyecto doodba
 
