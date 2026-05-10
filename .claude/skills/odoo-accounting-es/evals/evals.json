@@ -1,0 +1,126 @@
+{
+  "skill": "odoo-accounting-es",
+  "description": "Evaluacion de disparo del skill: 14 prompts que deben activarlo + 6 que no deben.",
+  "cases": [
+    {
+      "id": "trigger-01",
+      "prompt": "Crea una factura para el cliente Tecnativa SL con dos lineas de consultoria a 75 EUR la hora, 10 horas, IVA 21%.",
+      "should_trigger": true,
+      "expected_action": "Llamar create_invoice.py con payload out_invoice"
+    },
+    {
+      "id": "trigger-02",
+      "prompt": "Postea la factura ID 1234 en Odoo.",
+      "should_trigger": true,
+      "expected_action": "action_post sobre account.move 1234"
+    },
+    {
+      "id": "trigger-03",
+      "prompt": "Registra el cobro de la factura 1234 hoy en el banco principal.",
+      "should_trigger": true,
+      "expected_action": "register_payment.py --invoice-id 1234"
+    },
+    {
+      "id": "trigger-04",
+      "prompt": "Hazme una factura rectificativa de la 1234 por devolucion parcial.",
+      "should_trigger": true,
+      "expected_action": "credit_note.py --invoice-id 1234 --mode reverse"
+    },
+    {
+      "id": "trigger-05",
+      "prompt": "Genera el modelo 303 del primer trimestre de 2026.",
+      "should_trigger": true,
+      "expected_action": "run_aeat_report.py --model 303 --period 2026Q1"
+    },
+    {
+      "id": "trigger-06",
+      "prompt": "Quiero el modelo 347 anual de 2025.",
+      "should_trigger": true,
+      "expected_action": "run_aeat_report.py --model 347 --period 2025"
+    },
+    {
+      "id": "trigger-07",
+      "prompt": "Envia la factura 1234 al SII.",
+      "should_trigger": true,
+      "expected_action": "send_sii.py --invoice-id 1234"
+    },
+    {
+      "id": "trigger-08",
+      "prompt": "Manda la factura a Veri*Factu en modo prueba.",
+      "should_trigger": true,
+      "expected_action": "send_verifactu.py --invoice-id <id> --dry-run"
+    },
+    {
+      "id": "trigger-09",
+      "prompt": "Dame el PDF de la factura 1234 con el QR de Verifactu.",
+      "should_trigger": true,
+      "expected_action": "report_invoice_pdf.py --invoice-id 1234 --variant verifactu"
+    },
+    {
+      "id": "trigger-10",
+      "prompt": "Cuales son las facturas pendientes de cobro de clientes espanoles mayores a 5000 euros?",
+      "should_trigger": true,
+      "expected_action": "search_read sobre account.move via odoo_client.py o MCP"
+    },
+    {
+      "id": "trigger-11",
+      "prompt": "Verifica que la factura borrador 1234 cumple con la normativa espanola antes de postearla.",
+      "should_trigger": true,
+      "expected_action": "verify_es_compliance.py --invoice-id 1234"
+    },
+    {
+      "id": "trigger-12",
+      "prompt": "Busca el cliente con NIF B12345678 en Odoo.",
+      "should_trigger": true,
+      "expected_action": "partner_lookup.py --vat B12345678"
+    },
+    {
+      "id": "trigger-13",
+      "prompt": "Create a customer invoice in Odoo for partner 42 with 1 unit at 100 EUR plus IVA 21%.",
+      "should_trigger": true,
+      "expected_action": "create_invoice.py (English prompt, must trigger)"
+    },
+    {
+      "id": "trigger-14",
+      "prompt": "Necesito generar el FacturaE de la factura 1234 para enviarla a FACe.",
+      "should_trigger": true,
+      "expected_action": "Invocar metodo l10n_es_edi_facturae_generate via odoo_client.py + send_verifactu.py si aplica"
+    },
+    {
+      "id": "no-trigger-01",
+      "prompt": "Escribeme un poema sobre el otono en Cataluna.",
+      "should_trigger": false,
+      "expected_action": "Sin Odoo, sin contabilidad, no debe activarse"
+    },
+    {
+      "id": "no-trigger-02",
+      "prompt": "Configura un reverse proxy nginx para servir un blog estatico.",
+      "should_trigger": false,
+      "expected_action": "Devops puro, no contable"
+    },
+    {
+      "id": "no-trigger-03",
+      "prompt": "Traduce este texto al ingles: Hola mundo.",
+      "should_trigger": false,
+      "expected_action": "Tarea linguistica sin Odoo"
+    },
+    {
+      "id": "no-trigger-04",
+      "prompt": "Cual es la capital de Francia?",
+      "should_trigger": false,
+      "expected_action": "Trivia general"
+    },
+    {
+      "id": "no-trigger-05",
+      "prompt": "Refactoriza este componente React para usar hooks en lugar de class components.",
+      "should_trigger": false,
+      "expected_action": "Frontend, ningun termino contable"
+    },
+    {
+      "id": "no-trigger-06",
+      "prompt": "Calcula la integral de x^2 entre 0 y 5.",
+      "should_trigger": false,
+      "expected_action": "Matematica pura, no fiscal"
+    }
+  ]
+}

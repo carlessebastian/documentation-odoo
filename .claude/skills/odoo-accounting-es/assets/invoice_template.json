@@ -1,0 +1,36 @@
+{
+  "_comment": "Plantilla de payload para create_invoice.py. NO ejecutable directamente; sirve como ejemplo. Pasar a create_invoice.py via --file o --stdin.",
+  "move_type": "out_invoice",
+  "partner_vat": "ESB12345678",
+  "ref": "WEB-2026-0042",
+  "invoice_date": "2026-05-10",
+  "invoice_date_due": "2026-06-09",
+  "fiscal_position_id": null,
+  "currency_id": null,
+  "narration": "Factura de prueba generada via skill odoo-accounting-es",
+  "post": false,
+  "lines": [
+    {
+      "name": "Consultoria mayo 2026",
+      "qty": 10,
+      "price_unit": 75.00,
+      "tax_codes": ["S_IVA21B"],
+      "discount": 0,
+      "product_default_code": null
+    },
+    {
+      "name": "Material de oficina",
+      "qty": 5,
+      "price_unit": 12.50,
+      "tax_codes": ["S_IVA21B"],
+      "discount": 0,
+      "product_default_code": "OFI-001"
+    },
+    {
+      "name": "Retencion IRPF profesional 15%",
+      "qty": 1,
+      "price_unit": -112.50,
+      "tax_codes": ["P_IRPF15"]
+    }
+  ]
+}
