@@ -14,8 +14,6 @@ import sys
 import xmlrpc.client
 from typing import Any
 
-import requests
-
 from _common import OdooError, require_env, retry_on_network
 
 
@@ -36,6 +34,7 @@ class OdooClient:
 
     def _detect_version(self) -> int:
         # /web/version es publico en versiones recientes; si falla, caer a XML-RPC.
+        import requests
         try:
             r = requests.get(f"{self.url}/web/version", timeout=10)
             if r.status_code == 200:
@@ -90,6 +89,7 @@ class OdooClient:
             raise OdooError(_clean_fault(e.faultString)) from e
 
     def _json2(self, model: str, method: str, args: list, kwargs: dict) -> Any:
+        import requests
         body: dict = dict(kwargs)
         if args:
             body["args"] = args

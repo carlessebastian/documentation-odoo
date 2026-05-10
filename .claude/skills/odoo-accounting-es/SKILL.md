@@ -77,8 +77,10 @@ de ejecutar nada**. Nunca hardcodees credenciales en commits.
 | Enviar a SII | `scripts/send_sii.py` | `references/sii-verifactu-facturae.md` |
 | Enviar a Veri*Factu | `scripts/send_verifactu.py` | `references/sii-verifactu-facturae.md` |
 | Generar PDF de factura | `scripts/report_invoice_pdf.py` | `references/reports.md` |
+| **Multi-divisa** | | |
+| Actualizar tipos de cambio ECB | `scripts/update_exchange_rates.py --scope daily` | `references/workflows.md` |
 | **Lectura ad-hoc** | | |
-| Lectura conversacional | Usa MCP server `odoo` si esta configurado, o `scripts/odoo_client.py` | `references/domain-syntax.md` |
+| Lectura conversacional | Usa MCP server `odoo` si esta configurado, o `scripts/odoo_client.py` | `references/domain-syntax.md`, `references/mcp-setup.md` |
 
 ## Checklist de cumplimiento espanol antes de `action_post`
 
@@ -172,6 +174,23 @@ contable concreta.
   bienes inversion, modelos 369/232/720.
 - `references/cierre-periodico.md` - checklist mensual/trimestral/anual,
   asientos cierre/apertura, lock dates, distribucion de resultados.
+- `references/mcp-setup.md` - como configurar un MCP server Odoo
+  (`ivnvxd/mcp-server-odoo`) para usar el skill desde Claude Code o
+  Claude Desktop, variables de entorno compartidas, permisos.
+
+## Calidad y tests
+
+El skill incluye una suite pytest en `tests/` que cubre las funciones
+puras (validacion NIF/CIF/NIE, parsers de periodos, helpers). Ejecutar:
+
+```bash
+cd .claude/skills/odoo-accounting-es
+python3 -m pytest tests/ -v
+```
+
+No requiere conexion Odoo ni `requests` (los modulos del skill importan
+`requests` de forma diferida solo cuando se hacen llamadas RPC reales).
+Ver `tests/README.md` para detalles de cobertura.
 
 ## Assets
 

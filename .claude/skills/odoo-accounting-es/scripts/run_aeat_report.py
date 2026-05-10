@@ -33,6 +33,8 @@ def _period_to_dates(period: str) -> tuple[str, str, str]:
     m = re.fullmatch(r"(\d{4})-(\d{2})", period)
     if m:
         y, mo = int(m.group(1)), int(m.group(2))
+        if not 1 <= mo <= 12:
+            raise OdooError(f"Mes invalido en periodo: {period}")
         from calendar import monthrange
         last = monthrange(y, mo)[1]
         return f"{y}-{mo:02d}-01", f"{y}-{mo:02d}-{last}", f"{mo:02d}"
