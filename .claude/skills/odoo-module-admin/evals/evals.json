@@ -1,6 +1,6 @@
 {
   "skill": "odoo-module-admin",
-  "description": "Evaluacion de disparo: 12 should-trigger + 6 should-not-trigger + 4 handoff a skills hermanos.",
+  "description": "Evaluacion de disparo: 20 should-trigger + 10 should-not-trigger + 8 handoff a skills hermanos.",
   "cases": [
     {
       "id": "trigger-01",
@@ -133,6 +133,102 @@
       "prompt": "Despues de actualizar todos los modulos, comprobame que las facturas pendientes de SII se envian.",
       "should_trigger": true,
       "expected_action": "Upgrade aqui; verificacion del envio SII en odoo-accounting-es."
+    },
+    {
+      "id": "trigger-13",
+      "prompt": "Necesito un modulo OCA para domiciliacion SEPA, recomiendame cual.",
+      "should_trigger": true,
+      "expected_action": "Consultar references/oca-ecosystem.md; recomendar OCA/bank-payment account_banking_sepa_direct_debit"
+    },
+    {
+      "id": "trigger-14",
+      "prompt": "Lanza la migracion de Odoo 18 a 19 sobre una base staging para probar.",
+      "should_trigger": true,
+      "expected_action": "openupgrade_run.py --src-db prod --to 19.0 (sin --confirm primero, plan)"
+    },
+    {
+      "id": "trigger-15",
+      "prompt": "Audita el directorio /opt/doodba/custom/src/l10n-spain con manifestoo y dame el grafo de dependencias.",
+      "should_trigger": true,
+      "expected_action": "manifestoo_audit.py --addons-dir /opt/doodba/custom/src/l10n-spain --action tree"
+    },
+    {
+      "id": "trigger-16",
+      "prompt": "Porta el modulo l10n_es_aeat_mod232 de la rama 18.0 a la 19.0.",
+      "should_trigger": true,
+      "expected_action": "oca_port.py --module l10n_es_aeat_mod232 --from 18.0 --to 19.0 --repo /opt/doodba/custom/src/l10n-spain"
+    },
+    {
+      "id": "trigger-17",
+      "prompt": "Lista los PRs pendientes de portar al 19.0 sobre el modulo account_banking_mandate.",
+      "should_trigger": true,
+      "expected_action": "oca_port.py --module account_banking_mandate --from 18.0 --to 19.0 --list-pending"
+    },
+    {
+      "id": "trigger-18",
+      "prompt": "Comprueba si el modulo `mis_builder` declara dependencias pip que faltan en mi imagen Odoo.",
+      "should_trigger": true,
+      "expected_action": "pip_deps_check.py --paths /local/repos --names mis_builder"
+    },
+    {
+      "id": "trigger-19",
+      "prompt": "Revisa todos los manifests del repo l10n-spain para ver cuales no son installable en 19.0.",
+      "should_trigger": true,
+      "expected_action": "manifest_lint.py /opt/doodba/custom/src/l10n-spain/* (o similar) | filter installable=False"
+    },
+    {
+      "id": "trigger-20",
+      "prompt": "Necesito un modulo OCA que me importe extractos bancarios CAMT.053.",
+      "should_trigger": true,
+      "expected_action": "Consultar oca-ecosystem.md: OCA/bank-statement-import account_bank_statement_import_camt"
+    },
+    {
+      "id": "no-trigger-07",
+      "prompt": "Cual es la diferencia entre fiscalyear_lock_date y tax_lock_date?",
+      "should_trigger": false,
+      "expected_action": "Pregunta de contabilidad/configuracion; usar odoo-accounting-es o odoo-functional-admin segun contexto."
+    },
+    {
+      "id": "no-trigger-08",
+      "prompt": "Quiero crear un usuario portal para que un cliente vea sus facturas.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-functional-admin (creacion de usuarios)."
+    },
+    {
+      "id": "no-trigger-09",
+      "prompt": "Genera el modelo 349 de operaciones intracomunitarias del primer trimestre.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-accounting-es."
+    },
+    {
+      "id": "no-trigger-10",
+      "prompt": "Configura una posicion fiscal para Recargo de Equivalencia para clientes minoristas.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-functional-admin (fiscal_position_setup.py preset rec_eq)."
+    },
+    {
+      "id": "handoff-05",
+      "prompt": "Necesito el modulo de POS para tener TPV en una de las tiendas y dale acceso al equipo.",
+      "should_trigger": true,
+      "expected_action": "Instalar el modulo aqui; permisos del equipo se manejan con odoo-functional-admin."
+    },
+    {
+      "id": "handoff-06",
+      "prompt": "He instalado l10n_es_aeat_sii_oca; configurame el certificado AEAT y prueba un envio.",
+      "should_trigger": false,
+      "expected_action": "Instalacion ya hecha; configuracion de certificado y envio SII caen en odoo-accounting-es."
+    },
+    {
+      "id": "handoff-07",
+      "prompt": "Despues de portar account_invoice_inter_company a 19.0, configura las reglas de intercompany entre Ikigai y Camomilla.",
+      "should_trigger": true,
+      "expected_action": "Portar aqui (oca_port.py); configurar las reglas en odoo-functional-admin (intercompany_setup.py)."
+    },
+    {
+      "id": "handoff-08",
+      "prompt": "Tras la migracion a 19, asegurate de que los crons de SII estan activos.",
+      "should_trigger": false,
+      "expected_action": "Verificacion del estado de modulos puede hacerse aqui (audit_module_state.py); pero gestionar ir.cron es de odoo-functional-admin (cron_manage.py)."
     }
   ]
 }

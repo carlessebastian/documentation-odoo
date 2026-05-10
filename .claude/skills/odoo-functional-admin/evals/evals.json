@@ -1,6 +1,6 @@
 {
   "skill": "odoo-functional-admin",
-  "description": "Evaluacion de disparo: 12 should-trigger + 6 should-not-trigger + 4 handoff a skills hermanos.",
+  "description": "Evaluacion de disparo: 22 should-trigger + 10 should-not-trigger + 8 handoff a skills hermanos.",
   "cases": [
     {
       "id": "trigger-01",
@@ -133,6 +133,114 @@
       "prompt": "Dale al usuario maria.com los permisos para que pueda enviar SII desde Odoo.",
       "should_trigger": true,
       "expected_action": "group_assign.py con grupos de account + l10n_es_edi_sii. La operativa de envio en odoo-accounting-es."
+    },
+    {
+      "id": "trigger-13",
+      "prompt": "Crea desde cero la filial Kura Terra con su plan contable, diarios estandar y posiciones fiscales intra-UE; cuelga del holding Ikigai.",
+      "should_trigger": true,
+      "expected_action": "subsidiary_bootstrap.py --name 'Kura Terra S.L.' --vat ESBxxx --parent-vat ESB12345678"
+    },
+    {
+      "id": "trigger-14",
+      "prompt": "Activa el catalan, italiano y espanyol como idiomas disponibles para los usuarios.",
+      "should_trigger": true,
+      "expected_action": "language_install.py --langs ca_ES,it_IT,es_ES --activate"
+    },
+    {
+      "id": "trigger-15",
+      "prompt": "Cambia la URL base del sistema a https://erp.ikigaimagi.com.",
+      "should_trigger": true,
+      "expected_action": "settings_param.py set web.base.url https://erp.ikigaimagi.com"
+    },
+    {
+      "id": "trigger-16",
+      "prompt": "Genera una API key para [email protected] etiquetada como 'automation'.",
+      "should_trigger": true,
+      "expected_action": "apikey_provision.py --login [email protected] --label automation"
+    },
+    {
+      "id": "trigger-17",
+      "prompt": "Lista todos los parametros de sistema cuya clave empieza por 'mail.'.",
+      "should_trigger": true,
+      "expected_action": "settings_param.py list --prefix mail."
+    },
+    {
+      "id": "trigger-18",
+      "prompt": "Crea una regla de registro global multi-empresa sobre res.partner para que cada usuario solo vea los partners de sus companias.",
+      "should_trigger": true,
+      "expected_action": "record_rule_create.py --name 'res.partner: company' --model res.partner --groups '' --domain ... --force"
+    },
+    {
+      "id": "trigger-19",
+      "prompt": "Quiero que los usuarios del grupo de comerciales no puedan borrar oportunidades pero si crearlas y editarlas.",
+      "should_trigger": true,
+      "expected_action": "record_rule_create.py --model crm.lead --groups sales_team.group_sale_salesman --perms r,w,c (sin u)"
+    },
+    {
+      "id": "trigger-20",
+      "prompt": "Anyade Camomilla Blu como filial mas a la lista de companias permitidas del usuario [email protected].",
+      "should_trigger": true,
+      "expected_action": "user_provision.py --login ... --company-vats <CIFs incluyendo Camomilla> (write con company_ids)"
+    },
+    {
+      "id": "trigger-21",
+      "prompt": "Auditame todas las reglas de registro activas en el modelo account.move.",
+      "should_trigger": true,
+      "expected_action": "access_rule_audit.py --model account.move"
+    },
+    {
+      "id": "trigger-22",
+      "prompt": "Lista las API keys que ya tiene el usuario bot.contable.",
+      "should_trigger": true,
+      "expected_action": "apikey_provision.py --login bot.contable --list-only"
+    },
+    {
+      "id": "no-trigger-07",
+      "prompt": "Que diferencia hay entre Odoo Community y Enterprise?",
+      "should_trigger": false,
+      "expected_action": "Pregunta general sobre Odoo, no requiere accion. Responder en texto sin invocar skill."
+    },
+    {
+      "id": "no-trigger-08",
+      "prompt": "Hazme un dump de la base de datos.",
+      "should_trigger": false,
+      "expected_action": "Backup PostgreSQL, fuera de alcance. Sugerir pg_dump al usuario."
+    },
+    {
+      "id": "no-trigger-09",
+      "prompt": "El servidor odoo no responde, dame los logs del contenedor.",
+      "should_trigger": false,
+      "expected_action": "Sysadmin / debug del contenedor; si acaso, odoo-module-admin docker_exec.sh; este skill no aplica."
+    },
+    {
+      "id": "no-trigger-10",
+      "prompt": "Como instalo el modulo l10n_es?",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-module-admin (instalacion de modulos)."
+    },
+    {
+      "id": "handoff-05",
+      "prompt": "Crea Kura Terra S.L. como filial e instala l10n_es para que tenga plan contable.",
+      "should_trigger": true,
+      "expected_action": "Crear company aqui (subsidiary_bootstrap.py); l10n_es deberia estar ya instalado, pero si no, derivar a odoo-module-admin."
+    },
+    {
+      "id": "handoff-06",
+      "prompt": "Asignale a Maria un dashboard de tesoreria con KPIs DSO y DPO.",
+      "should_trigger": false,
+      "expected_action": "Permisos del dashboard caen aqui (group_assign.py para account.group_account_user); generacion de KPIs DSO/DPO en odoo-accounting-es."
+    },
+    {
+      "id": "handoff-07",
+      "prompt": "Despues de crear el diario VENT para Camomilla, postea la primera factura de prueba.",
+      "should_trigger": true,
+      "expected_action": "Crear el diario aqui (journal_setup.py); para postear la factura, derivar a odoo-accounting-es."
+    },
+    {
+      "id": "handoff-08",
+      "prompt": "Configurame el webhook que envia notificaciones a Slack cuando se postea una factura.",
+      "should_trigger": false,
+      "expected_action": "Webhooks salientes pueden requerir un modulo OCA (odoo-module-admin) y luego configuracion (este skill). Empezar por module-admin para verificar/instalar `endpoint` o similar."
     }
   ]
 }

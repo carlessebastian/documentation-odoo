@@ -89,19 +89,24 @@ Si falta cualquiera, **detente y pidela al usuario antes de ejecutar nada**.
 |--------------------|---------|-----------|
 | **Multi-empresa** | | |
 | Crear empresa filial / branch | `scripts/company_setup.py --name X --vat Y --parent ID` | `references/multi-company.md` |
+| **Bootstrap completo** de una filial (company + chart + diarios + FPs) | `scripts/subsidiary_bootstrap.py --name X --vat Y --parent-vat Z` | `references/multi-company.md`, `references/journals-sequences.md`, `references/fiscal-config.md` |
 | Snapshot del arbol de empresas | `scripts/audit_admin_state.py --section companies` | `references/multi-company.md` |
 | Configurar consolidacion intercompany | `scripts/intercompany_setup.py --src N --dst M` | `references/multi-company.md` |
 | **Usuarios y grupos** | | |
 | Crear usuario interno | `scripts/user_provision.py --login ... --groups XMLID,XMLID` | `references/users-groups-acls.md` |
 | Anyadir / quitar grupo a usuario | `scripts/group_assign.py --user N --add XMLID --remove XMLID` | `references/users-groups-acls.md` |
+| Crear API key para un usuario | `scripts/apikey_provision.py --login X --label Y` | `references/users-groups-acls.md` |
 | Auditar permisos de un modelo | `scripts/access_rule_audit.py --model res.partner` | `references/users-groups-acls.md` |
-| Crear regla de registro | (RPC manual via odoo_client / referencia) | `references/users-groups-acls.md` |
+| Crear regla de registro | `scripts/record_rule_create.py --name X --model M --groups GS --domain D` | `references/users-groups-acls.md` |
 | **Diarios y secuencias** | | |
 | Crear diario contable de setup | `scripts/journal_setup.py --type sale --code VENT --company N` | `references/journals-sequences.md` |
 | Crear secuencia con prefijo de anyo | `scripts/sequence_setup.py --code account.move.kt --prefix 'KT/%(range_year)s/'` | `references/journals-sequences.md` |
 | **Fiscal** | | |
 | Crear posicion fiscal intra-UE | `scripts/fiscal_position_setup.py --preset intra_eu --company N` | `references/fiscal-config.md` |
 | Crear posicion fiscal Recargo Equivalencia | `scripts/fiscal_position_setup.py --preset rec_eq --company N` | `references/fiscal-config.md` |
+| **Idioma y parametros** | | |
+| Activar idiomas (ES, CA, IT, EN) | `scripts/language_install.py --langs es_ES,ca_ES --activate` | `references/scheduled-actions.md` |
+| Get/set parametro de sistema | `scripts/settings_param.py get\|set\|delete\|list <key> [value]` | `references/users-groups-acls.md` |
 | **Acciones programadas** | | |
 | Listar / pausar / reanudar `ir.cron` | `scripts/cron_manage.py list\|pause\|resume\|run --id N` | `references/scheduled-actions.md` |
 | Ejecutar un cron ya | `scripts/cron_manage.py run --id N` | `references/scheduled-actions.md` |

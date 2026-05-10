@@ -102,11 +102,15 @@ puedes hacer operaciones RPC de auditoria, no install/upgrade.
 | **Repos OCA / addons** | | |
 | Sincronizar repos.yaml | `scripts/repos_aggregate.sh` (--dry-run primero) | `references/git-aggregator.md`, `references/addons-yaml.md` |
 | Reconstruir auto/addons tras pull | `scripts/addons_pull.sh` | `references/doodba-topology.md` |
+| Buscar modulo OCA por feature | (ver `references/oca-ecosystem.md`) | `references/oca-ecosystem.md` |
+| Auditar arbol de modulos (manifestoo) | `scripts/manifestoo_audit.py --addons-dir <path> --action list-depends` | `references/oca-ecosystem.md` |
+| Portar modulo de v18 a v19 | `scripts/oca_port.py --module X --from 18.0 --to 19.0 --repo <path>` | `references/upgrade-strategy.md` |
 | **Operativa Docker** | | |
 | Reiniciar contenedor Odoo | `scripts/docker_restart.sh` | `references/docker-exec-patterns.md`, `references/ssh-safety.md` |
 | Ejecutar comando arbitrario en Odoo container | `scripts/docker_exec.sh -- <cmd>` | `references/docker-exec-patterns.md` |
 | **Migracion de version** | | |
-| Migrar 18 -> 19 con OpenUpgrade | (multi-paso, ver `references/upgrade-strategy.md`) | `references/upgrade-strategy.md` |
+| Migrar 18 -> 19 con OpenUpgrade (staging DB) | `scripts/openupgrade_run.py --src-db prod --to 19.0 --confirm` | `references/upgrade-strategy.md` |
+| Plan-only (dry-run) | `scripts/openupgrade_run.py --src-db prod --to 19.0` | `references/upgrade-strategy.md` |
 
 ## Reglas de seguridad que debes cumplir SIEMPRE
 
@@ -224,6 +228,8 @@ de las reglas a `odoo-functional-admin` (`scripts/intercompany_setup.py`).
 - `references/upgrade-strategy.md` - pre-checks, OpenUpgrade para saltos
   mayores, smoke test.
 - `references/ssh-safety.md` - whitelist de comandos, --dry-run, locks.
+- `references/oca-ecosystem.md` - mapping curado feature -> repo OCA
+  (ES Community); decision si un modulo OCA es production-ready en 19.0.
 - `references/domain-syntax.md` - dominios Odoo (compartido con accounting-es).
 
 ## Calidad y tests
