@@ -1,12 +1,29 @@
+# Python
 *.pyc
+__pycache__/
 *.mo
-.*
-!.gitattributes
-!.weblate.json
-!.claude/
 
-# Sphinx build files
+# Hide dotfiles by default, allow the ones we ship
+.*
+!.claude/
+!.gitignore
+
+# Sphinx build artifacts (vendor/odoo-docs)
 _build/
 
-# Dependencies
-odoo
+# Local Odoo / upgrade-util checkouts placed next to vendor/odoo-docs
+vendor/odoo-docs/odoo
+vendor/odoo-docs/upgrade-util
+
+# Local environments and editor noise
+.venv/
+venv/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local agent state (not committed)
+.env
+.env.*
+!.env.example
