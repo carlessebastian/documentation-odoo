@@ -18,19 +18,24 @@ contexto entre conversaciones de Claude Code.
 ## Estado actual
 
 - **Última actualización**: 2026-05-10
-- **Última fase completada**: Fase 3 — runbook
-  `docs/infra/doodba-bootstrap.md` redactado en dos modos: **Modo A
-  (Docker local)** completo con pasos detallados para arranque
-  inmediato; **Modo B (gcloud Compute Engine)** como referencia para
-  producción futura. Añadidos `docs/infra/README.md` y
-  `docs/infra/secrets.md` (política de gestión de secretos).
-- **Próximo paso**: **Bloque B paso 8** — el **usuario** ejecuta el
-  Modo A del runbook contra Docker local (provisionar doodba, crear
-  DB `inpr3mium_dev`, crear bot user + API key). Tarea manual, sin
-  intervención del agente. Cuando termine, pasos 9-10 (configurar
-  `.env` + ejecutar `/onboard` para validar conectividad).
-- **Tenant activo**: `inpr3mium` (Inteligencia del negocio pr3mium S.L.
-  / farmapremium). La instancia Odoo 19 todavía no existe.
+- **Última fase completada**: **Bloque B completo (pasos 7-10)**.
+  Modo A del runbook ejecutado end-to-end: doodba + Odoo 19 +
+  Postgres 16 corriendo en `localhost:19069`, DB `inpr3mium_dev`
+  creada con `es_ES`, bot `bot.contable@inpr3mium.com` (uid=8) con
+  API key, `.env` del agente configurado, `/onboard` ejecutado con
+  resultado conocido y documentado. **Agente conectado a Odoo 19
+  real**.
+- **Próximo paso**: **Bloque C — Fase 4.1** (instalación de módulos
+  OCA via `odoo-module-admin`). Antes hay que resolver bloqueantes
+  identificados en `/onboard`: (a) bug `_json2` del cliente (forzar
+  XML-RPC mientras tanto vía `ODOO_FORCE_XMLRPC=1` ya funciona),
+  (b) revisar `expected_modules` contra disponibilidad OCA 19.0
+  (6 missing: `mod232`, `sii_oca`, `verifactu_oca`, `facturae`,
+  `mis_builder`, `sepa_credit_transfer`), (c) campos renombrados en
+  Odoo 19 (`groups_id` → `group_ids`).
+- **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
+  `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
+  Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
 
 ---
 
@@ -168,14 +173,19 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 
 7. ✅ **Fase 3** — `docs/infra/doodba-bootstrap.md` con Modo A
    (local) y Modo B (gcloud) + `secrets.md`.
-8. 🔄 Provisión real del entorno (Modo A: Docker local) — manual del
-   usuario, ~30-60 min. *(siguiente paso, sin intervención del
-   agente)*.
-9. ⏸ Crear bot user + API key en la DB recién creada (paso A.6 del
-   runbook).
-10. ⏸ Configurar `.env` del agente (paso A.7) y ejecutar `/onboard`
-    contra la instancia local → verde en conectividad, módulos en
-    rojo (DB vacía, esperado).
+8. ✅ Provisión real del entorno (Modo A: Docker local) — ejecutada
+   por el agente acompañando al usuario. Doodba copier 9.5.0 +
+   Odoo 19.0 + Postgres 16. 8 repos OCA pinneados a 19.0
+   sincronizados con gitaggregate. Stack levantado, DB
+   `inpr3mium_dev` creada con `--load-language=es_ES` (CLI, no
+   wizard porque PGDATABASE=devel hardcoded en devel.yaml).
+9. ✅ Bot user + API key creados (uid=8) vía `odoo shell`. Bot
+   promovido temporalmente a `base.group_system` para Bloque C
+   (auditar `ir.module.module`); tightening de ACL pendiente.
+10. ✅ `.env` del agente configurado (`ODOO_URL=http://localhost:19069`,
+    `ODOO_FORCE_XMLRPC=1` mientras `_json2` no esté arreglado).
+    `/onboard` ejecutado: 5 verde, 3 amarillo, 1 rojo (módulos sin
+    instalar, esperado). Agente operativo contra Odoo 19 real.
 
 ### Bloque C — Bootstrap funcional (primer uso real del agente)
 
@@ -207,6 +217,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-10 | Bloque A pasos 1-4 | Limpieza Ikigai → multi-tenant + onboarding + /onboard. Commit `76ab81904`. |
 | 2026-05-10 | Bloque A paso 5 (Fase 4.0) | `profile.yaml` de inpr3mium relleno con datos reales (NIF, plan, flags, dirección). README + migration plan actualizados. Commit `79f1acded`. |
 | 2026-05-10 | Bloque B paso 7 (Fase 3) | Runbook `doodba-bootstrap.md` con Modo A (Docker local) + Modo B (gcloud). Añadidos `infra/README.md` y `infra/secrets.md`. |
+| 2026-05-10 | Lateral (no roadmap) | `docs/infra/scaling.md` — guía de buenas prácticas de escalado Odoo 19 (workers, gevent, cron dedicado, Nginx, PG bajo carga, filestore externo, multi-nodo, `queue_job`, monitorización). Agnóstica al tenant; referencia para `fedefarma`. `Próximo paso` no cambia. |
+| 2026-05-10 | Bloque B pasos 8-10 | Modo A ejecutado end-to-end: doodba 9.5.0 + Odoo 19 + PG16 corriendo, DB `inpr3mium_dev`, bot uid=8 con API key, `.env` configurado. `/onboard`: 5🟢 3🟡 1🔴 — agente conectado. Bloqueantes para Bloque C identificados (bug `_json2`, campos renombrados Odoo 19, 6 módulos OCA missing). |
 
 ---
 
