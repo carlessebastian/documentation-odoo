@@ -1,0 +1,13 @@
+.env
+.env.local
+*.local.json
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+*.pem
+*.p12
+*.pfx

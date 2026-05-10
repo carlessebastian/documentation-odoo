@@ -1,0 +1,82 @@
+# Estado deseado del despliegue Ikigai Magi (config-as-code).
+# Compara con el estado real:
+#     python3 scripts/audit_admin_state.py --diff assets/desired_state.yaml.example
+# Reporta missing / extra / changed por seccion. NO aplica cambios.
+#
+# Cada seccion es opcional: lo que no aparezca aqui no se compara.
+# Las claves naturales son:
+#   companies: vat
+#   users:     login (en minusculas)
+#   journals:  (company_vat, code)
+
+companies:
+  - vat: ESB12345678
+    name: "Ikigai Magi S.L."
+    currency: EUR
+    country: ES
+    parent_vat: null
+
+  - vat: ESB22222222
+    name: "Camomilla Blu S.L."
+    currency: EUR
+    country: ES
+    parent_vat: ESB12345678
+
+  - vat: ESB33333333
+    name: "Kura Terra S.L."
+    currency: EUR
+    country: ES
+    parent_vat: ESB12345678
+
+users:
+  - login: bot.contable@ikigaimagi.tld
+    name: "Bot Contable"
+    lang: es_ES
+    active: true
+    groups:
+      - base.group_user
+      - base.group_multi_company
+      - account.group_account_manager
+    company_vats:
+      - ESB12345678
+      - ESB22222222
+      - ESB33333333
+
+  - login: bot.functional@ikigaimagi.tld
+    name: "Bot Functional Admin"
+    lang: en_US
+    active: true
+    groups:
+      - base.group_user
+      - base.group_multi_company
+      - base.group_erp_manager
+    company_vats:
+      - ESB12345678
+
+journals:
+  # Camomilla Blu - diarios estandar
+  - company_vat: ESB22222222
+    code: VENT
+    type: sale
+    name: "Customer Invoices"
+
+  - company_vat: ESB22222222
+    code: COMP
+    type: purchase
+    name: "Vendor Bills"
+
+  - company_vat: ESB22222222
+    code: BANC
+    type: bank
+    name: "Banco Principal"
+
+  # Kura Terra - diarios estandar
+  - company_vat: ESB33333333
+    code: VENT
+    type: sale
+    name: "Customer Invoices"
+
+  - company_vat: ESB33333333
+    code: COMP
+    type: purchase
+    name: "Vendor Bills"

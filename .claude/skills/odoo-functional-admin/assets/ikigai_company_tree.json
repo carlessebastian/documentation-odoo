@@ -1,0 +1,46 @@
+{
+  "_doc": "Estructura objetivo del holding Ikigai Magi (fixture de ejemplo).",
+  "_doc_units": "VATs ficticios; reemplazar por los reales antes de usar.",
+  "companies": [
+    {
+      "xmlid": "__custom__.company_ikigai_magi",
+      "name": "Ikigai Magi S.L.",
+      "vat": "ESB12345678",
+      "country": "ES",
+      "currency": "EUR",
+      "parent_xmlid": null,
+      "chart_template": "es_full",
+      "role": "holding"
+    },
+    {
+      "xmlid": "__custom__.company_camomilla_blu",
+      "name": "Camomilla Blu S.L.",
+      "vat": "ESB22222222",
+      "country": "ES",
+      "currency": "EUR",
+      "parent_xmlid": "__custom__.company_ikigai_magi",
+      "chart_template": "es_pymes",
+      "role": "subsidiary"
+    },
+    {
+      "xmlid": "__custom__.company_kura_terra",
+      "name": "Kura Terra S.L.",
+      "vat": "ESB33333333",
+      "country": "ES",
+      "currency": "EUR",
+      "parent_xmlid": "__custom__.company_ikigai_magi",
+      "chart_template": "es_pymes",
+      "role": "subsidiary"
+    },
+    {
+      "xmlid": "__custom__.company_omotenashi_hama",
+      "name": "Omotenashi Hama",
+      "vat": "ES44444444R",
+      "country": "ES",
+      "currency": "EUR",
+      "parent_xmlid": "__custom__.company_ikigai_magi",
+      "chart_template": "es_pymes",
+      "role": "participated"
+    }
+  ]
+}
