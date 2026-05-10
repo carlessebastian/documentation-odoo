@@ -1,63 +1,106 @@
 # Perfil del tenant inpr3mium
-# Inteligencia del Negocio Pr3mium S.L.
+# Inteligencia del negocio pr3mium S.L. (marca comercial: farmapremium)
 #
-# ESTADO: ESQUELETO — los campos marcados con <TODO> necesitan datos
-# reales antes de poder operar contra Odoo. Ver README.md adyacente.
+# Datos confirmados a partir de:
+# - Captura "Configuracion > Preferencias generales" de Holded (NIF, direccion, contacto)
+# - Cuadro de cuentas 2025 export de Holded (333 cuentas, plan Pymes con analitica extendida)
 
 slug: inpr3mium
-legal_name: "Inteligencia del Negocio Pr3mium S.L."
-vat: "ES<TODO_NIF>"                       # <-- rellenar con el NIF real
+legal_name: "Inteligencia del negocio pr3mium S.L."
+trade_name: "farmapremium"                # nombre comercial (logo, dominio holded, marketing)
+vat: "ESB65758682"
 locale: es_ES
 fiscal_country: ES
-chart_template: <TODO_chart>              # l10n_es.l10n_es_full | l10n_es.l10n_es_pymes
-edi_stack: oca                            # default razonable en Community
+chart_template: l10n_es.l10n_es_pymes     # confirmado por analisis del cuadro de cuentas (sin grupo 8/9)
+edi_stack: oca
+
+# Contacto y direccion fiscal -------------------------------------------------
+
+contact:
+  email_invoicing: facturas@inpr3mium.com
+  phone: "+34902811511"
+  website: https://inpr3mium.com
+
+address:
+  street: "Carrer Coneixement 7"
+  city: "Gava"
+  state: "Barcelona"
+  zip: "08850"
+  country_code: ES
+
+# Particularidades fiscales ---------------------------------------------------
 
 flags:
-  recargo_equivalencia: <TODO_bool>
-  iva_caja: <TODO_bool>
-  intracomunitario: <TODO_bool>
-  exportacion: <TODO_bool>
-  irpf_profesionales: <TODO_bool>
+  recargo_equivalencia: false             # confirmado: sin cuentas 4727
+  iva_caja: false                         # confirmado por usuario (regimen general devengo)
+  intracomunitario: true                  # SI: hay proveedores UE
+  exportacion: false                      # sin ventas fuera UE detectadas
+  irpf_profesionales: true                # SI: cuentas 4751* y servicios 62300710* (modelo 111 + 115)
+  extracomunitario_servicios: true        # SI: proveedores USA (software). Autoliquidacion ISP servicios extra-UE
+
+# Estructura de companies (sociedad unica) -----------------------------------
 
 companies:
-  - name: "Inteligencia del Negocio Pr3mium S.L."
-    vat: "ES<TODO_NIF>"
+  - name: "Inteligencia del negocio pr3mium S.L."
+    vat: "ESB65758682"
     currency: EUR
     country: ES
     parent_vat: null
-    chart_template: <TODO_chart>
+    chart_template: l10n_es.l10n_es_pymes
 
-# Diarios adicionales mas alla de los del chart_template (rellenar segun flags)
-journals: []
+# Diarios adicionales --------------------------------------------------------
+# El chart_template crea VENT/COMP/BANC/CAJA/MISC. Anyadir los especificos:
+
+journals:
+  - { company_vat: "ESB65758682", code: COMI, type: purchase, name: "Compras Intracomunitarias UE" }
+  - { company_vat: "ESB65758682", code: COMX, type: purchase, name: "Compras Servicios Extra-UE (USA)" }
+  - { company_vat: "ESB65758682", code: QONT, type: bank,     name: "Qonto" }
+
+# Bot user del agente ---------------------------------------------------------
 
 bot:
-  login: bot.contable@inpr3mium.<TODO_tld>
+  login: bot.contable@inpr3mium.com
   groups:
     - base.group_user
     - account.group_account_manager
     - base.group_multi_company
 
+# Origen y migracion ----------------------------------------------------------
+
 source_system:
   type: holded
+  holded_url: https://farmapremium.holded.com
   api_doc: https://developers.holded.com/
   notes: |
-    Migracion desde Holded (SaaS contable/CRM espanol). Diseno del
-    ETL pendiente — ver migration-from-holded.md.
+    Migracion desde Holded. Sociedad participada por FEDERACIO FARMACEUTICA,
+    BIDAFARMA y CRUZFARMA (capital social) con prestamo de FEDEFARMA.
+    Negocio: servicios de marketing/consultoria a farmacias + produccion y
+    distribucion de packs PLV (Publicidad Lugar de Venta). Servicios = core;
+    packs = volumen marginal pero presente.
 
 migration:
   strategy: api-export
-  scope: <TODO_minimo|year|completo>
-  cutover_target: <TODO_YYYY-MM-DD>
+  scope: completo                         # historico completo + anyo en curso
+  validation_subset: [2024, 2025]         # primero validamos con estos dos anyos antes de migrar el resto
+  cutover_target: <TODO_YYYY-MM-DD>       # sin fecha definida; se concreta cuando Odoo este maduro
+
+# Modulos esperados (lo que /onboard compara contra ir.module.module) --------
 
 expected_modules:
+  # Localizacion ES
   - l10n_es
-  - l10n_es_aeat_mod303
-  - l10n_es_aeat_mod347
-  - l10n_es_aeat_mod349
-  - l10n_es_aeat_mod390
+  - l10n_es_aeat_mod303                   # IVA trimestral
+  - l10n_es_aeat_mod347                   # operaciones >3005.06EUR
+  - l10n_es_aeat_mod349                   # intracomunitarias UE  (necesario por flags.intracomunitario)
+  - l10n_es_aeat_mod390                   # resumen anual IVA
+  - l10n_es_aeat_mod111                   # retenciones IRPF rendimientos trabajo y profesionales
+  - l10n_es_aeat_mod115                   # retenciones IRPF arrendamientos
+  - l10n_es_aeat_mod232                   # operaciones partes vinculadas (relevante: capital social participado)
+  # EDI
   - l10n_es_aeat_sii_oca
   - l10n_es_verifactu_oca
   - l10n_es_facturae
+  # Reporting y operativa
   - mis_builder
   - account_financial_report
   - account_payment_mode
@@ -65,6 +108,21 @@ expected_modules:
   - account_banking_sepa_credit_transfer
   - auditlog
   - queue_job
+
+# Modulos opcionales recomendados por sector y particularidades --------------
+
+optional_modules:
+  # Servicios profesionales
+  - project
+  - hr_timesheet
+  - sale_subscription                     # si hay retainers/contratos recurrentes
+  # Packs PLV (volumen marginal pero presente)
+  - stock
+  - purchase
+  # Holding/partes vinculadas
+  - account_consolidation                 # OCA, opcional para reporting agrupado
+
+# OCA repos a sincronizar -----------------------------------------------------
 
 oca_repos:
   - l10n-spain
@@ -76,6 +134,12 @@ oca_repos:
   - queue
   - bank-payment
 
+# Anyos fiscales a inicializar -----------------------------------------------
+# Estrategia: arrancamos con 2024+2025 para validar la migracion con datos
+# reales conocidos. Tras OK, anyadimos 2026 (anyo en curso) + el resto del
+# historico segun se decida en migration-from-holded.md.
+
 fiscal_years:
+  - 2024
+  - 2025
   - 2026
-  - 2027

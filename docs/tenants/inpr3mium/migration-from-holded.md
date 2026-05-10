@@ -1,8 +1,26 @@
 # Migración Holded → Odoo 19 — inpr3mium
 
-**Estado: pendiente de diseño.** Este archivo se completa en Fase 5
-del plan, una vez la instancia Odoo esté arrancada y bootstrappeada
-(Fases 3-4). Aquí van las decisiones y el plan ETL.
+**Estado: pre-diseño.** Estructura general decidida; el detalle ETL
+y el cutover se concretan en Fase 5 del plan, una vez la instancia
+Odoo esté arrancada y bootstrappeada (Fases 3-4).
+
+## Contexto del origen (datos del análisis)
+
+- **Holded URL**: https://farmapremium.holded.com (plan con API).
+- **Volumen del cuadro de cuentas (export 2025)**: 333 cuentas
+  activas, 70 prefijos de 4 dígitos. PGCE Pymes con analítica
+  extendida por Holded (códigos de 11 dígitos: 4 base + 7 analítica).
+- **Particularidades fiscales** (relevantes para mapeo):
+  - Cuentas IRPF retenido (`4751*` x5): retenciones a profesionales,
+    arrendamientos, retribución especie, vehículo.
+  - Cuentas servicios profesionales recibidos (`62300710*` x12):
+    asesoría laboral, contable, fiscal, secretaría consejo,
+    protección datos, prevención riesgos, etc.
+  - Cuentas IVA repercutido/soportado por % (`4720`, `4770`).
+  - Capital social tripartito: FEDERACIO FARMACEUTICA, BIDAFARMA,
+    CRUZFARMA. Préstamo de FEDEFARMA → cuenta `66231400002`.
+  - Compras de packs (`60000400*`) y producción PLV (`6230074*`,
+    `6240074*`).
 
 ## Origen: Holded
 
@@ -21,20 +39,24 @@ Recursos relevantes para el ETL:
   PGCE elegido en Odoo.
 - **Taxes** → mapeo a impuestos `account.tax` de `l10n_es`.
 
-## Scope (a decidir con el usuario)
+## Scope (decidido)
 
-Tres niveles. Recomendación inicial: **mínimo**.
+**Histórico completo + año en curso**, con validación previa por
+subset.
 
-- [ ] **Mínimo**: maestros (partners, productos) + plan contable
-      ajustado + saldos de apertura del cutover. Operativa nueva en
-      Odoo desde día 1.
-- [ ] **Año en curso**: lo anterior + facturas y pagos del ejercicio
-      en curso, para tener libros completos en Odoo. Más trabajo;
-      útil si el cutover no es a 1 de enero.
-- [ ] **Histórico completo**: lo anterior + ejercicios cerrados
-      anteriores. Generalmente no se recomienda — los ejercicios
-      cerrados quedan en Holded (read-only) durante el periodo legal
-      de conservación.
+- [x] **Subset de validación**: ejercicios **2024 y 2025** completos.
+      Estos dos años son los que se migran primero como prueba para
+      verificar que el ETL produce balances cuadrados, partners
+      coherentes y facturación correcta antes de cargar el resto.
+- [ ] **Histórico completo**: tras validación OK, migrar todos los
+      ejercicios anteriores disponibles en Holded.
+- [ ] **Año en curso**: tras OK del histórico, traer el ejercicio
+      activo hasta el día del cutover.
+
+Justificación: el negocio tiene partes vinculadas (capital social
+participado) y modelo 232; tener histórico contable completo en
+Odoo facilita auditoría y reporting consolidado futuro con las
+sociedades hermanas.
 
 ## Mapeo de modelos (borrador)
 
@@ -67,20 +89,47 @@ cuarto skill `odoo-data-migration`. Decisión diferida al momento.
 
 ## Cutover
 
-- Fecha objetivo: **`<TODO>`** (idealmente fin de mes o trimestre).
-- Pasos del día D — a detallar.
+- Fecha objetivo: **sin fecha fija**. Se decidirá cuando el agente
+  esté maduro y la migración del subset 2024+2025 esté validada.
+- Pasos del día D — a detallar tras validación.
+
+## Particularidades a resolver durante el ETL
+
+- **Códigos de cuenta de 11 dígitos en Holded** vs 4-8 dígitos en
+  Odoo PGCE Pymes. Decidir: ¿colapsar al prefijo de 4-8 (perdiendo
+  granularidad analítica) o crear `account.analytic.account` para
+  preservar el desglose? Recomendación inicial: colapsar a `account.account`
+  PGCE Pymes y mover la granularidad a tags analíticas vía
+  `account.analytic.tag` (modelo `account.analytic.distribution`).
+- **Capital social tripartito** (3 cuentas `100*`): preservar el
+  desglose por socio como analítica o como cuentas separadas dentro
+  del 100. Probable preservar.
+- **Préstamo FEDEFARMA**: mapear a cuenta de pasivo a corto/largo
+  plazo según vencimiento.
+- **IRPF retenido**: las 5 cuentas `4751*` deben mapear a las cuentas
+  estándar `4751` del PGCE Pymes con conceptos analíticos. Revisar
+  con el módulo `l10n_es_aeat_mod111`.
+- **Servicios extracomunitarios USA**: durante la migración del
+  histórico, las facturas de proveedores USA deben llevar la posición
+  fiscal "Servicios Extra-UE" para que el IVA se autoliquide
+  correctamente en el 303.
 
 ## Riesgos
 
 - API de Holded con rate limits o paginación inestable.
-- Plan contable de Holded no mapeable 1:1 con el `l10n_es` elegido.
+- Plan contable de Holded (con códigos de 11 dígitos) no mapeable 1:1
+  con `l10n_es_pymes`. Decisión de granularidad analítica pendiente.
 - IVA y cuotas redondeadas distinto entre los dos sistemas → cuadres
-  céntimo arriba/abajo.
-- IRPF retenido en facturas: revisar mapeo de cuentas.
+  céntimo arriba/abajo en saldos de apertura.
+- IRPF retenido: 5 cuentas distintas en Holded → ¿mantener desglose o
+  colapsar?
 
-## Cuestiones abiertas
+## Cuestiones abiertas (para resolver en Fase 5)
 
-- ¿Carles tiene Holded en plan API o necesita exportar manualmente?
 - ¿Cuántos contactos / productos / facturas/año hay aproximadamente?
+  (orientativo para diseñar batch size del ETL).
+- ¿Plan de Holded incluye API access? Confirmar antes de codificar.
 - ¿Hay módulos de Holded usados que no tengan equivalente directo en
-  Odoo (p.ej. CRM con campos custom, proyectos, RRHH)?
+  Odoo (CRM con campos custom, proyectos, RRHH)?
+- ¿Mantener Holded en read-only post-cutover durante el periodo legal
+  de conservación, o exportar todo y dar de baja?

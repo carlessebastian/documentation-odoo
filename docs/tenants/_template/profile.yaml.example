@@ -20,9 +20,11 @@ edi_stack: oca                            # oca | enterprise
 flags:
   recargo_equivalencia: false             # true si hay clientes/proveedores en RE
   iva_caja: false                         # true si la sociedad esta acogida al regimen IVA de caja
-  intracomunitario: false                 # true si hay operaciones intra-UE
-  exportacion: false                      # true si hay exportacion fuera UE
-  irpf_profesionales: false               # true si hay retenciones IRPF en facturas
+  intracomunitario: false                 # true si hay operaciones intra-UE -> modelo 349
+  exportacion: false                      # true si hay exportacion fuera UE -> FP exportacion IVA 0%
+  irpf_profesionales: false               # true si hay retenciones IRPF en facturas -> modelo 111/115/130
+  extracomunitario_servicios: false       # true si hay proveedores no-UE de servicios (p.ej. SaaS USA)
+                                          # -> autoliquidacion ISP en 303, NO va al 349
 
 # Estructura de companies -----------------------------------------------------
 # Para sociedad unica: deja un solo elemento con parent_vat: null.
