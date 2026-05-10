@@ -18,7 +18,7 @@ from _common import OdooError
 from odoo_client import OdooClient
 
 
-SUPPORTED = {"111", "115", "130", "303", "347", "349", "369", "390"}
+SUPPORTED = {"111", "115", "130", "232", "303", "347", "349", "369", "390", "720"}
 
 
 def _period_to_dates(period: str) -> tuple[str, str, str]:

@@ -45,20 +45,40 @@ de ejecutar nada**. Nunca hardcodees credenciales en commits.
 
 | El usuario pide... | Ejecuta | Antes lee |
 |--------------------|---------|-----------|
+| **Operativa diaria** | | |
 | Crear factura cliente | `scripts/create_invoice.py` | `references/workflows.md`, `references/localizacion-espana.md` |
 | Crear factura proveedor | `scripts/create_invoice.py --type in_invoice` | `references/workflows.md` |
 | Postear factura | (incluido en `create_invoice.py --post`) o `scripts/odoo_client.py` accion `action_post` | `references/workflows.md` |
 | Registrar cobro/pago | `scripts/register_payment.py` | `references/workflows.md` |
-| Crear factura rectificativa | `scripts/credit_note.py --mode reverse|modify` | `references/workflows.md` |
+| Crear factura rectificativa | `scripts/credit_note.py --mode reverse\|modify` | `references/workflows.md` |
 | Buscar cliente/proveedor | `scripts/partner_lookup.py` | `references/domain-syntax.md` |
 | Buscar producto | `scripts/product_lookup.py` | `references/modelos-cheatsheet.md` |
 | Buscar/listar impuestos | `scripts/tax_lookup.py` | `references/localizacion-espana.md` |
 | Verificar cumplimiento ES | `scripts/verify_es_compliance.py` | `references/localizacion-espana.md`, `references/sii-verifactu-facturae.md` |
+| **Tesoreria** | | |
+| Aged receivables/payables | `scripts/aged_balance.py --type receivable\|payable` | `references/treasury.md` |
+| Importar extracto bancario | `scripts/bank_statement_import.py --file ext.csv --journal-id N` | `references/treasury.md` |
+| Conciliar extracto bancario | `scripts/bank_statement_reconcile.py --statement-id N` | `references/treasury.md` |
+| Recordatorios de cobro (dunning) | `scripts/dunning.py --level 1\|2\|3` | `references/treasury.md` |
+| KPIs tesoreria (DSO/DPO/CCC) | `scripts/dashboard_kpis.py --from YYYY-MM-DD --to YYYY-MM-DD` | `references/treasury.md` |
+| **Volumen y automatizacion** | | |
+| Importar facturas masivas CSV/Excel | `scripts/bulk_invoice_import.py --file ventas.csv` | `references/automation.md` |
+| Generar factura recurrente | `scripts/recurring_invoice.py --template-id N --frequency monthly` | `references/automation.md` |
+| Operacion en lote (post/payment/cancel/send) | `scripts/batch_operations.py --action post --domain '...'` | `references/automation.md` |
+| **Cumplimiento ES extendido** | | |
+| Libro IVA emitido/recibido | `scripts/vat_book.py --period 2026Q1` | `references/iva-extendido.md` |
+| Calcular prorrata IVA | `scripts/vat_prorate.py --year 2026 --provisional 85` | `references/iva-extendido.md` |
+| Modelos AEAT | `scripts/run_aeat_report.py --model 303\|369\|232\|720 --period ...` | `references/reports.md`, `references/iva-extendido.md` |
+| **Cierre y reporting financiero** | | |
+| Checklist pre-cierre periodico | `scripts/period_close_checklist.py --from ... --to ...` | `references/cierre-periodico.md` |
+| Asiento de cierre 6/7 -> 129 | `scripts/closing_entries.py --year 2026 --dry-run` | `references/cierre-periodico.md` |
+| P&L / Balance / Trial balance multi-periodo | `scripts/financial_reports.py --report pl\|balance\|trial` | `references/cierre-periodico.md` |
+| **EDI AEAT** | | |
 | Enviar a SII | `scripts/send_sii.py` | `references/sii-verifactu-facturae.md` |
 | Enviar a Veri*Factu | `scripts/send_verifactu.py` | `references/sii-verifactu-facturae.md` |
 | Generar PDF de factura | `scripts/report_invoice_pdf.py` | `references/reports.md` |
-| Modelo 303/347/349/390 | `scripts/run_aeat_report.py --model 303 --period 2026Q1` | `references/reports.md` |
-| Lectura conversacional ad-hoc | Usa MCP server `odoo` si esta configurado, o `scripts/odoo_client.py` | `references/domain-syntax.md` |
+| **Lectura ad-hoc** | | |
+| Lectura conversacional | Usa MCP server `odoo` si esta configurado, o `scripts/odoo_client.py` | `references/domain-syntax.md` |
 
 ## Checklist de cumplimiento espanol antes de `action_post`
 
@@ -144,6 +164,14 @@ contable concreta.
   BOE, generacion PDF.
 - `references/domain-syntax.md` - dominios Odoo, operadores,
   `read_group`, paginacion, optimistic locking.
+- `references/treasury.md` - aged receivables/payables, conciliacion
+  bancaria (CAMT/OFX/CSV/N43), dunning, KPIs (DSO/DPO/CCC).
+- `references/automation.md` - importacion masiva, recurrencia, bulk
+  operations, idempotencia en lotes, performance.
+- `references/iva-extendido.md` - libros IVA, prorrata, regularizacion
+  bienes inversion, modelos 369/232/720.
+- `references/cierre-periodico.md` - checklist mensual/trimestral/anual,
+  asientos cierre/apertura, lock dates, distribucion de resultados.
 
 ## Assets
 
