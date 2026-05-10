@@ -1,5 +1,12 @@
 # odoo-agent — contexto para Claude
 
+> **🔖 Al inicio de cada sesión, lee primero
+> [`docs/PLAN.md`](docs/PLAN.md)** — es el single source of truth del
+> estado del desarrollo. Indica la última fase completada, el próximo
+> paso, y permite retomar sesiones interrumpidas sin perder
+> contexto. Tras completar cualquier paso del roadmap, actualízalo
+> (regla en memoria).
+
 Este repo **no es la documentación de Odoo**. Es un agente Claude Code
 que asiste al usuario en la instalación, migración, administración y
 explotación contable/fiscal de instancias self-hosted **Odoo 19
