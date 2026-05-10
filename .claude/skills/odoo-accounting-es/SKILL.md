@@ -66,6 +66,7 @@ de ejecutar nada**. Nunca hardcodees credenciales en commits.
 | Registrar cobro/pago | `scripts/register_payment.py` | `references/workflows.md` |
 | Crear factura rectificativa | `scripts/credit_note.py --mode reverse\|modify` | `references/workflows.md` |
 | Buscar cliente/proveedor | `scripts/partner_lookup.py` | `references/domain-syntax.md` |
+| Asignar posicion fiscal / payment term en bulk a partners | `scripts/partner_fiscal_setup.py --criteria eu_with_vat\|non_eu_with_vat\|spain_only\|match_partner_ids --fiscal-position N --company N --confirm` | `references/localizacion-espana.md` |
 | Buscar producto | `scripts/product_lookup.py` | `references/modelos-cheatsheet.md` |
 | Buscar/listar impuestos | `scripts/tax_lookup.py` | `references/localizacion-espana.md` |
 | Verificar cumplimiento ES | `scripts/verify_es_compliance.py` | `references/localizacion-espana.md`, `references/sii-verifactu-facturae.md` |

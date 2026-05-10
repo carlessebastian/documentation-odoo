@@ -12,6 +12,7 @@ import json
 import sys
 from typing import Sequence
 
+import checksum_track
 import ssh_runner
 from _common import OdooError
 from odoo_client import OdooClient
@@ -72,8 +73,25 @@ def main() -> int:
         action="store_true",
         help="Equivalente a `odoo -u all` sobre los instalados.",
     )
+    grp.add_argument(
+        "--changed",
+        action="store_true",
+        help=(
+            "Detecta modulos cuyo codigo cambio desde el ultimo upgrade "
+            "(SHA256 de *.py/*.xml/*.csv) y solo actualiza esos. Equivalente "
+            "local a click-odoo-update."
+        ),
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--skip-restart", action="store_true")
+    parser.add_argument(
+        "--save-checksums",
+        action="store_true",
+        help=(
+            "Solo con --changed: tras un upgrade exitoso (o dry-run), guarda "
+            "los nuevos checksums en ir.config_parameter."
+        ),
+    )
     ns = parser.parse_args()
 
     client = OdooClient()
@@ -81,10 +99,53 @@ def main() -> int:
     if not cfg["db_name"]:
         raise OdooError("DOODBA_DB_NAME / ODOO_DB no esta seteado.")
 
+    checksum_diff: dict[str, list[str]] | None = None
+    current_checksums: dict[str, str] | None = None
+
     if ns.all_installed:
         names = list_installed(client)
         if not names:
             raise OdooError("Ningun modulo instalado.")
+    elif ns.changed:
+        current_checksums = checksum_track.compute_remote_checksums()
+        stored = checksum_track.load_stored_checksums(client)
+        installed = list_installed(client)
+        checksum_diff = checksum_track.diff_checksums(
+            current_checksums, stored, installed
+        )
+        names = checksum_diff["changed"] + checksum_diff["new"]
+        if not names:
+            json.dump(
+                {
+                    "action": "noop",
+                    "reason": "no installed module changed since last run",
+                    "diff": checksum_diff,
+                },
+                sys.stdout,
+                indent=2,
+                ensure_ascii=False,
+            )
+            print()
+            return 0
+        precheck(client, checksum_diff["changed"])  # 'new' aun no instalados; se omite check
+        names = checksum_diff["changed"]  # solo los ya instalados que cambiaron
+        if not names:
+            # Solo habia 'new' no instalados; no hay que upgradear
+            if ns.save_checksums:
+                checksum_track.save_checksums(client, current_checksums)
+            json.dump(
+                {
+                    "action": "noop",
+                    "reason": "only newly added modules detected; nothing to upgrade",
+                    "diff": checksum_diff,
+                    "checksums_saved": ns.save_checksums,
+                },
+                sys.stdout,
+                indent=2,
+                ensure_ascii=False,
+            )
+            print()
+            return 0
     else:
         names = [n.strip() for n in ns.names.split(",") if n.strip()]
         if not names:
@@ -107,13 +168,25 @@ def main() -> int:
     if not ns.dry_run and not ns.skip_restart:
         ssh_runner.docker_compose_restart(dry_run=False)
 
+    checksums_saved = False
+    if ns.save_checksums and current_checksums is not None:
+        if not ns.dry_run:
+            checksum_track.save_checksums(client, current_checksums)
+            checksums_saved = True
+
     json.dump(
         {
             "action": "upgraded" if not ns.dry_run else "would_upgrade",
-            "target": "all" if ns.all_installed else "named",
+            "target": (
+                "all" if ns.all_installed
+                else "changed" if ns.changed
+                else "named"
+            ),
             "names": names if not ns.all_installed else f"{len(names)} modulos",
             "ssh_returncode": ssh_result.returncode,
             "cmd": " ".join(ssh_result.cmd),
+            "checksum_diff": checksum_diff,
+            "checksums_saved": checksums_saved,
         },
         sys.stdout,
         indent=2,

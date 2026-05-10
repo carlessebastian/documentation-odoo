@@ -98,6 +98,7 @@ puedes hacer operaciones RPC de auditoria, no install/upgrade.
 | **Instalacion / upgrade / uninstall** | | |
 | Instalar modulo (production) | `scripts/module_install.py --names X` | `references/module-lifecycle.md`, `references/docker-exec-patterns.md` |
 | Actualizar modulo(s) | `scripts/module_upgrade.py --names X,Y` | `references/upgrade-strategy.md` |
+| Actualizar solo modulos cuyo codigo cambio (SHA256) | `scripts/module_upgrade.py --changed --save-checksums` | `references/upgrade-strategy.md` |
 | Desinstalar modulo | `scripts/module_uninstall.py --names X` | `references/module-lifecycle.md` |
 | **Repos OCA / addons** | | |
 | Sincronizar repos.yaml | `scripts/repos_aggregate.sh` (--dry-run primero) | `references/git-aggregator.md`, `references/addons-yaml.md` |

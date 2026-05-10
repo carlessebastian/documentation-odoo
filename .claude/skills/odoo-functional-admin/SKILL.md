@@ -114,6 +114,7 @@ Si falta cualquiera, **detente y pidela al usuario antes de ejecutar nada**.
 | Upsert por `ir.model.data` ext-ID | `scripts/ext_id_upsert.py --xmlid module.name --model M --vals JSON` | `references/data-import-export.md` |
 | **Auditoria** | | |
 | Snapshot global (companies, users, journals, crons) | `scripts/audit_admin_state.py` | `references/users-groups-acls.md` |
+| Detectar drift contra YAML deseado (config-as-code) | `scripts/audit_admin_state.py --diff assets/desired_state.yaml.example` | `references/multi-company.md`, `references/users-groups-acls.md` |
 
 ## Reglas de seguridad que debes cumplir SIEMPRE
 
