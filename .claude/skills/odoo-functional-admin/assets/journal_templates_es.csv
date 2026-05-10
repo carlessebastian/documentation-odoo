@@ -1,0 +1,11 @@
+code,type,name,prefix,padding,no_gap,hash_chain,notes
+VENT,sale,Customer Invoices,VENT/%(range_year)s/,5,1,0,Facturas emitidas. no_gap obligatorio en Espana.
+COMP,purchase,Vendor Bills,COMP/%(range_year)s/,5,0,0,Facturas recibidas. standard OK.
+RECT,sale,Customer Refunds,RECT/%(range_year)s/,5,1,0,Facturas rectificativas (notas de credito).
+ABRC,purchase,Vendor Refunds,ABRC/%(range_year)s/,5,0,0,Abonos recibidos.
+BANC,bank,Banco Principal,,5,0,0,Por cada banco un diario; bank_account_id requerido.
+CAJA,cash,Caja,,5,0,0,Movimientos en efectivo. default_account_id = 570.
+NOMI,general,Nominas,,5,0,0,Asientos de payroll mensual.
+APER,general,Apertura,,5,0,0,Asiento de apertura del ejercicio.
+CIERR,general,Cierre,,5,0,0,Asientos de cierre 6/7 -> 129 -> 121.
+MISC,general,Miscelaneos,,5,0,0,Ajustes manuales no clasificados.

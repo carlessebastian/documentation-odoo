@@ -1,16 +1,30 @@
 ---
 name: odoo-accounting-es
 description: |
-  Usa este skill siempre que el usuario trabaje con Odoo 19 Community
-  self-hosted para contabilidad y facturacion espanolas (Cataluna/UE):
-  crear facturas (account.move out_invoice/in_invoice), postearlas
-  (action_post), registrar pagos via account.payment.register, generar
-  rectificativas (account.move.reversal), conciliar extractos, calcular
-  IVA 21/10/4/0, IRPF y Recargo de Equivalencia, enviar a la AEAT por SII
-  o Veri*Factu, generar FacturaE para FACe, o ejecutar modelos AEAT
-  303/347/349/390/111/115/130. Activa el skill aunque el usuario solo
-  mencione "factura", "asiento", "modelo 303", "AEAT", "SII", "Verifactu",
-  "FACe", "PGCE", "Odoo", "ERP", "balance", "P&L" o "create invoice".
+  Usa este skill SOLO para operativa contable y fiscal espanola en Odoo 19
+  Community self-hosted (Cataluna/UE): crear facturas
+  (account.move out_invoice/in_invoice), postearlas (action_post),
+  registrar pagos (account.payment.register), generar rectificativas
+  (account.move.reversal), conciliar extractos, calcular IVA 21/10/4/0,
+  IRPF y Recargo de Equivalencia, enviar SII / Veri*Factu / FacturaE,
+  ejecutar modelos AEAT 303/347/349/390/111/115/130/369/232/720,
+  cierres periodicos, reporting financiero. Activa aunque el usuario solo
+  diga "factura", "asiento", "modelo 303", "AEAT", "SII", "Verifactu",
+  "FACe", "PGCE", "balance", "P&L", "create invoice", "post invoice".
+
+  DO NOT trigger for (handoff to sibling skills):
+    - User / group / ACL / record-rule / multi-company configuration
+      -> use skill `odoo-functional-admin`.
+    - Journal / sequence / fiscal-position / tax-code creation as setup
+      (vs daily use) -> use skill `odoo-functional-admin`.
+    - Scheduled action (ir.cron) configuration -> `odoo-functional-admin`.
+    - Module install / upgrade / uninstall, addons.yaml, repos.yaml,
+      git-aggregator, doodba/Docker operations, odoo-bin -i/-u, restarting
+      the Odoo container, pip dependencies of an addon
+      -> use skill `odoo-module-admin`.
+
+  No usar para tareas no-Odoo (frontend, devops generico, traducciones,
+  matematicas, trivia).
 license: MIT
 allowed-tools:
   - Read
@@ -177,6 +191,26 @@ contable concreta.
 - `references/mcp-setup.md` - como configurar un MCP server Odoo
   (`ivnvxd/mcp-server-odoo`) para usar el skill desde Claude Code o
   Claude Desktop, variables de entorno compartidas, permisos.
+
+## Skills hermanos (handoff)
+
+Si la peticion del usuario cae fuera del alcance contable/fiscal, delega al
+skill hermano correspondiente; no intentes cubrirlo aqui.
+
+| Si el usuario pide... | Usa el skill |
+|-----------------------|--------------|
+| Crear/modificar usuarios, grupos, ACLs, reglas de registro | `odoo-functional-admin` |
+| Configurar diarios, secuencias, posiciones fiscales como *setup* | `odoo-functional-admin` |
+| Configurar multi-company (holding Ikigai Magi y filiales) | `odoo-functional-admin` |
+| Activar/desactivar `ir.cron` | `odoo-functional-admin` |
+| Instalar / actualizar / desinstalar modulos | `odoo-module-admin` |
+| Tocar `addons.yaml`, `repos.yaml`, git-aggregator, doodba | `odoo-module-admin` |
+| Reiniciar el contenedor Odoo, ejecutar `odoo-bin -i/-u` | `odoo-module-admin` |
+| Diagnosticar dependencias pip de un addon | `odoo-module-admin` |
+
+La distincion clave: este skill *opera* facturas/asientos/cobros sobre una
+configuracion ya instalada. Si el usuario quiere *configurar* la base
+(usuarios, diarios, modulos), no es trabajo de este skill.
 
 ## Calidad y tests
 

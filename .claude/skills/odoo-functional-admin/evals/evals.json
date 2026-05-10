@@ -1,0 +1,138 @@
+{
+  "skill": "odoo-functional-admin",
+  "description": "Evaluacion de disparo: 12 should-trigger + 6 should-not-trigger + 4 handoff a skills hermanos.",
+  "cases": [
+    {
+      "id": "trigger-01",
+      "prompt": "Crea un usuario para Maria Pons con login [email protected], idioma catalan y permisos de contabilidad basica.",
+      "should_trigger": true,
+      "expected_action": "user_provision.py --login --groups account.group_account_invoice --lang ca_ES"
+    },
+    {
+      "id": "trigger-02",
+      "prompt": "Quiero que los comerciales solo vean sus propias oportunidades.",
+      "should_trigger": true,
+      "expected_action": "Crear ir.rule sobre crm.lead con domain_force [('user_id','=',user.id)] para sales_team.group_sale_salesman"
+    },
+    {
+      "id": "trigger-03",
+      "prompt": "Anyade Kura Terra como filial de Ikigai Magi, NIF ESB99999999.",
+      "should_trigger": true,
+      "expected_action": "company_setup.py --name 'Kura Terra S.L.' --vat ESB99999999 --parent-vat ESB12345678"
+    },
+    {
+      "id": "trigger-04",
+      "prompt": "Crea un diario bancario para la cuenta BBVA de Camomilla.",
+      "should_trigger": true,
+      "expected_action": "journal_setup.py --type bank --code BBVA --company <camomilla>"
+    },
+    {
+      "id": "trigger-05",
+      "prompt": "Configura una posicion fiscal para clientes intracomunitarios en Camomilla.",
+      "should_trigger": true,
+      "expected_action": "fiscal_position_setup.py --preset intra_eu --company <camomilla>"
+    },
+    {
+      "id": "trigger-06",
+      "prompt": "Quiero numeracion separada por anyo para las facturas: KT/2026/00001.",
+      "should_trigger": true,
+      "expected_action": "sequence_setup.py --code account.move.kt --prefix 'KT/%(range_year)s/' --no-gap --use-date-range"
+    },
+    {
+      "id": "trigger-07",
+      "prompt": "Activa multi-company para el usuario admin para que vea todas las filiales.",
+      "should_trigger": true,
+      "expected_action": "group_assign.py --login admin --add base.group_multi_company (con confirmacion previa por uid 1)"
+    },
+    {
+      "id": "trigger-08",
+      "prompt": "Anyade el catalan como idioma disponible para los usuarios.",
+      "should_trigger": true,
+      "expected_action": "Activar res.lang con code=ca_ES via base.language_install"
+    },
+    {
+      "id": "trigger-09",
+      "prompt": "Pausa el cron de envio de Veri*Factu mientras renovamos el certificado.",
+      "should_trigger": true,
+      "expected_action": "cron_manage.py pause --id <verifactu_cron_id>"
+    },
+    {
+      "id": "trigger-10",
+      "prompt": "Da de baja al usuario [email protected]; ya no trabaja con nosotros.",
+      "should_trigger": true,
+      "expected_action": "Detener y confirmar con el usuario; luego res.users write active=False"
+    },
+    {
+      "id": "trigger-11",
+      "prompt": "Auditame que reglas de registro tiene activadas el modelo res.partner.",
+      "should_trigger": true,
+      "expected_action": "access_rule_audit.py --model res.partner"
+    },
+    {
+      "id": "trigger-12",
+      "prompt": "Damele a Carlos los permisos de gestor de compras adicionalmente sin tocar lo demas.",
+      "should_trigger": true,
+      "expected_action": "group_assign.py --login [email protected] --add purchase.group_purchase_manager"
+    },
+    {
+      "id": "no-trigger-01",
+      "prompt": "Crea una factura para el cliente Tecnativa SL por 1500 EUR + IVA 21%.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-accounting-es (operativa de facturas)."
+    },
+    {
+      "id": "no-trigger-02",
+      "prompt": "Concilia el extracto bancario de marzo en el diario BBVA.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-accounting-es."
+    },
+    {
+      "id": "no-trigger-03",
+      "prompt": "Genera el modelo 303 del primer trimestre.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-accounting-es."
+    },
+    {
+      "id": "no-trigger-04",
+      "prompt": "Necesito instalar el modulo l10n_es_aeat_mod303.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-module-admin."
+    },
+    {
+      "id": "no-trigger-05",
+      "prompt": "He hecho git pull en /opt/doodba/oca/l10n-spain, actualiza los modulos.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-module-admin."
+    },
+    {
+      "id": "no-trigger-06",
+      "prompt": "Como configuro nginx delante de Odoo con HTTPS?",
+      "should_trigger": false,
+      "expected_action": "Fuera de alcance de cualquier skill Odoo; sysadmin generico."
+    },
+    {
+      "id": "handoff-01",
+      "prompt": "Crea un diario de ventas y postea en el la primera factura del trimestre.",
+      "should_trigger": true,
+      "expected_action": "Crear el diario aqui (journal_setup.py); para postear la factura, derivar a odoo-accounting-es."
+    },
+    {
+      "id": "handoff-02",
+      "prompt": "Antes de que pueda usar el modulo l10n_es_aeat_mod303 necesito asignarme permisos de contabilidad.",
+      "should_trigger": true,
+      "expected_action": "Asignar permisos aqui; instalacion de modulo en odoo-module-admin si procede."
+    },
+    {
+      "id": "handoff-03",
+      "prompt": "Quiero un usuario 'bot.contable' con API key para automatizar facturas.",
+      "should_trigger": true,
+      "expected_action": "Crear el usuario aqui (user_provision.py). La generacion de API key suele ser via UI; la operativa de facturas con esa key cae en odoo-accounting-es."
+    },
+    {
+      "id": "handoff-04",
+      "prompt": "Dale al usuario maria.com los permisos para que pueda enviar SII desde Odoo.",
+      "should_trigger": true,
+      "expected_action": "group_assign.py con grupos de account + l10n_es_edi_sii. La operativa de envio en odoo-accounting-es."
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+# Ejemplo de repos.yaml para Odoo 19 ES Community (doodba + git-aggregator).
+# Copiar a custom/src/repos.yaml en el proyecto doodba y ejecutar:
+#     gitaggregate -c custom/src/repos.yaml
+# o, en doodba:
+#     invoke git-aggregate
+
+custom/src/account-financial-tools:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/account-financial-tools.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/account-financial-reporting:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/account-financial-reporting.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/bank-payment:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/bank-payment.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/l10n-spain:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/l10n-spain.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/server-auth:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/server-auth.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/server-tools:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/server-tools.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/server-ux:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/server-ux.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/web:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/web.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+custom/src/queue:
+  defaults:
+    depth: 1
+  remotes:
+    oca: https://github.com/OCA/queue.git
+  merges:
+    - oca 19.0
+  target: oca 19.0
+
+# Para repos privados via SSH (requiere clave en custom/ssh/id_rsa):
+# custom/src/private:
+#   remotes:
+#     origin: git@github.com:ikigai/odoo-private.git
+#   merges:
+#     - origin 19.0
+#   target: origin 19.0

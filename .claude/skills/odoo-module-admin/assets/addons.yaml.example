@@ -1,0 +1,68 @@
+# Ejemplo de addons.yaml para Odoo 19 ES Community (doodba).
+# Copiar a custom/src/addons.yaml en el proyecto doodba.
+# Tras editar, ejecutar `invoke img-build` (o `docker compose build odoo`)
+# para regenerar auto/addons, y luego un restart + update_list().
+
+private:
+  - "*"
+
+l10n-spain:
+  - l10n_es
+  - l10n_es_aeat
+  - l10n_es_aeat_mod303
+  - l10n_es_aeat_mod347
+  - l10n_es_aeat_mod349
+  - l10n_es_aeat_mod390
+  - l10n_es_aeat_sii_oca
+  - l10n_es_facturae
+  # Cuando estén migrados a 19.0, anyadir:
+  # - l10n_es_verifactu_oca
+  # - l10n_es_ticketbai
+
+account-financial-reporting:
+  - mis_builder
+  - mis_builder_budget
+  - account_financial_report
+
+account-financial-tools:
+  - account_lock_date_update
+  - account_chart_update
+  - account_move_line_purchase_info
+
+bank-payment:
+  - account_payment_mode
+  - account_payment_partner
+  - account_banking_sepa_direct_debit
+  - account_banking_sepa_credit_transfer
+
+server-auth:
+  - auth_oauth_environment
+  - auth_session_timeout
+
+server-tools:
+  - auditlog
+  - base_technical_user
+  - mail_environment
+  - module_auto_update
+
+server-ux:
+  - mass_editing
+  - base_search_fuzzy
+
+queue:
+  - queue_job
+  - queue_job_cron
+
+web:
+  - web_responsive
+  - web_no_bubble
+  - web_search_with_and
+
+# Bloque ONLY/EXCEPT opcional para entornos:
+# ONLY:
+#   ENVIRONMENT: ["devel", "test"]
+# EXCEPT:
+#   ENVIRONMENT: ["prod"]
+# server-tools:
+#   - dev_tools
+#   - test_environment

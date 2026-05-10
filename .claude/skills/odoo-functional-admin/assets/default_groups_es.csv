@@ -1,0 +1,22 @@
+role,xmlid,description
+admin_full,base.group_system,Administrador completo (equivalente a sudo). USAR CON CUIDADO.
+admin_settings,base.group_erp_manager,Acceso a Settings sin sudo total.
+internal_user,base.group_user,Usuario interno minimo (necesario para todo el resto).
+multi_company,base.group_multi_company,Activa el switcher de companias.
+contacts_manager,base.group_partner_manager,Gestion de contactos / partners.
+contabilidad_basica,account.group_account_invoice,Solo facturacion (alta/edit facturas).
+contabilidad_user,account.group_account_user,Contable (asientos manuales).
+contabilidad_manager,account.group_account_manager,Adviser (full accounting + lock dates).
+contabilidad_readonly,account.group_account_readonly,Solo lectura contable.
+ventas_user,sales_team.group_sale_salesman,Comercial - solo sus documentos.
+ventas_user_all,sales_team.group_sale_salesman_all_leads,Comercial - todos los documentos.
+ventas_manager,sales_team.group_sale_manager,Director comercial.
+compras_user,purchase.group_purchase_user,Compras - User.
+compras_manager,purchase.group_purchase_manager,Compras - Manager.
+inventario_user,stock.group_stock_user,Inventario - User.
+inventario_manager,stock.group_stock_manager,Inventario - Manager.
+hr_user,hr.group_hr_user,RRHH - User.
+hr_manager,hr.group_hr_manager,RRHH - Manager.
+project_user,project.group_project_user,Proyectos - User.
+project_manager,project.group_project_manager,Proyectos - Manager.
+portal,base.group_portal,Cliente externo (portal). Implica share=True.

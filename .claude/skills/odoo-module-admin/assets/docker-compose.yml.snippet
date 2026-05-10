@@ -1,0 +1,50 @@
+# Excerpt de docker-compose.yml de un deployment doodba tipico para
+# referencia. NO copiar literalmente; usar la version generada por
+# `copier copy` desde doodba-copier-template.
+
+version: "2.4"
+services:
+  odoo:
+    build:
+      context: ./odoo
+      args:
+        ODOO_VERSION: "19.0"
+    image: doodba-ikigai-odoo:19.0
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: odoo
+      DB_PASSWORD: odoo
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-changeme}"
+      ODOO_DEFAULT_LIMIT_TIME_REAL: "600"
+      ODOO_DEFAULT_LIMIT_TIME_CPU: "500"
+      ODOO_DEFAULT_WORKERS: "4"
+    volumes:
+      - ./odoo/auto/addons:/opt/odoo/auto/addons:ro
+      - ./odoo/custom:/opt/odoo/custom:ro
+      - ./volumes/odoo/filestore:/var/lib/odoo/filestore
+      - ./volumes/odoo/sessions:/var/lib/odoo/sessions
+    depends_on:
+      - db
+    ports:
+      - "127.0.0.1:8069:8069"
+      - "127.0.0.1:8072:8072"   # longpolling
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: postgres
+    volumes:
+      - ./volumes/db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+# Notas:
+# - El servicio que el skill espera por defecto se llama 'odoo';
+#   override-able via env DOODBA_COMPOSE_SERVICE.
+# - Los mounts ro de auto/addons y custom son criticos para que los
+#   cambios de gitaggregate se vean tras un restart sin rebuild.
+# - El puerto 8069 esta limitado a 127.0.0.1 porque suele haber un
+#   reverse proxy (Traefik / nginx) delante.
