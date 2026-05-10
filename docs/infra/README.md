@@ -12,6 +12,11 @@ docker exec sobre una instancia ya existente).
 - [`secrets.md`](secrets.md) — política de gestión de secretos
   (API keys, contraseñas, certificados digitales). Qué va en `.env`,
   qué no se versiona, dónde se almacena la copia maestra.
+- [`scaling.md`](scaling.md) — buenas prácticas de escalado de Odoo 19
+  (workers, gevent, cron dedicado, Nginx + X-Sendfile, PostgreSQL,
+  filestore externo, multi-nodo, OCA `queue_job`, monitorización).
+  Agnóstica al tenant: referencia para dimensionar `fedefarma` y
+  cualquier despliegue futuro que crezca en carga.
 
 ## Convención
 
