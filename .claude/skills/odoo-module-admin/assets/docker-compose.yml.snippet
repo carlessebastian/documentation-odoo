@@ -9,7 +9,7 @@ services:
       context: ./odoo
       args:
         ODOO_VERSION: "19.0"
-    image: doodba-ikigai-odoo:19.0
+    image: doodba-<tenant>-odoo:19.0
     environment:
       DB_HOST: db
       DB_PORT: "5432"

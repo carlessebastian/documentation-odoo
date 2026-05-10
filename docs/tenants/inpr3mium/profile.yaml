@@ -1,0 +1,81 @@
+# Perfil del tenant inpr3mium
+# Inteligencia del Negocio Pr3mium S.L.
+#
+# ESTADO: ESQUELETO — los campos marcados con <TODO> necesitan datos
+# reales antes de poder operar contra Odoo. Ver README.md adyacente.
+
+slug: inpr3mium
+legal_name: "Inteligencia del Negocio Pr3mium S.L."
+vat: "ES<TODO_NIF>"                       # <-- rellenar con el NIF real
+locale: es_ES
+fiscal_country: ES
+chart_template: <TODO_chart>              # l10n_es.l10n_es_full | l10n_es.l10n_es_pymes
+edi_stack: oca                            # default razonable en Community
+
+flags:
+  recargo_equivalencia: <TODO_bool>
+  iva_caja: <TODO_bool>
+  intracomunitario: <TODO_bool>
+  exportacion: <TODO_bool>
+  irpf_profesionales: <TODO_bool>
+
+companies:
+  - name: "Inteligencia del Negocio Pr3mium S.L."
+    vat: "ES<TODO_NIF>"
+    currency: EUR
+    country: ES
+    parent_vat: null
+    chart_template: <TODO_chart>
+
+# Diarios adicionales mas alla de los del chart_template (rellenar segun flags)
+journals: []
+
+bot:
+  login: bot.contable@inpr3mium.<TODO_tld>
+  groups:
+    - base.group_user
+    - account.group_account_manager
+    - base.group_multi_company
+
+source_system:
+  type: holded
+  api_doc: https://developers.holded.com/
+  notes: |
+    Migracion desde Holded (SaaS contable/CRM espanol). Diseno del
+    ETL pendiente — ver migration-from-holded.md.
+
+migration:
+  strategy: api-export
+  scope: <TODO_minimo|year|completo>
+  cutover_target: <TODO_YYYY-MM-DD>
+
+expected_modules:
+  - l10n_es
+  - l10n_es_aeat_mod303
+  - l10n_es_aeat_mod347
+  - l10n_es_aeat_mod349
+  - l10n_es_aeat_mod390
+  - l10n_es_aeat_sii_oca
+  - l10n_es_verifactu_oca
+  - l10n_es_facturae
+  - mis_builder
+  - account_financial_report
+  - account_payment_mode
+  - account_banking_sepa_direct_debit
+  - account_banking_sepa_credit_transfer
+  - auditlog
+  - queue_job
+
+oca_repos:
+  - l10n-spain
+  - server-tools
+  - server-auth
+  - account-financial-tools
+  - account-financial-reporting
+  - web
+  - queue
+  - bank-payment
+
+fiscal_years:
+  - 2026
+  - 2027

@@ -1,0 +1,37 @@
+{
+  "_doc": "Plantilla generica de holding + filiales (fixture de ejemplo).",
+  "_doc_units": "VATs ficticios; reemplazar por los reales del tenant antes de usar.",
+  "_doc_usage": "Para tenants de sociedad unica deja solo el primer elemento y pon parent_xmlid=null.",
+  "companies": [
+    {
+      "xmlid": "__custom__.company_acme_holdings",
+      "name": "Acme Holdings S.L.",
+      "vat": "ESB99999999",
+      "country": "ES",
+      "currency": "EUR",
+      "parent_xmlid": null,
+      "chart_template": "es_full",
+      "role": "holding"
+    },
+    {
+      "xmlid": "__custom__.company_acme_iberia",
+      "name": "Acme Iberia S.L.",
+      "vat": "ESB88888888",
+      "country": "ES",
+      "currency": "EUR",
+      "parent_xmlid": "__custom__.company_acme_holdings",
+      "chart_template": "es_pymes",
+      "role": "subsidiary"
+    },
+    {
+      "xmlid": "__custom__.company_acme_foods",
+      "name": "Acme Foods S.L.",
+      "vat": "ESB77777777",
+      "country": "ES",
+      "currency": "EUR",
+      "parent_xmlid": "__custom__.company_acme_holdings",
+      "chart_template": "es_pymes",
+      "role": "subsidiary"
+    }
+  ]
+}

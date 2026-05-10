@@ -77,8 +77,8 @@ pero algunas referencias a `gitaggregate` o `auto/addons` no aplican
 | `ODOO_DB` | Nombre de la base, p.ej. `miempresa_prod` |
 | `ODOO_USER` | Login del bot (para fallback XML-RPC). |
 | `ODOO_API_KEY` | API key del bot. |
-| `DOODBA_SSH_HOST` | Host SSH, p.ej. `odoo@erp.ikigaimagi.com` |
-| `DOODBA_PROJECT_DIR` | Path remoto al proyecto doodba, p.ej. `/opt/doodba/ikigai` |
+| `DOODBA_SSH_HOST` | Host SSH, p.ej. `odoo@erp.<TENANT>.tld` |
+| `DOODBA_PROJECT_DIR` | Path remoto al proyecto doodba, p.ej. `/opt/doodba/<tenant>` |
 | `DOODBA_COMPOSE_SERVICE` | (Opcional) Nombre del servicio en compose, default `odoo`. |
 | `DOODBA_DB_NAME` | (Opcional) Si difiere de `ODOO_DB`. |
 

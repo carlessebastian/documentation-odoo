@@ -22,10 +22,10 @@ custom/src/server-tools:
     shallow: true
   remotes:
     oca: https://github.com/OCA/server-tools.git
-    fork: [email protected]:ikigai/server-tools.git
+    fork: [email protected]:<TENANT_ORG>/server-tools.git
   merges:
     - oca 19.0
-    - fork ikigai/19.0/feature_X
+    - fork <TENANT_ORG>/19.0/feature_X
   target: oca 19.0    # rama final commiteada localmente
 ```
 

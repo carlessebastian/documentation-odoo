@@ -1,10 +1,10 @@
-# Odoo 19 admin skills (Ikigai Magi)
+# Odoo 19 admin skills
 
 This directory hosts three cooperating Claude Agent Skills for managing
-a self-hosted Odoo 19 Community deployment for the holding **Ikigai
-Magi S.L.** and its subsidiaries (Camomilla Blu, Kura Terra,
-Omotenashi Hama). Spanish/Catalan locale, doodba (Tecnativa) Docker
-deployment.
+self-hosted Odoo 19 Community deployments. Spanish/Catalan locale,
+doodba (Tecnativa) Docker deployment. The skills are **tenant-agnostic**
+— per-tenant configuration lives in `docs/tenants/<slug>/profile.yaml`,
+selected via the `ODOO_AGENT_TENANT` env var.
 
 ## Skills
 
@@ -34,7 +34,7 @@ on the user's request. Common patterns:
 
 - **"Instala l10n_es_aeat_mod303 y configura los permisos"** -> module-admin
   installs; functional-admin assigns groups to the relevant users.
-- **"Crea Kura Terra como filial y haz su primera factura"** ->
+- **"Crea una filial nueva y haz su primera factura"** ->
   functional-admin runs `subsidiary_bootstrap.py` (company + journals +
   fiscal positions); accounting-es posts the invoice afterwards.
 - **"Migra de Odoo 18 a 19"** -> module-admin runs `openupgrade_run.py`
@@ -46,11 +46,29 @@ All three skills consume:
 
 | Variable | Used by | Purpose |
 |----------|---------|---------|
+| `ODOO_AGENT_TENANT` | All three | Active tenant slug (subdir of `docs/tenants/`) |
 | `ODOO_URL`, `ODOO_DB`, `ODOO_USER`, `ODOO_API_KEY` | All three | RPC / JSON-2 auth |
 | `ODOO_FORCE_XMLRPC` | All three | Optional XML-RPC fallback |
 | `DOODBA_SSH_HOST`, `DOODBA_PROJECT_DIR` | module-admin only | SSH target |
 | `DOODBA_COMPOSE_SERVICE`, `DOODBA_DB_NAME` | module-admin only | docker compose service name + DB |
 | `OPENUPGRADE_PATH` | module-admin (`openupgrade_run.py` only) | OpenUpgrade clone path on host |
+
+Full template in repo-root `.env.example`.
+
+## Reading the active tenant
+
+At the start of any session that will touch the Odoo instance, read
+`docs/tenants/$ODOO_AGENT_TENANT/profile.yaml` to know:
+
+- The tenant's legal name(s) and VAT(s).
+- Chart of accounts template (`l10n_es.l10n_es_full` vs `l10n_es_pymes`).
+- EDI stack (`oca` vs `enterprise`).
+- Journals, fiscal positions, taxes that apply (RE, IVA Caja, intra-UE).
+- The list of `expected_modules` (used by `/onboard` to verify state).
+
+Pass tenant data into scripts as CLI flags (`--name`, `--vat`,
+`--chart-template`, etc.). The skills' scripts are designed to be
+agnostic — the tenant profile is the user-supplied parameter source.
 
 ## Duplicated infrastructure
 
@@ -85,12 +103,18 @@ for skill in odoo-accounting-es odoo-functional-admin odoo-module-admin; do
 done
 ```
 
-## Bootstrap runbook: greenfield Ikigai deployment
+## Bootstrap runbook: greenfield deployment
 
 This is the canonical sequence to bootstrap a fresh deployment, using
 all three skills. **Each step is run by the corresponding skill**;
-Claude handles the routing automatically when the user says "set up
-Ikigai from scratch".
+Claude handles the routing automatically when the user says something
+like "set up `<TENANT>` from scratch".
+
+Before starting, the agent reads
+`docs/tenants/$ODOO_AGENT_TENANT/profile.yaml` and substitutes
+placeholders below (`<TENANT_NAME>`, `<TENANT_VAT>`, etc.) with real
+values. The narrative examples ("Acme S.L.", `ESB99999999`) are
+**fictional** and only there to make the runbook concrete.
 
 ### 0. Prerequisites (manual, outside the skills)
 
@@ -98,8 +122,11 @@ Ikigai from scratch".
   `Tecnativa/doodba-copier-template`.
 - `docker compose up -d` running.
 - A bot user (e.g. `bot.admin`) with API key, and SSH key pushed to
-  `DOODBA_SSH_HOST`. Env vars set.
+  `DOODBA_SSH_HOST`. Env vars set in `.env`.
 - Empty Odoo DB created (no chart_template installed yet).
+- `docs/tenants/$ODOO_AGENT_TENANT/profile.yaml` filled in.
+- `/onboard` reports green for connectivity (modules can still be
+  pending — this runbook installs them).
 
 ### 1. Install OCA repos and base modules — `odoo-module-admin`
 
@@ -122,34 +149,44 @@ account_payment_mode,account_banking_sepa_direct_debit,\
 auditlog,queue_job
 ```
 
+The exact module list comes from `expected_modules` in the tenant
+profile.
+
 ### 2. Languages and base settings — `odoo-functional-admin`
 
 ```bash
 .claude/skills/odoo-functional-admin/scripts/language_install.py \
-  --langs es_ES,ca_ES,it_IT --activate
+  --langs es_ES,ca_ES --activate
 
 .claude/skills/odoo-functional-admin/scripts/settings_param.py \
-  set web.base.url https://erp.ikigaimagi.com
+  set web.base.url <ODOO_URL>
 ```
 
-### 3. Holding company — `odoo-functional-admin`
+### 3. Company creation — `odoo-functional-admin`
+
+For a **single-company** tenant:
+
+```bash
+.claude/skills/odoo-functional-admin/scripts/subsidiary_bootstrap.py \
+  --name "<TENANT_NAME>" --vat <TENANT_VAT> \
+  --chart-template <CHART_TEMPLATE> \
+  --ensure-years 2026,2027
+```
+
+For a **holding + subsidiaries** tenant (example with fictional
+"Acme Holdings S.L."):
 
 ```bash
 # Holding (parent)
 .claude/skills/odoo-functional-admin/scripts/subsidiary_bootstrap.py \
-  --name "Ikigai Magi S.L." --vat ESB12345678 \
+  --name "Acme Holdings S.L." --vat ESB99999999 \
   --chart-template l10n_es.l10n_es_full \
   --ensure-years 2026,2027
 
-# Subsidiaries
+# Subsidiary
 .claude/skills/odoo-functional-admin/scripts/subsidiary_bootstrap.py \
-  --name "Camomilla Blu S.L." --vat ESB22222222 \
-  --parent-vat ESB12345678 \
-  --ensure-years 2026,2027
-
-.claude/skills/odoo-functional-admin/scripts/subsidiary_bootstrap.py \
-  --name "Kura Terra S.L." --vat ESB33333333 \
-  --parent-vat ESB12345678 \
+  --name "Acme Iberia S.L." --vat ESB88888888 \
+  --parent-vat ESB99999999 \
   --ensure-years 2026,2027
 ```
 
@@ -158,15 +195,18 @@ auditlog,queue_job
 ```bash
 # Bot for accounting automation (limited scope)
 .claude/skills/odoo-functional-admin/scripts/user_provision.py \
-  --login bot.contable@... --name "Bot Contable" \
+  --login bot.contable@<TENANT_DOMAIN> --name "Bot Contable" \
   --groups base.group_user,account.group_account_manager,base.group_multi_company \
-  --company-vats ESB12345678,ESB22222222,ESB33333333
+  --company-vats <COMMA_SEPARATED_VATS>
 
 .claude/skills/odoo-functional-admin/scripts/apikey_provision.py \
-  --login bot.contable@... --label automation
+  --login bot.contable@<TENANT_DOMAIN> --label automation
 ```
 
 ### 5. Multi-company global rules — `odoo-functional-admin`
+
+Even for single-company tenants, leave the rule in place so future
+expansion is safe:
 
 ```bash
 .claude/skills/odoo-functional-admin/scripts/record_rule_create.py \
@@ -194,3 +234,4 @@ trigger SII/Veri*Factu pipelines.
 - `odoo-accounting-es/SKILL.md` — daily accounting operations.
 - `odoo-functional-admin/SKILL.md` — admin configuration (no SSH).
 - `odoo-module-admin/SKILL.md` — module lifecycle (SSH + Docker).
+- `docs/tenants/README.md` — multi-tenant model and how to add a tenant.

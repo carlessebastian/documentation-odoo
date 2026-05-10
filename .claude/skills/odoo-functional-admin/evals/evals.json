@@ -16,21 +16,21 @@
     },
     {
       "id": "trigger-03",
-      "prompt": "Anyade Kura Terra como filial de Ikigai Magi, NIF ESB99999999.",
+      "prompt": "Anyade Acme Iberia como filial de Acme Holdings, NIF ESB99999999.",
       "should_trigger": true,
-      "expected_action": "company_setup.py --name 'Kura Terra S.L.' --vat ESB99999999 --parent-vat ESB12345678"
+      "expected_action": "company_setup.py --name 'Acme Iberia S.L.' --vat ESB99999999 --parent-vat ESB12345678"
     },
     {
       "id": "trigger-04",
-      "prompt": "Crea un diario bancario para la cuenta BBVA de Camomilla.",
+      "prompt": "Crea un diario bancario para la cuenta BBVA de Acme Foods.",
       "should_trigger": true,
-      "expected_action": "journal_setup.py --type bank --code BBVA --company <camomilla>"
+      "expected_action": "journal_setup.py --type bank --code BBVA --company <acme_foods>"
     },
     {
       "id": "trigger-05",
-      "prompt": "Configura una posicion fiscal para clientes intracomunitarios en Camomilla.",
+      "prompt": "Configura una posicion fiscal para clientes intracomunitarios en Acme Foods.",
       "should_trigger": true,
-      "expected_action": "fiscal_position_setup.py --preset intra_eu --company <camomilla>"
+      "expected_action": "fiscal_position_setup.py --preset intra_eu --company <acme_foods>"
     },
     {
       "id": "trigger-06",
@@ -136,9 +136,9 @@
     },
     {
       "id": "trigger-13",
-      "prompt": "Crea desde cero la filial Kura Terra con su plan contable, diarios estandar y posiciones fiscales intra-UE; cuelga del holding Ikigai.",
+      "prompt": "Crea desde cero la filial Acme Iberia con su plan contable, diarios estandar y posiciones fiscales intra-UE; cuelga del holding Acme Holdings.",
       "should_trigger": true,
-      "expected_action": "subsidiary_bootstrap.py --name 'Kura Terra S.L.' --vat ESBxxx --parent-vat ESB12345678"
+      "expected_action": "subsidiary_bootstrap.py --name 'Acme Iberia S.L.' --vat ESBxxx --parent-vat ESB12345678"
     },
     {
       "id": "trigger-14",
@@ -148,9 +148,9 @@
     },
     {
       "id": "trigger-15",
-      "prompt": "Cambia la URL base del sistema a https://erp.ikigaimagi.com.",
+      "prompt": "Cambia la URL base del sistema a https://erp.acme.example.com.",
       "should_trigger": true,
-      "expected_action": "settings_param.py set web.base.url https://erp.ikigaimagi.com"
+      "expected_action": "settings_param.py set web.base.url https://erp.acme.example.com"
     },
     {
       "id": "trigger-16",
@@ -178,9 +178,9 @@
     },
     {
       "id": "trigger-20",
-      "prompt": "Anyade Camomilla Blu como filial mas a la lista de companias permitidas del usuario [email protected].",
+      "prompt": "Anyade Acme Foods como filial mas a la lista de companias permitidas del usuario [email protected].",
       "should_trigger": true,
-      "expected_action": "user_provision.py --login ... --company-vats <CIFs incluyendo Camomilla> (write con company_ids)"
+      "expected_action": "user_provision.py --login ... --company-vats <CIFs incluyendo Acme Foods> (write con company_ids)"
     },
     {
       "id": "trigger-21",
@@ -220,7 +220,7 @@
     },
     {
       "id": "handoff-05",
-      "prompt": "Crea Kura Terra S.L. como filial e instala l10n_es para que tenga plan contable.",
+      "prompt": "Crea Acme Iberia S.L. como filial e instala l10n_es para que tenga plan contable.",
       "should_trigger": true,
       "expected_action": "Crear company aqui (subsidiary_bootstrap.py); l10n_es deberia estar ya instalado, pero si no, derivar a odoo-module-admin."
     },
@@ -232,7 +232,7 @@
     },
     {
       "id": "handoff-07",
-      "prompt": "Despues de crear el diario VENT para Camomilla, postea la primera factura de prueba.",
+      "prompt": "Despues de crear el diario VENT para Acme Foods, postea la primera factura de prueba.",
       "should_trigger": true,
       "expected_action": "Crear el diario aqui (journal_setup.py); para postear la factura, derivar a odoo-accounting-es."
     },

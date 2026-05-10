@@ -14,8 +14,8 @@ def _at(local: str, domain: str) -> str:
 
 class TestNormalizeLogin:
     def test_lowercases_and_strips(self):
-        raw = " " + _at("MARIA", "ikigai.tld") + " "
-        assert normalize_login(raw) == _at("maria", "ikigai.tld")
+        raw = " " + _at("MARIA", "example.tld") + " "
+        assert normalize_login(raw) == _at("maria", "example.tld")
 
     def test_keeps_plus_dot_dash(self):
         addr = _at("a.b+c-d", "sub.domain.tld")
@@ -35,7 +35,7 @@ class TestNormalizeLogin:
 
     def test_rejects_internal_whitespace(self):
         with pytest.raises(OdooError):
-            normalize_login(_at("user mid", "ikigai.tld"))
+            normalize_login(_at("user mid", "example.tld"))
 
 
 class TestValidateGroupXmlid:

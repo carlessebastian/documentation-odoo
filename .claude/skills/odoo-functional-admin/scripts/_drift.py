@@ -5,14 +5,14 @@ Compara un YAML deseado contra un snapshot actual y reporta diff.
 YAML schema (lo que se compara hoy):
 
     companies:
-      - vat: ESB12345678        # clave natural
-        name: "Ikigai Magi S.L."
+      - vat: ESB99999999        # clave natural
+        name: "Acme Holdings S.L."
         currency: EUR
         country: ES
         parent_vat: null
-      - vat: ESB22222222
-        name: "Camomilla Blu S.L."
-        parent_vat: ESB12345678
+      - vat: ESB88888888
+        name: "Acme Iberia S.L."
+        parent_vat: ESB99999999
 
     users:
       - login: bot.contable@...

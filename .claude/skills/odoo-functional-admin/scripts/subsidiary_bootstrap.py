@@ -6,7 +6,7 @@ para montar una filial nueva en una sola llamada. Idempotente.
 
 Uso:
     python3 subsidiary_bootstrap.py \\
-        --name "Kura Terra S.L." \\
+        --name "Acme Iberia S.L." \\
         --vat ESB99999999 \\
         --parent-vat ESB12345678 \\
         --chart-template es_pymes

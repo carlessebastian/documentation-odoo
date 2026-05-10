@@ -6,7 +6,7 @@
 Copier). Estructura tipica de un proyecto:
 
 ```
-/opt/doodba/ikigai/                 ← DOODBA_PROJECT_DIR
+/opt/doodba/<tenant>/               ← DOODBA_PROJECT_DIR
 ├── docker-compose.yml              ← stack runtime
 ├── docker-compose.override.yml     ← overrides locales
 ├── invoke.yaml                     ← config de pyinvoke (opcional)
@@ -110,7 +110,7 @@ custom/src/l10n-spain:
 
 custom/src/private:
   remotes:
-    origin: [email protected]:ikigai/odoo-private.git
+    origin: [email protected]:<TENANT_ORG>/odoo-private.git
   merges:
     - origin 19.0
   target: origin 19.0

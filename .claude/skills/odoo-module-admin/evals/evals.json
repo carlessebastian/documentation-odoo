@@ -94,7 +94,7 @@
     },
     {
       "id": "no-trigger-04",
-      "prompt": "Configura una posicion fiscal intra-UE para Camomilla.",
+      "prompt": "Configura una posicion fiscal intra-UE para Acme Foods.",
       "should_trigger": false,
       "expected_action": "Handoff a odoo-functional-admin."
     },
@@ -112,7 +112,7 @@
     },
     {
       "id": "handoff-01",
-      "prompt": "Instala account_invoice_inter_company y configura las reglas para que entre Ikigai y Camomilla pase facturacion automatica.",
+      "prompt": "Instala account_invoice_inter_company y configura las reglas para que entre Acme Holdings y Acme Foods pase facturacion automatica.",
       "should_trigger": true,
       "expected_action": "Instalar el modulo aqui (module_install.py); derivar la configuracion de reglas a odoo-functional-admin (intercompany_setup.py)."
     },
@@ -220,7 +220,7 @@
     },
     {
       "id": "handoff-07",
-      "prompt": "Despues de portar account_invoice_inter_company a 19.0, configura las reglas de intercompany entre Ikigai y Camomilla.",
+      "prompt": "Despues de portar account_invoice_inter_company a 19.0, configura las reglas de intercompany entre Acme Holdings y Acme Foods.",
       "should_trigger": true,
       "expected_action": "Portar aqui (oca_port.py); configurar las reglas en odoo-functional-admin (intercompany_setup.py)."
     },

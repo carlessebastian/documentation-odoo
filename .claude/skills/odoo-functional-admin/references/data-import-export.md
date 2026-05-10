@@ -17,14 +17,14 @@ Es el mismo mecanismo que usan los modulos al instalarse.
 
 - `<modulo>`: para datos custom administrativos, usar `__custom__` (no
   colisiona con modulos reales) o un namespace propio tipo
-  `ikigai_admin`.
+  `<tenant_slug>_admin`.
 - `<nombre_unico>`: snake_case, descriptivo.
 
 Ejemplos:
-- `__custom__.company_kura_terra`
+- `__custom__.company_acme_iberia`
 - `__custom__.user_maria_pons`
-- `__custom__.journal_kura_sale`
-- `ikigai_admin.fp_intra_eu_camomilla`
+- `__custom__.journal_acme_sale`
+- `acme_admin.fp_intra_eu_iberia`
 
 ## Patron canonico via JSON-2 / XML-RPC
 
@@ -55,9 +55,9 @@ def upsert(client, xmlid, model, vals):
 
 ```bash
 python3 scripts/ext_id_upsert.py \
-    --xmlid __custom__.company_kura_terra \
+    --xmlid __custom__.company_acme_iberia \
     --model res.company \
-    --vals '{"name": "Kura Terra S.L.", "vat": "ESB99999999",
+    --vals '{"name": "Acme Iberia S.L.", "vat": "ESB99999999",
              "country_id": 69, "currency_id": 1}'
 ```
 

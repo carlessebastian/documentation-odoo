@@ -202,7 +202,7 @@ skill hermano correspondiente; no intentes cubrirlo aqui.
 |-----------------------|--------------|
 | Crear/modificar usuarios, grupos, ACLs, reglas de registro | `odoo-functional-admin` |
 | Configurar diarios, secuencias, posiciones fiscales como *setup* | `odoo-functional-admin` |
-| Configurar multi-company (holding Ikigai Magi y filiales) | `odoo-functional-admin` |
+| Configurar multi-company (holding y filiales) | `odoo-functional-admin` |
 | Activar/desactivar `ir.cron` | `odoo-functional-admin` |
 | Instalar / actualizar / desinstalar modulos | `odoo-module-admin` |
 | Tocar `addons.yaml`, `repos.yaml`, git-aggregator, doodba | `odoo-module-admin` |

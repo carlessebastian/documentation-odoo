@@ -4,16 +4,15 @@ description: |
   Usa este skill SOLO para configuracion administrativa funcional de Odoo 19
   Community self-hosted (RPC / JSON-2 / MCP, sin SSH): crear y mantener
   usuarios (`res.users`), grupos (`res.groups`), ACLs (`ir.model.access`)
-  y reglas de registro (`ir.rule`); montar la estructura multi-empresa
-  (`res.company` con padre/hijo, branches, holding "Ikigai Magi" + filiales
-  Camomilla Blu, Kura Terra, Omotenashi Hama); asignar `company_ids` a
-  usuarios; crear diarios (`account.journal`) con secuencias (`ir.sequence`)
-  prefijadas por anyo; configurar posiciones fiscales
-  (`account.fiscal.position`) intra-UE / Recargo de Equivalencia /
-  exportacion / IVA Caja; ajustar parametros de sistema
-  (`res.config.settings`, `ir.config_parameter`); habilitar idiomas
-  (es_ES, ca_ES, it_IT, en_US) y monedas; gestionar acciones programadas
-  (`ir.cron`). Activa este skill aunque el usuario solo diga "crea un
+  y reglas de registro (`ir.rule`); montar estructuras multi-empresa
+  (`res.company` con padre/hijo, branches, holding + filiales) sea cual
+  sea el tenant activo; asignar `company_ids` a usuarios; crear diarios
+  (`account.journal`) con secuencias (`ir.sequence`) prefijadas por anyo;
+  configurar posiciones fiscales (`account.fiscal.position`) intra-UE /
+  Recargo de Equivalencia / exportacion / IVA Caja; ajustar parametros de
+  sistema (`res.config.settings`, `ir.config_parameter`); habilitar
+  idiomas (es_ES, ca_ES, en_US, ...) y monedas; gestionar acciones
+  programadas (`ir.cron`). Activa este skill aunque el usuario solo diga "crea un
   usuario", "permisos", "que el comercial solo vea sus clientes",
   "regla de registro", "nueva empresa", "branch", "diario nuevo",
   "secuencia con prefijo de anyo", "posicion fiscal intracomunitaria",
@@ -57,19 +56,22 @@ ir.cron, parametros), no operativa contable ni administracion de modulos.
 Asume modulos `base`, `mail`, `account`, `l10n_es` ya instalados. Si el
 usuario pide instalar un modulo, deriva al skill `odoo-module-admin`.
 
-## Contexto multi-empresa por defecto
+## Contexto multi-empresa por tenant
 
-El despliegue tipico cubierto por este skill es:
+Este skill soporta dos topologias por igual:
 
-- Holding **Ikigai Magi S.L.** (matriz, Espana, EUR).
-- Filial **Camomilla Blu S.L.** (Espana, EUR).
-- Filial **Kura Terra S.L.** (Espana, EUR).
-- Participada **Omotenashi Hama** (puede ser persona fisica/autonomo).
+- **Sociedad unica**: una `res.company` raiz, sin filiales (caso por
+  defecto del tenant `inpr3mium`).
+- **Holding + filiales**: una `res.company` matriz con `parent_id`
+  apuntando a varias filiales (caso previsto para el tenant `fedefarma`
+  y para grupos en general). Cada filial es una company independiente
+  con CIF y libros separados.
 
-Las tres primeras suelen ser `res.company` separadas con `parent_id` para
-reflejar la jerarquia. La participada puede ser `res.company` separada o
-quedar fuera de la consolidacion segun decision del usuario. Ver
-`references/multi-company.md`.
+El skill no asume la topologia: lee
+`docs/tenants/$ODOO_AGENT_TENANT/profile.yaml` (campo `companies`) y
+ejecuta los scripts con los `--vat`, `--name`, `--parent-vat` que
+correspondan. Ver `references/multi-company.md` para el arbol de
+decision branch-vs-company.
 
 ## Variables de entorno requeridas
 
@@ -166,8 +168,8 @@ Si falta cualquiera, **detente y pidela al usuario antes de ejecutar nada**.
    `references/multi-company.md` para el arbol de decision.
 2. **Detente y confirma** la decision con el usuario; recuerda que es
    semi-irreversible.
-3. Ejecuta `scripts/company_setup.py --name "Kura Terra S.L." --vat
-   ESB99999999 --parent <ikigai_id>`.
+3. Ejecuta `scripts/company_setup.py --name "<NOMBRE_FILIAL>" --vat
+   <CIF_FILIAL> --parent <ID_MATRIZ>`.
 4. El script crea la company, copia el chart_template `l10n_es` si
    procede, y crea los diarios estandar VENT/COMP/BANC/CAJA via
    `scripts/journal_setup.py`.
@@ -190,8 +192,8 @@ skill `odoo-accounting-es` postea la factura.
 
 ## Punteros a las references
 
-- `references/multi-company.md` - `res.company`, branches, holding
-  Ikigai, allowed_company_ids, `_check_company_auto`, reglas globales.
+- `references/multi-company.md` - `res.company`, branches, holding +
+  filiales, allowed_company_ids, `_check_company_auto`, reglas globales.
 - `references/users-groups-acls.md` - `res.users`, `res.groups` (Many2many
   syntax `(0,0,{}) (4,id) (3,id) (6,0,[ids])`), `ir.model.access` CSV,
   `ir.rule` con dominio, XML-IDs frecuentes.

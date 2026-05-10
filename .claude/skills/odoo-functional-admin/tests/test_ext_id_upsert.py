@@ -31,7 +31,7 @@ class TestParseXmlid:
             parse_xmlid("base.group-user")
 
     def test_accepts_underscores_and_digits(self):
-        assert parse_xmlid("ikigai_admin.fp_intra_eu_2026") == (
-            "ikigai_admin",
+        assert parse_xmlid("acme_admin.fp_intra_eu_2026") == (
+            "acme_admin",
             "fp_intra_eu_2026",
         )

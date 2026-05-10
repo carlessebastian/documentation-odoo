@@ -2,9 +2,9 @@
 """Crea o actualiza una `res.company`. Idempotente sobre `vat`.
 
 Uso:
-    python3 company_setup.py --name "Kura Terra S.L." --vat ESB99999999 \\
+    python3 company_setup.py --name "Acme Iberia S.L." --vat ESB99999999 \\
         --parent-vat ESB12345678 --country ES --currency EUR
-    python3 company_setup.py --name "Kura Terra S.L." --vat ESB99999999 \\
+    python3 company_setup.py --name "Acme Iberia S.L." --vat ESB99999999 \\
         --parent-id 1
 """
 from __future__ import annotations

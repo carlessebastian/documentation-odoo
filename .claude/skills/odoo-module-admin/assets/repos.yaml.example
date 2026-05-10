@@ -88,7 +88,7 @@ custom/src/queue:
 # Para repos privados via SSH (requiere clave en custom/ssh/id_rsa):
 # custom/src/private:
 #   remotes:
-#     origin: git@github.com:ikigai/odoo-private.git
+#     origin: git@github.com:<TENANT_ORG>/odoo-private.git
 #   merges:
 #     - origin 19.0
 #   target: origin 19.0

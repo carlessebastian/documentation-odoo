@@ -1,6 +1,9 @@
-# Estado deseado del despliegue Ikigai Magi (config-as-code).
+# Estado deseado del despliegue (config-as-code) — plantilla generica.
+# Copiar a un archivo del tenant (p.ej. docs/tenants/<slug>/desired_state.yaml)
+# y rellenar con valores reales antes de comparar.
+#
 # Compara con el estado real:
-#     python3 scripts/audit_admin_state.py --diff assets/desired_state.yaml.example
+#     python3 scripts/audit_admin_state.py --diff <ruta>/desired_state.yaml
 # Reporta missing / extra / changed por seccion. NO aplica cambios.
 #
 # Cada seccion es opcional: lo que no aparezca aqui no se compara.
@@ -10,26 +13,26 @@
 #   journals:  (company_vat, code)
 
 companies:
-  - vat: ESB12345678
-    name: "Ikigai Magi S.L."
+  - vat: ESB99999999
+    name: "Acme Holdings S.L."
     currency: EUR
     country: ES
     parent_vat: null
 
-  - vat: ESB22222222
-    name: "Camomilla Blu S.L."
+  - vat: ESB88888888
+    name: "Acme Iberia S.L."
     currency: EUR
     country: ES
-    parent_vat: ESB12345678
+    parent_vat: ESB99999999
 
-  - vat: ESB33333333
-    name: "Kura Terra S.L."
+  - vat: ESB77777777
+    name: "Acme Foods S.L."
     currency: EUR
     country: ES
-    parent_vat: ESB12345678
+    parent_vat: ESB99999999
 
 users:
-  - login: bot.contable@ikigaimagi.tld
+  - login: bot.contable@example.tld
     name: "Bot Contable"
     lang: es_ES
     active: true
@@ -38,11 +41,11 @@ users:
       - base.group_multi_company
       - account.group_account_manager
     company_vats:
-      - ESB12345678
-      - ESB22222222
-      - ESB33333333
+      - ESB99999999
+      - ESB88888888
+      - ESB77777777
 
-  - login: bot.functional@ikigaimagi.tld
+  - login: bot.functional@example.tld
     name: "Bot Functional Admin"
     lang: en_US
     active: true
@@ -51,32 +54,32 @@ users:
       - base.group_multi_company
       - base.group_erp_manager
     company_vats:
-      - ESB12345678
+      - ESB99999999
 
 journals:
-  # Camomilla Blu - diarios estandar
-  - company_vat: ESB22222222
+  # Acme Iberia - diarios estandar
+  - company_vat: ESB88888888
     code: VENT
     type: sale
     name: "Customer Invoices"
 
-  - company_vat: ESB22222222
+  - company_vat: ESB88888888
     code: COMP
     type: purchase
     name: "Vendor Bills"
 
-  - company_vat: ESB22222222
+  - company_vat: ESB88888888
     code: BANC
     type: bank
     name: "Banco Principal"
 
-  # Kura Terra - diarios estandar
-  - company_vat: ESB33333333
+  # Acme Foods - diarios estandar
+  - company_vat: ESB77777777
     code: VENT
     type: sale
     name: "Customer Invoices"
 
-  - company_vat: ESB33333333
+  - company_vat: ESB77777777
     code: COMP
     type: purchase
     name: "Vendor Bills"

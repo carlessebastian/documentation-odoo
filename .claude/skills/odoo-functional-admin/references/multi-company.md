@@ -30,22 +30,24 @@ Campos relevantes:
 **Regla mental**: si la AEAT ve dos NIFs distintos, son dos `res.company`.
 Si es un mismo NIF con varios establecimientos -> branch.
 
-## Holding "Ikigai Magi" - estructura tipica
+## Holding + filiales - estructura tipica (ejemplo)
 
 ```
-Ikigai Magi S.L. (parent_id=False, ES, EUR)
+Acme Holdings S.L. (parent_id=False, ES, EUR)
   |
-  +-- Camomilla Blu S.L. (parent_id=ikigai, ES, EUR, CIF distinto)
+  +-- Acme Iberia S.L. (parent_id=holding, ES, EUR, CIF distinto)
   |
-  +-- Kura Terra S.L. (parent_id=ikigai, ES, EUR, CIF distinto)
-  |
-  (Omotenashi Hama puede quedar fuera del arbol o en parent_id=ikigai)
+  +-- Acme Foods S.L. (parent_id=holding, ES, EUR, CIF distinto)
 ```
 
-Las tres SLs son **companies independientes** con `parent_id=ikigai_id`
-(no branches, porque cada una es persona juridica con su propio CIF y
-libros). Esta estructura permite ejecutar consolidacion via OCA
-`account_consolidation` o reporting agrupado por `parent_id`.
+Las filiales son **companies independientes** con
+`parent_id=<holding_id>` (no branches, porque cada una es persona
+juridica con su propio CIF y libros). Esta estructura permite ejecutar
+consolidacion via OCA `account_consolidation` o reporting agrupado por
+`parent_id`.
+
+Para tenants de **sociedad unica** (caso del tenant `inpr3mium`)
+simplemente se omite `parent_id` y se crea una sola `res.company`.
 
 ## `allowed_company_ids` y `self.env.company`
 

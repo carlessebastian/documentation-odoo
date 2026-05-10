@@ -1,0 +1,110 @@
+# Perfil del tenant — plantilla
+#
+# Copiar a docs/tenants/<slug>/profile.yaml y rellenar con datos
+# reales. Este archivo es leído por el agente al inicio de cada
+# sesion (env var ODOO_AGENT_TENANT). Las skills lo usan como fuente
+# de verdad para los argumentos --name, --vat, --chart-template, etc.
+
+# Identificacion --------------------------------------------------------------
+
+slug: <slug>                              # debe coincidir con el subdir y con $ODOO_AGENT_TENANT
+legal_name: "<Razon Social S.L.>"         # como aparece en la AEAT
+vat: "ES<NIF>"                            # NIF/CIF principal (con prefijo pais)
+locale: es_ES                             # idioma principal de la UI
+fiscal_country: ES
+chart_template: l10n_es.l10n_es_full      # o l10n_es.l10n_es_pymes
+edi_stack: oca                            # oca | enterprise
+
+# Particularidades fiscales ---------------------------------------------------
+
+flags:
+  recargo_equivalencia: false             # true si hay clientes/proveedores en RE
+  iva_caja: false                         # true si la sociedad esta acogida al regimen IVA de caja
+  intracomunitario: false                 # true si hay operaciones intra-UE
+  exportacion: false                      # true si hay exportacion fuera UE
+  irpf_profesionales: false               # true si hay retenciones IRPF en facturas
+
+# Estructura de companies -----------------------------------------------------
+# Para sociedad unica: deja un solo elemento con parent_vat: null.
+# Para holding + filiales: lista la matriz primero (parent_vat: null) y luego
+# las filiales con parent_vat apuntando a la matriz.
+
+companies:
+  - name: "<Razon Social S.L.>"
+    vat: "ES<NIF>"
+    currency: EUR
+    country: ES
+    parent_vat: null
+    chart_template: l10n_es.l10n_es_full
+
+  # - name: "<Filial S.L.>"
+  #   vat: "ES<CIF_FILIAL>"
+  #   currency: EUR
+  #   country: ES
+  #   parent_vat: "ES<NIF>"
+  #   chart_template: l10n_es.l10n_es_pymes
+
+# Diarios necesarios (mas alla de los que cree el chart_template) -------------
+
+journals:
+  # - { company_vat: "ES<NIF>", code: VEXP, type: sale,     name: "Customer Invoices Export" }
+  # - { company_vat: "ES<NIF>", code: CIEU, type: purchase, name: "Vendor Bills Intra-UE" }
+
+# Bot user del agente ---------------------------------------------------------
+
+bot:
+  login: bot.contable@<dominio>
+  groups:
+    - base.group_user
+    - account.group_account_manager
+    - base.group_multi_company
+
+# Sistema de origen y estrategia de migracion ---------------------------------
+
+source_system:
+  type: <holded|axional|odoo|otro|greenfield>
+  api_doc: https://...                    # link a la doc de la API si aplica
+  notes: |
+    Notas libres sobre el sistema de origen.
+
+migration:
+  strategy: <api-export|csv|openupgrade|none>
+  scope: <minimo|year|completo>           # ver migration-plan.md
+  cutover_target: 2026-XX-XX
+
+# Modulos esperados (lo que /onboard compara contra ir.module.module) --------
+
+expected_modules:
+  - l10n_es
+  - l10n_es_aeat_mod303
+  - l10n_es_aeat_mod347
+  - l10n_es_aeat_mod349
+  - l10n_es_aeat_mod390
+  - l10n_es_aeat_sii_oca                  # o l10n_es_edi_sii si edi_stack=enterprise
+  - l10n_es_verifactu_oca                 # o l10n_es_edi_verifactu si edi_stack=enterprise
+  - l10n_es_facturae                      # o l10n_es_edi_facturae si edi_stack=enterprise
+  - mis_builder
+  - account_financial_report
+  - account_payment_mode
+  - account_banking_sepa_direct_debit
+  - account_banking_sepa_credit_transfer
+  - auditlog
+  - queue_job
+
+# OCA repos a sincronizar (para repos.yaml de doodba) -------------------------
+
+oca_repos:
+  - l10n-spain
+  - server-tools
+  - server-auth
+  - account-financial-tools
+  - account-financial-reporting
+  - web
+  - queue
+  - bank-payment
+
+# Anyos fiscales a inicializar ------------------------------------------------
+
+fiscal_years:
+  - 2026
+  - 2027

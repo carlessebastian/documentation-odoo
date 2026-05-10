@@ -2,10 +2,18 @@
 
 Este repo **no es la documentación de Odoo**. Es un agente Claude Code
 que asiste al usuario en la instalación, migración, administración y
-explotación contable/fiscal de su instancia self-hosted **Odoo 19
-Community**, desplegada con doodba (Tecnativa) y orientada a la holding
-**Ikigai Magi S.L.** y sus filiales (**Camomilla Blu**, **Kura Terra**,
-**Omotenashi Hama**), locale ES/CA, ámbito Cataluña/UE.
+explotación contable/fiscal de instancias self-hosted **Odoo 19
+Community**, desplegadas con doodba (Tecnativa). Foco en localización
+española (ES/CA, ámbito Cataluña/UE).
+
+El agente es **multi-tenant**: cada despliegue (cliente / holding /
+sociedad) vive como un perfil bajo `docs/tenants/<slug>/`. La sesión
+activa se selecciona con la env var `ODOO_AGENT_TENANT`. Tenant activo
+en este momento: **`inpr3mium`** (Inteligencia del Negocio Pr3mium S.L.,
+sociedad única, migra desde Holded). Tenants futuros previstos:
+`fedefarma` (migra desde Axional). Lee
+`docs/tenants/$ODOO_AGENT_TENANT/profile.yaml` al inicio de cada
+sesión para conocer la sociedad activa antes de operar.
 
 La documentación oficial de Odoo está vendorizada en `vendor/odoo-docs/`
 como **material de referencia de solo lectura**. Cuando necesites
@@ -19,11 +27,17 @@ ahí con `Grep` o `Read`.
 odoo-agent/
 ├── CLAUDE.md                     # este archivo
 ├── README.md                     # presentación pública del agente
+├── .env.example                  # plantilla de configuración local
 ├── .claude/                      # capacidades del agente
 │   ├── skills/                   # skills de dominio (ver abajo)
 │   ├── agents/                   # subagentes (oca-module-scout, ...)
-│   └── commands/                 # slash-commands (/cierre-mensual, ...)
-├── docs/                         # notas propias del proyecto (infra, ikigai, migración)
+│   └── commands/                 # slash-commands (/onboard, /cierre-mensual, ...)
+├── docs/                         # notas propias del proyecto
+│   ├── onboarding.md             # primer arranque del agente
+│   ├── infra/                    # provisión doodba, host, secrets
+│   └── tenants/                  # un perfil por despliegue
+│       ├── _template/            # plantilla para crear nuevos tenants
+│       └── inpr3mium/            # tenant activo
 └── vendor/
     └── odoo-docs/                # documentación oficial de Odoo (upstream, read-only)
 ```
@@ -49,16 +63,19 @@ Subagentes:
 
 Slash-commands:
 
+- `/onboard` — verifica que el agente puede operar contra el Odoo
+  configurado en `.env` (ping RPC, validar API key, listar módulos,
+  validar permisos del bot, comprobar SSH a doodba).
 - `/cierre-mensual <YYYY-MM> [--company N]` — orquesta el cierre mensual
   ES con checkpoints entre fases.
 
 ## Variables de entorno
 
-Compartidas por las tres skills (ver tabla completa en
-`.claude/skills/CLAUDE.md`):
+Compartidas por las tres skills (plantilla completa en `.env.example`):
 
 | Variable | Uso |
 |----------|-----|
+| `ODOO_AGENT_TENANT` | slug del tenant activo (subdir de `docs/tenants/`) |
 | `ODOO_URL`, `ODOO_DB`, `ODOO_USER`, `ODOO_API_KEY` | autenticación RPC/JSON-2 |
 | `ODOO_FORCE_XMLRPC` | fallback opcional a XML-RPC |
 | `DOODBA_SSH_HOST`, `DOODBA_PROJECT_DIR`, `DOODBA_COMPOSE_SERVICE`, `DOODBA_DB_NAME` | solo `odoo-module-admin` |

@@ -1,0 +1,64 @@
+# Migración a Odoo 19 — `<slug>`
+
+Plan de migración desde el sistema actual a la instancia Odoo 19 del
+tenant `<slug>`.
+
+## Origen
+
+- **Sistema actual**: <Holded | Axional | Odoo X.0 | otro ERP | nada>
+- **Datos disponibles**: <API REST | export CSV/Excel | dump SQL | acceso UI>
+- **Volumen aproximado**: <N partners, M productos, K facturas/año>
+
+## Scope
+
+Tres niveles posibles. Decidir con el cliente:
+
+- [ ] **Mínimo**: maestros (partners, productos, plan contable
+      ajustado) + saldos de apertura.
+- [ ] **Año en curso**: lo anterior + facturas y pagos del ejercicio
+      activo.
+- [ ] **Histórico completo**: lo anterior + ejercicios anteriores. Alto
+      coste, baja utilidad — generalmente no recomendado.
+
+Decisión: **`<scope_elegido>`** — justificación: …
+
+## Mapeo de modelos
+
+| Origen | Destino Odoo | Notas |
+|--------|--------------|-------|
+| ¿contacts? | `res.partner` | unificar tipos persona/empresa |
+| ¿products? | `product.product` | … |
+| ¿invoices? | `account.move` (`out_invoice`/`in_invoice`) | … |
+| ¿payments? | `account.payment` | … |
+| ¿chart of accounts? | `account.account` | mapear vs PGCE elegido |
+
+## ETL
+
+1. **Export del origen** — script o exportación manual; formato CSV.
+2. **Transformación** — normalizar VATs, deduplicar partners, mapear
+   códigos de productos, ajustar fechas.
+3. **Carga en Odoo** — vía `base_import.import` (CSV) o JSON-2
+   (`ext_id_upsert.py`) según volumen e idempotencia requerida.
+4. **Validación** — conteo de registros, cuadre de balance, pruebas
+   spot-check con un partner real.
+
+## Cutover
+
+- Fecha objetivo: **`<YYYY-MM-DD>`** (idealmente fin de mes/trimestre).
+- Pasos del día D:
+  1. Cierre operativo en el sistema origen.
+  2. Export final.
+  3. Carga de saldos de apertura en Odoo.
+  4. Comunicación al equipo: a partir de ahora se factura en Odoo.
+
+## Validación post-cutover
+
+- [ ] Cuadre de balance pre/post.
+- [ ] Conteo de partners y productos coincide (±).
+- [ ] Reconciliación de tesorería (saldos bancarios coinciden).
+- [ ] Primer cierre mensual en Odoo (ver `cierres/<YYYY-MM>.md`).
+
+## Riesgos y rollback
+
+- ¿Qué pasa si el cutover falla? Plan B: …
+- ¿Cuánto tiempo se conserva el sistema origen en read-only? …

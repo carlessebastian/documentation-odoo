@@ -1,11 +1,16 @@
 # odoo-agent
 
 Agente [Claude Code](https://claude.com/claude-code) para administrar
-una instancia self-hosted de **Odoo 19 Community** desplegada con
+instancias self-hosted de **Odoo 19 Community** desplegadas con
 [doodba](https://github.com/Tecnativa/doodba-copier-template) (Tecnativa)
-sobre Docker. Pensado para la holding **Ikigai Magi S.L.** y sus
-filiales (**Camomilla Blu**, **Kura Terra**, **Omotenashi Hama**),
-locale ES/CA, ámbito Cataluña/UE.
+sobre Docker. Foco en localización española (ES/CA, ámbito
+Cataluña/UE).
+
+El agente es **multi-tenant**: cada despliegue (cliente, holding o
+sociedad individual) tiene su perfil bajo `docs/tenants/<slug>/`, y la
+sesión activa se selecciona con la env var `ODOO_AGENT_TENANT`. Esto
+permite reusar el mismo agente para distintas empresas sin tocar el
+código de las skills.
 
 El proyecto nació como fork de `odoo/documentation` (rama 19.0) y ha
 evolucionado: la documentación oficial de Odoo se conserva como
@@ -33,11 +38,15 @@ El agente acompaña en cuatro frentes:
 ```
 odoo-agent/
 ├── CLAUDE.md                     # contexto del proyecto para Claude
+├── .env.example                  # plantilla de configuración local
 ├── .claude/                      # capacidades del agente
 │   ├── skills/                   # 3 skills (ver tabla abajo)
 │   ├── agents/                   # subagentes (oca-module-scout)
-│   └── commands/                 # slash-commands (/cierre-mensual)
-├── docs/                         # notas propias (infra, ikigai, migración)
+│   └── commands/                 # slash-commands (/onboard, /cierre-mensual)
+├── docs/                         # notas propias del proyecto
+│   ├── onboarding.md             # primer arranque del agente
+│   ├── infra/                    # provisión doodba, host, secrets
+│   └── tenants/<slug>/           # perfil por despliegue
 └── vendor/
     └── odoo-docs/                # documentación oficial de Odoo (read-only)
 ```
@@ -58,6 +67,9 @@ solaparse y solo `odoo-module-admin` puede SSH-ear al host. Detalle en
 
 - **`oca-module-scout`** — agente especializado que busca módulos OCA
   compatibles con 19.0 cuando se le describe una funcionalidad.
+- **`/onboard`** — verifica conectividad y permisos contra el Odoo
+  configurado en `.env`. Punto de entrada habitual al usar el agente
+  con un tenant nuevo.
 - **`/cierre-mensual <YYYY-MM>`** — orquesta el cierre mensual ES con
   checkpoints entre fases (compliance, libros IVA, P&L, balance,
   modelos AEAT).
@@ -72,21 +84,22 @@ solaparse y solo `odoo-module-admin` puede SSH-ear al host. Detalle en
 
 ## Configuración
 
-Variables de entorno mínimas (más detalle en
-[`.claude/skills/CLAUDE.md`](.claude/skills/CLAUDE.md)):
-
 ```bash
-export ODOO_URL=https://erp.example.com
-export ODOO_DB=miempresa_prod
-export ODOO_USER=bot.admin@example.com
-export ODOO_API_KEY=...
-
-# Solo para odoo-module-admin
-export DOODBA_SSH_HOST=user@host
-export DOODBA_PROJECT_DIR=/opt/doodba
-export DOODBA_COMPOSE_SERVICE=odoo
-export DOODBA_DB_NAME=miempresa_prod
+cp .env.example .env
+# editar .env con los valores reales
 ```
+
+Variables mínimas (plantilla completa en
+[`.env.example`](.env.example), playbook detallado en
+[`docs/onboarding.md`](docs/onboarding.md)):
+
+| Variable | Uso |
+|----------|-----|
+| `ODOO_AGENT_TENANT` | slug del tenant activo (subdir de `docs/tenants/`) |
+| `ODOO_URL`, `ODOO_DB`, `ODOO_USER`, `ODOO_API_KEY` | autenticación RPC/JSON-2 |
+| `DOODBA_SSH_HOST`, `DOODBA_PROJECT_DIR`, `DOODBA_COMPOSE_SERVICE`, `DOODBA_DB_NAME` | solo para `odoo-module-admin` |
+
+Verifica la configuración ejecutando `/onboard` dentro de Claude Code.
 
 ## Tests
 
