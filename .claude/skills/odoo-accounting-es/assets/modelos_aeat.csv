@@ -1,0 +1,68 @@
+modelo,casilla,seccion,descripcion
+303,01,IVA Devengado,Base imponible operaciones interiores tipo general (21%)
+303,02,IVA Devengado,Tipo aplicable 21%
+303,03,IVA Devengado,Cuota IVA tipo general
+303,04,IVA Devengado,Base imponible operaciones interiores tipo reducido (10%)
+303,05,IVA Devengado,Tipo aplicable 10%
+303,06,IVA Devengado,Cuota IVA tipo reducido
+303,07,IVA Devengado,Base imponible operaciones interiores tipo superreducido (4%)
+303,08,IVA Devengado,Tipo aplicable 4%
+303,09,IVA Devengado,Cuota IVA tipo superreducido
+303,10,IVA Devengado,Adquisiciones intracomunitarias - Base
+303,11,IVA Devengado,Adquisiciones intracomunitarias - Cuota
+303,12,IVA Devengado,Otras operaciones con ISP - Base
+303,13,IVA Devengado,Otras operaciones con ISP - Cuota
+303,14,IVA Devengado,Modificacion bases y cuotas - Base
+303,15,IVA Devengado,Modificacion bases y cuotas - Cuota
+303,16,IVA Devengado,Recargo equivalencia 5.2% - Base
+303,17,IVA Devengado,Tipo recargo 5.2%
+303,18,IVA Devengado,Cuota recargo equivalencia 5.2%
+303,28,IVA Deducible,Operaciones interiores corrientes - Base
+303,29,IVA Deducible,Operaciones interiores corrientes - Cuota deducible
+303,30,IVA Deducible,Operaciones interiores con bienes de inversion - Base
+303,31,IVA Deducible,Operaciones interiores con bienes de inversion - Cuota deducible
+303,32,IVA Deducible,Importaciones de bienes corrientes - Base
+303,33,IVA Deducible,Importaciones de bienes corrientes - Cuota
+303,40,IVA Deducible,Adquisiciones intracomunitarias corrientes - Base
+303,41,IVA Deducible,Adquisiciones intracomunitarias corrientes - Cuota
+303,46,Resultado,Cuota a compensar de periodos anteriores
+303,47,Resultado,Cuota a deducir
+303,65,Resultado,Atribuible a la Administracion del Estado
+303,69,Resultado,Resultado liquidacion
+303,71,Resultado,A devolver / a compensar / a ingresar
+347,1,Operaciones,Identificacion declarado (NIF + nombre)
+347,2,Operaciones,Identificacion declarante
+347,3,Operaciones,Importe operaciones (anual > 3.005.06 EUR)
+347,4,Operaciones,Operaciones desglosadas por trimestre
+347,5,Operaciones,Operaciones de seguros
+347,6,Operaciones,Arrendamientos de locales de negocio
+347,7,Operaciones,Cantidades percibidas en metalico (>6.000 EUR)
+349,2A,Operaciones intracomunitarias,Entregas intracomunitarias - Base
+349,2B,Operaciones intracomunitarias,Adquisiciones intracomunitarias - Base
+349,2C,Operaciones intracomunitarias,Prestaciones intracomunitarias servicios - Base
+349,2D,Operaciones intracomunitarias,Adquisiciones intracomunitarias servicios - Base
+349,2E,Operaciones intracomunitarias,Operaciones triangulares - Base
+390,01,Datos identificativos,Identificacion empresa y periodo
+390,02,Datos estadisticos,Volumen total de operaciones
+390,84,Resumen IVA devengado,Total cuota devengada
+390,85,Resumen IVA devengado,Total recargo devengado
+390,99,Resumen IVA deducible,Total cuota deducible
+390,650,Resultado anual,Suma cuotas trimestrales ingresadas
+390,651,Resultado anual,Resultado anual liquidacion
+111,01,Identificacion,Datos del retenedor
+111,02,Rendimientos del trabajo,Numero de perceptores
+111,03,Rendimientos del trabajo,Importe percepciones
+111,04,Rendimientos del trabajo,Importe retenciones
+111,06,Profesionales,Numero de perceptores
+111,07,Profesionales,Importe percepciones
+111,08,Profesionales,Importe retenciones
+115,01,Identificacion,Datos del retenedor (arrendatario)
+115,02,Arrendamientos,Numero de perceptores
+115,03,Arrendamientos,Base de las retenciones
+115,04,Arrendamientos,Importe de las retenciones
+130,01,IRPF,Ingresos computables del periodo
+130,02,IRPF,Gastos deducibles
+130,03,IRPF,Rendimiento neto
+130,07,IRPF,Pago fraccionado (20% rendimiento neto)
+130,12,IRPF,Resultado anterior - retenciones soportadas
+130,15,IRPF,Resultado a ingresar (o cero)

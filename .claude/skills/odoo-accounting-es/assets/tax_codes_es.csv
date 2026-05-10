@@ -1,0 +1,25 @@
+xml_id,name,amount,type_tax_use,description
+S_IVA21B,IVA 21% (Bienes),21.00,sale,IVA general venta de bienes
+S_IVA21S,IVA 21% (Servicios),21.00,sale,IVA general venta de servicios
+S_IVA10B,IVA 10% (Bienes),10.00,sale,IVA reducido venta de bienes
+S_IVA10S,IVA 10% (Servicios),10.00,sale,IVA reducido venta de servicios
+S_IVA4B,IVA 4% (Bienes),4.00,sale,IVA superreducido venta de bienes
+S_IVA4S,IVA 4% (Servicios),4.00,sale,IVA superreducido venta de servicios
+S_IVA0_E,IVA 0% Exportaciones,0.00,sale,Exportacion fuera de la UE
+S_IVA0_IC,IVA 0% Intracomunitario,0.00,sale,Operacion intracomunitaria UE
+S_IVA_EXE,IVA Exento,0.00,sale,Operacion exenta art. 20 LIVA
+S_REQ52,Recargo Equivalencia 5.2%,5.20,sale,RE para tipo IVA 21%
+S_REQ14,Recargo Equivalencia 1.4%,1.40,sale,RE para tipo IVA 10%
+S_REQ05,Recargo Equivalencia 0.5%,0.50,sale,RE para tipo IVA 4%
+P_IVA21_BC,IVA Soportado 21% (Bienes),21.00,purchase,IVA general compra de bienes
+P_IVA21_SC,IVA Soportado 21% (Servicios),21.00,purchase,IVA general compra de servicios
+P_IVA10_BC,IVA Soportado 10% (Bienes),10.00,purchase,IVA reducido compra de bienes
+P_IVA4_BC,IVA Soportado 4% (Bienes),4.00,purchase,IVA superreducido compra de bienes
+P_IVA0_NS,IVA Soportado 0% No deducible,0.00,purchase,Compras sin derecho a deduccion
+P_IVA0_ISP,IVA Soportado 0% ISP,0.00,purchase,Inversion del Sujeto Pasivo
+P_IVA0_IC,IVA Soportado 0% Intracomunitario,0.00,purchase,Adquisicion intracomunitaria
+P_IRPF7,Retencion IRPF 7%,-7.00,purchase,IRPF profesionales nuevos (3 primeros anos)
+P_IRPF15,Retencion IRPF 15%,-15.00,purchase,IRPF profesionales general
+P_IRPF19,Retencion IRPF 19%,-19.00,purchase,IRPF alquileres e intereses
+P_IRPF24,Retencion IRPF 24%,-24.00,purchase,IRPF no residentes general
+P_IRPF35,Retencion IRPF 35%,-35.00,purchase,IRPF administradores no residentes
