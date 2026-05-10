@@ -18,15 +18,17 @@ contexto entre conversaciones de Claude Code.
 ## Estado actual
 
 - **Última actualización**: 2026-05-10
-- **Última fase completada**: Fase 4.0 — `profile.yaml` de `inpr3mium`
-  relleno con datos reales (NIF B65758682, plan `l10n_es_pymes`,
-  flags fiscales, intracom UE + servicios extra-UE USA, IRPF
-  profesionales, cuadro de cuentas analizado, dominio `inpr3mium.com`,
-  años fiscales 2024-2026, estrategia migración histórico completo
-  con validación 24-25).
-- **Próximo paso**: **Bloque B paso 7** — redactar
-  `docs/infra/doodba-bootstrap.md` (runbook manual de provisión del
-  host doodba para inpr3mium).
+- **Última fase completada**: Fase 3 — runbook
+  `docs/infra/doodba-bootstrap.md` redactado en dos modos: **Modo A
+  (Docker local)** completo con pasos detallados para arranque
+  inmediato; **Modo B (gcloud Compute Engine)** como referencia para
+  producción futura. Añadidos `docs/infra/README.md` y
+  `docs/infra/secrets.md` (política de gestión de secretos).
+- **Próximo paso**: **Bloque B paso 8** — el **usuario** ejecuta el
+  Modo A del runbook contra Docker local (provisionar doodba, crear
+  DB `inpr3mium_dev`, crear bot user + API key). Tarea manual, sin
+  intervención del agente. Cuando termine, pasos 9-10 (configurar
+  `.env` + ejecutar `/onboard` para validar conectividad).
 - **Tenant activo**: `inpr3mium` (Inteligencia del negocio pr3mium S.L.
   / farmapremium). La instancia Odoo 19 todavía no existe.
 
@@ -86,11 +88,14 @@ comando el agente confirma que puede operar contra el Odoo real.
 **Objetivo**: documentar el provisioning del entorno (fuera del scope
 ejecutable del agente, pero el agente lo necesita).
 
-- ⏸ **3** Crear `docs/infra/{README.md, doodba-bootstrap.md, secrets.md}`
-  cubriendo: requisitos host, `copier copy` desde
-  `Tecnativa/doodba-copier-template`, edición de `invoke.yaml` y
-  secrets, primer `docker compose up -d`, crear DB vacía, crear bot
-  user + API key, hardening básico.
+- ✅ **3** `docs/infra/{README.md, doodba-bootstrap.md, secrets.md}`
+  creados. `doodba-bootstrap.md` cubre Modo A (Docker local en
+  Mac/Linux: copier, repos.yaml, addons.yaml, gitaggregate, docker
+  compose, crear DB, crear bot user, configurar `.env`, validar con
+  `/onboard`) y Modo B (gcloud Compute Engine: arquitectura, IP
+  estática, VM, traefik+Let's Encrypt, backups, migración A→B).
+  `secrets.md` define qué se versiona, qué no, dónde vive cada
+  secreto, política de rotación y acceso al certificado AEAT.
 
 ### Fase 4 — Bootstrap funcional de inpr3mium en Odoo 19
 
@@ -161,13 +166,16 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 
 ### Bloque B — Provisionar y arrancar (manual + agente)
 
-7. 🔄 **Fase 3** — escribir `docs/infra/doodba-bootstrap.md`
-   *(siguiente paso)*.
-8. ⏸ Provisión real del host doodba — manual, fuera del agente,
-   varias horas.
-9. ⏸ Crear bot user + API key en la instancia recién levantada.
-10. ⏸ Ejecutar `/onboard` contra la instancia real → verde excepto
-    módulos (DB vacía).
+7. ✅ **Fase 3** — `docs/infra/doodba-bootstrap.md` con Modo A
+   (local) y Modo B (gcloud) + `secrets.md`.
+8. 🔄 Provisión real del entorno (Modo A: Docker local) — manual del
+   usuario, ~30-60 min. *(siguiente paso, sin intervención del
+   agente)*.
+9. ⏸ Crear bot user + API key en la DB recién creada (paso A.6 del
+   runbook).
+10. ⏸ Configurar `.env` del agente (paso A.7) y ejecutar `/onboard`
+    contra la instancia local → verde en conectividad, módulos en
+    rojo (DB vacía, esperado).
 
 ### Bloque C — Bootstrap funcional (primer uso real del agente)
 
@@ -197,7 +205,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | Fecha | Bloque/Fase | Cambio |
 |-------|-------------|--------|
 | 2026-05-10 | Bloque A pasos 1-4 | Limpieza Ikigai → multi-tenant + onboarding + /onboard. Commit `76ab81904`. |
-| 2026-05-10 | Bloque A paso 5 (Fase 4.0) | `profile.yaml` de inpr3mium relleno con datos reales (NIF, plan, flags, dirección). README + migration plan actualizados. |
+| 2026-05-10 | Bloque A paso 5 (Fase 4.0) | `profile.yaml` de inpr3mium relleno con datos reales (NIF, plan, flags, dirección). README + migration plan actualizados. Commit `79f1acded`. |
+| 2026-05-10 | Bloque B paso 7 (Fase 3) | Runbook `doodba-bootstrap.md` con Modo A (Docker local) + Modo B (gcloud). Añadidos `infra/README.md` y `infra/secrets.md`. |
 
 ---
 
