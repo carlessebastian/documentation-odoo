@@ -1,0 +1,95 @@
+{
+  "phase": "4.6",
+  "date": "2026-05-11",
+  "summary": "Smoke test contable end-to-end: out_invoice A- + in_invoice PB- + out_refund AC-",
+  "company_id": 1,
+  "partners": {
+    "customer": {
+      "id": 13,
+      "vat": "ESB12345674"
+    },
+    "supplier": {
+      "id": 14,
+      "vat": "ESB87654323"
+    }
+  },
+  "moves": {
+    "out_invoice": {
+      "id": 2,
+      "name": "A-/2026/00001",
+      "state": "posted",
+      "journal_id": 7,
+      "journal_code": "A-",
+      "amount_total": 1210.0,
+      "amount_untaxed": 1000.0,
+      "amount_tax": 210.0,
+      "vat_subaccount_validation": {
+        "ok": true,
+        "vat_account_code": "47700000021",
+        "vat_account_name": "HP IVA repercutido 21%",
+        "expected": "47700000021",
+        "n_lines": 3
+      }
+    },
+    "in_invoice": {
+      "id": 3,
+      "name": "PB-/2026/05/0001",
+      "state": "posted",
+      "journal_id": 8,
+      "journal_code": "PB-",
+      "amount_total": 605.0,
+      "amount_untaxed": 500.0,
+      "amount_tax": 105.0,
+      "vat_subaccount_validation": {
+        "ok": true,
+        "vat_account_code": "47200000021",
+        "vat_account_name": "HP IVA soportado 21%",
+        "expected": "47200000021",
+        "n_lines": 3
+      }
+    },
+    "out_refund": {
+      "id": 4,
+      "name": "AC-/2026/00001",
+      "state": "posted",
+      "journal_id": 13,
+      "journal_code": "AC-",
+      "amount_total": 1210.0,
+      "reversed_entry_id": 2,
+      "name_prefix_ok": true,
+      "journal_assigned_ok": true
+    }
+  },
+  "reporting_by_account": {
+    "Other services": {
+      "debit": 500.0,
+      "credit": 0.0,
+      "net": 500.0
+    },
+    "HP IVA soportado 21%": {
+      "debit": 105.0,
+      "credit": 0.0,
+      "net": 105.0
+    },
+    "Payables for the rendering of services (euros)": {
+      "debit": 0.0,
+      "credit": 605.0,
+      "net": -605.0
+    },
+    "Services rendered": {
+      "debit": 0.0,
+      "credit": 1000.0,
+      "net": -1000.0
+    },
+    "HP IVA repercutido 21%": {
+      "debit": 0.0,
+      "credit": 210.0,
+      "net": -210.0
+    },
+    "Trade receivables (euros)": {
+      "debit": 1210.0,
+      "credit": 0.0,
+      "net": 1210.0
+    }
+  }
+}
