@@ -146,6 +146,31 @@ Fase 4.3.
 | dailyledger | 2.250 | asientos contables completos 2018-2026 (chunkeados por años) |
 | **PDFs descargados** | **7.489** | 3.430 invoice (142.6 MB) + 4.059 purchase (801.4 MB) |
 
+### PDFs de purchase: corte en 2022
+
+3.939 de las 7.998 facturas recibidas (`purchase`) no tienen PDF
+original. Verificado por el operador en Holded UI: estos documentos
+**fueron importados como histórico contable** cuando inpr3mium
+migró a Holded a inicios de 2022, sin adjuntar las facturas
+escaneadas. El corte es nítido por año:
+
+| Año | Con PDF | Sin PDF |
+|---:|---:|---:|
+| 2018-2021 | 1 | 3.933 |
+| 2022 | 992 | 6 (anomalías sueltas) |
+| 2023+ | 2.793 | 0 |
+
+Implicación para la migración:
+
+- **2018-2021**: cargar solo los asientos contables (de `dailyledger`),
+  sin facturas individuales. Los 3.933 records de `documents.purchase`
+  son redundantes con `dailyledger` para ese período. **No crear
+  `account.move` individual** por cada uno — bastaría con los
+  asientos del libro diario.
+- **2022+**: cargar `account.move` con PDF adjunto en
+  `ir.attachment` (4.059 PDFs para los purchase, 3.430 para invoice).
+  Las 6 anomalías de 2022 cargarlas como move sin adjunto.
+
 ### Secuencias de numeración (`numbering_series.json`)
 
 Holded usa placeholders `%%%%%%` para el contador y `[YY]` para el
