@@ -18,28 +18,29 @@ contexto entre conversaciones de Claude Code.
 ## Estado actual
 
 - **Última actualización**: 2026-05-11
-- **Última fase completada**: **Bloque C — Fase 4.1 (instalación de
-  módulos OCA)**. 12/12 `expected_modules` con `state=installed` en DB
-  `inpr3mium_dev`; 0 módulos colgados; 75 módulos totales (12 explícitos
-  + 30 deps OCA transitivas + 33 deps core). Stack completo:
-  `l10n_es`, AEAT 303/347/349/390/111/115, `l10n_es_facturae`,
-  `account_financial_report`, `account_payment_mode`, `auditlog`,
-  `queue_job`. Aprendizajes capturados en memoria (gotchas doodba) y
-  en runbook compartido `.claude/skills/CLAUDE.md`.
-- **Próximo paso**: **Fase 4.2** — empresa + idiomas + settings via
-  `odoo-functional-admin`. Subtareas:
-  - `language_install --langs es_ES,ca_ES --activate`.
-  - `subsidiary_bootstrap.py --name "Inteligencia del negocio pr3mium
-    S.L." --vat ESB65758682 --chart-template l10n_es.l10n_es_pymes`.
-  - `settings_param` con `web.base.url`.
-  - Reasignar compañía del bot a la nueva.
-
-  Tras 4.2 viene **Fase 4.2.1 (nueva, insertada)** — crear el skill
-  `odoo-data-migration` MVP solo-lectura para hacer dump de Holded
-  antes de Fase 4.3. Razón: la configuración de diarios y secuencias
-  (4.3) depende del formato de numeración real usado en Holded para
-  preservar continuidad. Sin el dump, configuraríamos a ciegas y
-  romperíamos secuencia al migrar.
+- **Última fase completada**: **Bloque C — Fase 4.2 (empresa, idiomas,
+  chart template)**. Company id=1 renombrada a "Inteligencia del
+  negocio pr3mium S.L." con NIF ESB65758682, EUR, Spain/Barcelona,
+  dirección y contacto del profile. Chart template `es_pymes` cargado
+  (646 cuentas PGCE Pymes). Idiomas activos: es_ES + ca_ES. Bot ya en
+  la company correcta (id=1 simplemente cambio de metadatos), tz
+  Europe/Madrid, grupos extendidos con `account.group_account_manager`
+  + `base.group_partner_manager` (conserva group_system de bootstrap).
+  `web.base.url.freeze = True`. Aprendizaje gotcha: chart template
+  codes en Odoo 19 son strings cortos (`es_pymes`, no
+  `l10n_es.l10n_es_pymes`); `try_loading` via XML-RPC tiene bug con
+  segundo arg positional — usar `odoo shell` directo.
+- **Próximo paso**: **Fase 4.2.1** — Skill `odoo-data-migration` MVP
+  solo-lectura para dumpear Holded antes de configurar
+  diarios/secuencias (Fase 4.3). Subtareas:
+  - Crear estructura del skill (`SKILL.md`, `scripts/`, etc.).
+  - Endpoint Holded `Get Company Info` (cross-check de datos legales).
+  - Endpoint `Get Numeration Series` (CRÍTICO para 4.3).
+  - Endpoint `List Accounts` (mapeo Holded → PGCE Pymes).
+  - Endpoint `List Contacts`.
+  - Endpoint `List Documents` (sample).
+  - Dump JSON a `docs/tenants/inpr3mium/holded-export/`.
+  - Añadir `HOLDED_API_KEY` a `.env.example`.
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -133,9 +134,12 @@ ejecutable del agente, pero el agente lo necesita).
   intracomunitario UE, servicios extra-UE USA), bot user
   `bot.contable@inpr3mium.com`, años fiscales 2024-2026, scope
   migración histórico completo con validación 24-25.
-- ⏸ **4.2** Empresa, idiomas y settings vía `odoo-functional-admin`
-  (`language_install --langs es_ES,ca_ES`, `settings_param`,
-  `subsidiary_bootstrap` con datos del profile). No depende de Holded.
+- ✅ **4.2** Empresa, idiomas y chart template completados.
+  Idiomas: `es_ES + ca_ES` activos. Company id=1 con todos los datos
+  del profile (nombre legal, VAT, Spain/Barcelona, contacto). Chart
+  `es_pymes` cargado (646 cuentas PGCE Pymes). Bot reconfigurado (tz
+  Europe/Madrid + grupos account/partner manager). `web.base.url.freeze`
+  activado.
 - ⏸ **4.2.1** **Skill `odoo-data-migration` MVP (solo lectura Holded)**.
   Objetivo: poder hacer una radiografía completa de la instancia Holded
   origen antes de tocar la configuración Fase 4.3. Outputs:
@@ -225,7 +229,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 ### Bloque C — Bootstrap funcional (primer uso real del agente)
 
 11. ✅ Fase 4.1 (instalación de módulos)
-12. ⏸ Fase 4.2 (empresa + idiomas + settings) — no depende de Holded
+12. ✅ Fase 4.2 (empresa + idiomas + chart template)
 13. ⏸ Fase 4.2.1 (skill `odoo-data-migration` MVP solo-lectura + dump
     de Holded) — desbloquea 4.3
 14. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales — informado
@@ -260,7 +264,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-10 | Bloque B pasos 8-10 | Modo A ejecutado end-to-end: doodba 9.5.0 + Odoo 19 + PG16 corriendo, DB `inpr3mium_dev`, bot uid=8 con API key, `.env` configurado. `/onboard`: 5🟢 3🟡 1🔴 — agente conectado. Bloqueantes para Bloque C identificados (bug `_json2`, campos renombrados Odoo 19, 6 módulos OCA missing). |
 | 2026-05-11 | Bloque C pre-flight | Auditoría OCA 19.0 de los 6 módulos missing vía `oca-module-scout` (paralelo). Solo `l10n_es_facturae` (19.0.1.0.0) está disponible. `l10n_es_aeat_sii_oca` eliminado del profile (inpr3mium no es gran empresa; fedefarma sí lo necesitará — memoria guardada). `mod232`, `verifactu_oca` (obligatorio 2027, no 2026), `mis_builder`, `sepa_credit_transfer`, `sepa_direct_debit` movidos a nuevo bloque `deferred_modules` con razón y `revisit_on`. Template de tenant actualizado con la convención. Commit `ddfde7ddb`. |
 | 2026-05-11 | Bloque C Fase 4.1 | Install de los 12 `expected_modules` completado (state=installed). Camino largo: descubrir 3 repos OCA faltantes (`reporting-engine`, `server-ux`, `community-data-files`), 9 módulos adicionales en `addons.yaml` para cerrar closure de `depends`, 5 pip pkgs en `pip.txt`, `invoke img-build` para rebuild image, chown del filestore (UID mismatch `exec` vs `run --rm`). DB final: 75 módulos installed, 0 colgados. Gotchas en memoria, runbook actualizado, profile/addons.yaml/pip.txt persistidos. |
-| 2026-05-11 | Restructura plan | Insertada Fase 4.2.1 entre 4.2 y 4.3: skill `odoo-data-migration` MVP solo-lectura para dumpear Holded antes de configurar diarios/secuencias. Decisión diferida en Fase 5.2 (`¿abrir cuarto skill?`) resuelta anticipadamente: SÍ, ahora en 4.2.1 lado-lectura; 5.3 completa lado-escritura. Numeración del Bloque C/D ajustada. |
+| 2026-05-11 | Restructura plan | Insertada Fase 4.2.1 entre 4.2 y 4.3: skill `odoo-data-migration` MVP solo-lectura para dumpear Holded antes de configurar diarios/secuencias. Decisión diferida en Fase 5.2 (`¿abrir cuarto skill?`) resuelta anticipadamente: SÍ, ahora en 4.2.1 lado-lectura; 5.3 completa lado-escritura. Numeración del Bloque C/D ajustada. Commit `99e0e7ea0`. |
+| 2026-05-11 | Bloque C Fase 4.2 | Company id=1 reconfigurada con datos legales reales (Inteligencia del negocio pr3mium S.L., NIF, Spain/Barcelona, dirección y contacto). Chart `es_pymes` cargado (51 generic_coa → 646 PGCE Pymes). Idiomas es_ES + ca_ES activos. Bot tz Europe/Madrid + grupos account/partner manager (group_system conservado para 4.3). `web.base.url.freeze=True`. Gotchas nuevos: chart template codes en Odoo 19 son strings cortos (`es_pymes`), no XML-IDs; `try_loading` via XML-RPC tiene bug en arg posicional — usar `odoo shell`. |
 
 ---
 

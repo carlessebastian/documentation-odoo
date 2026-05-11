@@ -11,7 +11,7 @@ trade_name: "farmapremium"                # nombre comercial (logo, dominio hold
 vat: "ESB65758682"
 locale: es_ES
 fiscal_country: ES
-chart_template: l10n_es.l10n_es_pymes     # confirmado por analisis del cuadro de cuentas (sin grupo 8/9)
+chart_template: es_pymes                  # Odoo 19 code (no `l10n_es.l10n_es_pymes`); confirmado por analisis del cuadro de cuentas Holded (sin grupo 8/9). Cargado en Fase 4.2 (646 cuentas).
 edi_stack: oca
 
 # Contacto y direccion fiscal -------------------------------------------------
@@ -46,7 +46,7 @@ companies:
     currency: EUR
     country: ES
     parent_vat: null
-    chart_template: l10n_es.l10n_es_pymes
+    chart_template: es_pymes
 
 # Diarios adicionales --------------------------------------------------------
 # El chart_template crea VENT/COMP/BANC/CAJA/MISC. Anyadir los especificos:

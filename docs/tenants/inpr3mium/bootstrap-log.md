@@ -167,3 +167,42 @@ totales en DB tras cerrar closure de dependencias; 0 módulos colgados.
 - `addons.yaml` con 21 módulos OCA listados (closure completo).
 - `pip.txt` doodba con 7 entradas (3 originales + 5 nuevos).
 - DB `inpr3mium_dev`: 75 módulos installed, ready para Fase 4.2.
+
+## Fase 4.2 — Empresa + idiomas + chart template (2026-05-11)
+
+- ✅ Idiomas: `es_ES` (preinstalado) + `ca_ES` activados via
+  `language_install.py --langs es_ES,ca_ES --activate`.
+- ✅ Moneda `EUR` activada (estaba inactiva).
+- ✅ Chart template `es_pymes` cargado vía `odoo shell` (workaround
+  por bug XML-RPC en `try_loading` con segundo arg posicional —
+  ver gotchas memory). Resultado: 51 cuentas `generic_coa` borradas
+  y reemplazadas con 646 cuentas PGCE Pymes.
+- ✅ `res.company id=1` reescrita:
+  - `name`: "Inteligencia del negocio pr3mium S.L."
+  - `vat`: "ESB65758682"
+  - `country_id`: Spain, `state_id`: Barcelona
+  - `street/city/zip`: Carrer Coneixement 7 / Gava / 08850
+  - `email`/`phone`/`website`: facturas@inpr3mium.com / +34902811511 /
+    https://inpr3mium.com
+- ✅ Bot user (uid=8): tz Europe/Madrid + grupos extendidos con
+  `account.group_account_manager` (Administrator de account) y
+  `base.group_partner_manager` (Creation de partners). Conserva
+  `base.group_system` para Fase 4.3 (tightening de ACL pendiente
+  para Fase 4.4).
+- ✅ `web.base.url.freeze = True` para evitar que el login
+  sobreescriba la URL base.
+
+### Gotchas descubiertos
+
+- **`chart_template` en Odoo 19**: el formato corto (`es_pymes`),
+  no XML-ID (`l10n_es.l10n_es_pymes`). El profile estaba con el
+  formato antiguo y se corrigió.
+- **`try_loading` via XML-RPC**: el segundo argumento posicional
+  (`company`) se pierde en el dispatcher, dando `TypeError: missing
+  'company'`. Workaround: ejecutar via `odoo shell` dentro del
+  contenedor.
+
+### Próximo paso
+
+Fase 4.2.1 — skill `odoo-data-migration` (MVP solo-lectura) para
+hacer dump de Holded antes de Fase 4.3 (diarios + secuencias).
