@@ -89,7 +89,7 @@ def normalize_users(rows: list[dict], group_id_to_xmlid: dict[int, str],
         if not login or login in ("admin", "__system__"):
             continue
         groups = sorted(
-            group_id_to_xmlid[g] for g in (r.get("groups_id") or [])
+            group_id_to_xmlid[g] for g in (r.get("group_ids") or [])
             if g in group_id_to_xmlid
         )
         company_vats = sorted(

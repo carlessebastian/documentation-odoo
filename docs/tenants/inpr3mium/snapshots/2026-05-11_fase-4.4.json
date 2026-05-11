@@ -1,0 +1,833 @@
+{
+  "generated_at": "2026-05-11",
+  "phase": "4.4 (post-tightening)",
+  "companies": [
+    {
+      "id": 1,
+      "name": "Inteligencia del negocio pr3mium S.L.",
+      "vat": "ESB65758682",
+      "country_id": [
+        68,
+        "Spain"
+      ],
+      "currency_id": [
+        126,
+        "EUR"
+      ],
+      "parent_id": false
+    }
+  ],
+  "users": [
+    {
+      "id": 2,
+      "name": "Administrator",
+      "login": "admin",
+      "lang": "es_ES",
+      "tz": "Europe/Madrid",
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "company_ids": [
+        1
+      ],
+      "group_ids": [
+        33,
+        40,
+        26,
+        38,
+        27,
+        4
+      ],
+      "groups_resolved": [
+        "account.group_account_manager",
+        "base.group_system",
+        "l10n_es_aeat.group_account_aeat",
+        "product.group_product_manager",
+        "queue_job.group_queue_job_manager",
+        "spreadsheet_dashboard.group_dashboard_manager"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Bot Contable",
+      "login": "bot.contable@inpr3mium.com",
+      "lang": "es_ES",
+      "tz": "Europe/Madrid",
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "company_ids": [
+        1
+      ],
+      "group_ids": [
+        33,
+        9,
+        2,
+        23,
+        5,
+        1
+      ],
+      "groups_resolved": [
+        "account.group_account_manager",
+        "analytic.group_analytic_accounting",
+        "base.group_erp_manager",
+        "base.group_multi_company",
+        "base.group_partner_manager",
+        "base.group_user"
+      ]
+    }
+  ],
+  "journals": [
+    {
+      "id": 12,
+      "name": "Bank",
+      "code": "BNK1",
+      "type": "bank",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 11,
+      "name": "Cash Basis Taxes",
+      "code": "CABA",
+      "type": "general",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 10,
+      "name": "Exchange Difference",
+      "code": "CAMBI",
+      "type": "general",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 9,
+      "name": "Miscellaneous Operations",
+      "code": "Vario",
+      "type": "general",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 8,
+      "name": "Facturas Gastos",
+      "code": "PB-",
+      "type": "purchase",
+      "refund_sequence": true,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 18,
+      "name": "Facturas Inmovilizado",
+      "code": "PI-",
+      "type": "purchase",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 7,
+      "name": "Facturas Ventas",
+      "code": "A-",
+      "type": "sale",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 13,
+      "name": "Abonos Ventas",
+      "code": "AC-",
+      "type": "sale",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 14,
+      "name": "Autofacturas",
+      "code": "AF-",
+      "type": "sale",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 16,
+      "name": "Facturas Especiales",
+      "code": "FVU-",
+      "type": "sale",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 15,
+      "name": "Facturas Kit Digital",
+      "code": "KD-",
+      "type": "sale",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    },
+    {
+      "id": 17,
+      "name": "Facturas Laboratorios",
+      "code": "L-",
+      "type": "sale",
+      "refund_sequence": false,
+      "restrict_mode_hash_table": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ],
+      "active": true
+    }
+  ],
+  "fiscal_positions": [
+    {
+      "id": 3,
+      "name": "ES Domestic",
+      "auto_apply": true,
+      "country_id": [
+        68,
+        "Spain"
+      ],
+      "country_group_id": [
+        11,
+        "Mainland Spain VAT"
+      ],
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Intra-community",
+      "auto_apply": true,
+      "country_id": false,
+      "country_group_id": [
+        9,
+        "European Union VAT"
+      ],
+      "vat_required": true,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "EU private",
+      "auto_apply": true,
+      "country_id": false,
+      "country_group_id": [
+        9,
+        "European Union VAT"
+      ],
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Extra-community",
+      "auto_apply": true,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Personal income tax withholding 1%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Personal income tax withholding 2%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Personal income tax withholding 7%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Perosnal income tax withholding 9%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Personal income tax withholding 15%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Personal income tax withholding 18%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Personal income tax withholding 19%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Retention 19% leases",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Withholding 19.5% leases",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Personal income tax withholding 20%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Personal income tax withholding 24%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Withholding 19% leases",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Personal tax income withholding 21%",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Withholding 21% leases",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 24,
+      "name": "National Reverse charge",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 25,
+      "name": "REAGYP - Agriculture",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 26,
+      "name": "REAGYP - animal breeding and fishing",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 27,
+      "name": "DUA",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 28,
+      "name": "24% Withholding for non-EU residents",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 29,
+      "name": "19% Withholding for non-EU residents",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Exempt Withholding EU residents",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Exempt Withholding Non EU residents",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Regime not subject to localization rules",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Equivalence surcharge",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    },
+    {
+      "id": 9,
+      "name": "ISP reseller equivalence surcharge",
+      "auto_apply": false,
+      "country_id": false,
+      "country_group_id": false,
+      "vat_required": false,
+      "company_id": [
+        1,
+        "Inteligencia del negocio pr3mium S.L."
+      ]
+    }
+  ],
+  "analytic_plans": [
+    {
+      "id": 1,
+      "name": "Project",
+      "default_applicability": "optional"
+    },
+    {
+      "id": 2,
+      "name": "Granularidad gasto",
+      "default_applicability": "optional"
+    }
+  ],
+  "record_rules_critical_models": [
+    {
+      "id": 18,
+      "name": "user rule",
+      "model_id": [
+        102,
+        "User"
+      ],
+      "domain_force": "['|', ('share', '=', False), ('company_ids', 'in', company_ids)]",
+      "active": true,
+      "groups": [],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 19,
+      "name": "portal user access",
+      "model_id": [
+        102,
+        "User"
+      ],
+      "domain_force": "[('commercial_partner_id', '=', user.commercial_partner_id.id)]",
+      "active": true,
+      "groups": [
+        10
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 97,
+      "name": "Account Entry",
+      "model_id": [
+        745,
+        "Journal Entry"
+      ],
+      "domain_force": "[('company_id', 'in', company_ids)]",
+      "active": true,
+      "groups": [],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 114,
+      "name": "All Journal Entries",
+      "model_id": [
+        745,
+        "Journal Entry"
+      ],
+      "domain_force": "[(1, '=', 1)]",
+      "active": true,
+      "groups": [
+        30
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 116,
+      "name": "Portal Personal Account Invoices",
+      "model_id": [
+        745,
+        "Journal Entry"
+      ],
+      "domain_force": "[('state', 'not in', ('cancel', 'draft')), ('move_type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')), ('partner_id','child_of',[user.commercial_partner_id.id])]",
+      "active": true,
+      "groups": [
+        10
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 118,
+      "name": "Readonly Move",
+      "model_id": [
+        745,
+        "Journal Entry"
+      ],
+      "domain_force": "[(1, '=', 1)]",
+      "active": true,
+      "groups": [
+        29
+      ],
+      "perm_read": true,
+      "perm_write": false,
+      "perm_create": false,
+      "perm_unlink": false
+    },
+    {
+      "id": 120,
+      "name": "Readonly Move",
+      "model_id": [
+        745,
+        "Journal Entry"
+      ],
+      "domain_force": "[(1, '=', 1)]",
+      "active": true,
+      "groups": [
+        30
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 2,
+      "name": "res.partner company",
+      "model_id": [
+        90,
+        "Contact"
+      ],
+      "domain_force": "['|', '|', ('partner_share', '=', False), ('company_id', 'parent_of', company_ids), ('company_id', '=', False)]",
+      "active": true,
+      "groups": [],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 3,
+      "name": "res_partner: portal/public: read access on my commercial partner",
+      "model_id": [
+        90,
+        "Contact"
+      ],
+      "domain_force": "[('id', 'child_of', user.commercial_partner_id.id)]",
+      "active": true,
+      "groups": [
+        10,
+        11
+      ],
+      "perm_read": true,
+      "perm_write": false,
+      "perm_create": false,
+      "perm_unlink": false
+    },
+    {
+      "id": 13,
+      "name": "company rule portal",
+      "model_id": [
+        98,
+        "Companies"
+      ],
+      "domain_force": "[('id','in', company_ids)]",
+      "active": true,
+      "groups": [
+        10
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 14,
+      "name": "company rule employee",
+      "model_id": [
+        98,
+        "Companies"
+      ],
+      "domain_force": "[('id','in', company_ids)]",
+      "active": true,
+      "groups": [
+        1
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 15,
+      "name": "company rule public",
+      "model_id": [
+        98,
+        "Companies"
+      ],
+      "domain_force": "[('id','in', company_ids)]",
+      "active": true,
+      "groups": [
+        11
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    },
+    {
+      "id": 16,
+      "name": "company rule erp manager",
+      "model_id": [
+        98,
+        "Companies"
+      ],
+      "domain_force": "[(1,'=',1)]",
+      "active": true,
+      "groups": [
+        2
+      ],
+      "perm_read": true,
+      "perm_write": true,
+      "perm_create": true,
+      "perm_unlink": true
+    }
+  ],
+  "installed_modules_count": 75
+}

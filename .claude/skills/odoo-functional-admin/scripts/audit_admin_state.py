@@ -65,7 +65,7 @@ def users(client: OdooClient, company_id: int | None) -> list[dict]:
                 "tz",
                 "company_id",
                 "company_ids",
-                "groups_id",
+                "group_ids",
             ],
             "order": "login",
         },
@@ -78,8 +78,8 @@ def groups(client: OdooClient) -> list[dict]:
         "search_read",
         [[]],
         {
-            "fields": ["id", "name", "category_id", "implied_ids"],
-            "order": "category_id, name",
+            "fields": ["id", "name", "implied_ids"],
+            "order": "name",
         },
     )
 
@@ -99,7 +99,8 @@ def journals(client: OdooClient, company_id: int | None) -> list[dict]:
                 "code",
                 "type",
                 "company_id",
-                "sequence_id",
+                "refund_sequence",
+                "restrict_mode_hash_table",
                 "default_account_id",
                 "currency_id",
                 "active",
@@ -206,7 +207,7 @@ def diff_against_yaml(client: OdooClient, yaml_path: Path) -> dict:
 
     # Mappings auxiliares para normalizar
     cid_to_vat = _company_id_to_vat(company_rows)
-    all_group_ids = sorted({g for u in user_rows for g in (u.get("groups_id") or [])})
+    all_group_ids = sorted({g for u in user_rows for g in (u.get("group_ids") or [])})
     gid_to_xmlid = _resolve_group_xmlid_map(client, all_group_ids)
 
     out: dict = {"sections": {}, "yaml_path": str(yaml_path)}

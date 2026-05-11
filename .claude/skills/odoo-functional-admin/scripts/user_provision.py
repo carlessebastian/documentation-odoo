@@ -104,7 +104,7 @@ def upsert_user(
         "name": name,
         "lang": lang,
         "tz": tz,
-        "groups_id": [(6, 0, group_ids)] if group_ids else False,
+        "group_ids": [(6, 0, group_ids)] if group_ids else False,
     }
     if default_company:
         vals["company_id"] = default_company

@@ -17,8 +17,30 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11 (Fase 4.3 cerrada)
-- **Última fase completada**: **Bloque C — Fase 4.3 (diarios,
+- **Última actualización**: 2026-05-11 (Fase 4.4 cerrada)
+- **Última fase completada**: **Bloque C — Fase 4.4 (bot tightening +
+  record rules + snapshot)**. Bot uid=8 reducido de
+  `base.group_system` a perfil least-privilege: `base.group_user` +
+  `base.group_erp_manager` + `base.group_multi_company` +
+  `base.group_partner_manager` + `account.group_account_manager` +
+  `analytic.group_analytic_accounting` (6 grupos). Validado: bot
+  puede leer/escribir partners, account.move (draft), ir.rule,
+  ir.model.data, ir.module.module, journals, fiscal positions,
+  analytic plans. Únicas operaciones que pierde: instalar módulos y
+  modificar `ir.config_parameter` (requieren `group_system` —
+  escalación temporal via `odoo shell` cuando se necesite). Regla
+  multi-company global de `res.partner`: Odoo core ya provee una con
+  dominio más sofisticado (id=2, maneja `partner_share` +
+  `parent_of`), no se crea ninguna nueva. Snapshot en
+  `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.4.json` (1
+  company, 2 users, 12 journals, 29 fiscal positions, 2 analytic
+  plans, 13 record rules en modelos críticos, 75 modules
+  installed). Parchados 5 scripts del agente con bugs Odoo 19:
+  `groups_id`→`group_ids` (group_assign, audit_admin_state,
+  _drift, user_provision), `account.journal.sequence_id` y
+  `res.groups.category_id` removidos (audit_admin_state). 4 gotchas
+  Odoo 19 nuevos en memoria.
+- **Fase 4.3 (previa)**: **Bloque C — Fase 4.3 (diarios,
   secuencias, posiciones fiscales)**. 8 `account.journal` configurados
   en company_id=1 preservando continuidad Holded: 6 sale (A-, AC-,
   AF-, KD-, FVU-, L-) + 2 purchase (PB-, PI-). INV stock → A-, FACTU
@@ -71,16 +93,15 @@ contexto entre conversaciones de Claude Code.
   - Decisión: la skill se llama **`holded-export`** (no
     `odoo-data-migration` como reservaba el plan original). Una skill
     por origen externo; `fedefarma` tendrá `axional-export`.
-- **Próximo paso**: abrir **Fase 4.4** (bot user permisos + record
-  rules + `audit_admin_state`). El bot tiene actualmente
-  `base.group_system` (admin pleno) heredado del Bloque C, más
-  `analytic.group_analytic_accounting` añadido en 4.3. Toca tightening:
-  reducir a `account.group_account_manager` + `base.group_partner_manager`
-  + `base.group_multi_company` (lo definido en `expected_modules` /
-  workflow canónico del runbook), retirar `base.group_system`, validar
-  que sigue pudiendo postear facturas y crear cuentas analíticas via
-  RPC, y persistir `record_rule_create.py` para la regla multi-company
-  global de `res.partner`.
+- **Próximo paso**: abrir **Fase 4.5** (EDI: certificado digital +
+  entornos test/prod en módulos AEAT). Pasos manuales: importar
+  certificado de firma electrónica en Odoo (FNMT o DigitalSign), crear
+  registros de configuración en `l10n_es_aeat` para entornos `test`
+  y `production`, activar Veri*Factu opcional (no obligatorio hasta
+  2027, pero útil para validar pipeline). Documentar en
+  `docs/tenants/inpr3mium/edi-setup.md`. Bloqueante operativo:
+  necesita certificado digital del operador (manual, fuera del
+  agente).
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -348,7 +369,21 @@ ejecutable del agente, pero el agente lo necesita).
   `refund_sequence` es boolean). `account.analytic.plan` ya no tiene
   `company_id` (cross-company en Odoo 19). Bot escalado con
   `analytic.group_analytic_accounting`.
-- ⏸ **4.4** Bot user + permisos + record rules + `audit_admin_state`.
+- ✅ **4.4** Bot tightening + record rules + snapshot (2026-05-11).
+  Bot uid=8 reducido a 6 grupos least-privilege
+  (`base.group_user` + `base.group_erp_manager` +
+  `base.group_multi_company` + `base.group_partner_manager` +
+  `account.group_account_manager` +
+  `analytic.group_analytic_accounting`). Regla multi-company global
+  de `res.partner` ya provista por Odoo core (id=2, dominio
+  con `partner_share` + `parent_of` — más sofisticado que el del
+  runbook). Snapshot manual en
+  `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.4.json`. 5
+  scripts del agente parchados para Odoo 19 (`groups_id` → `group_ids`,
+  `category_id` y `sequence_id` removidos). 4 gotchas nuevos en
+  memoria. Trade-offs aceptados: bot no puede escribir
+  `ir.config_parameter` ni instalar módulos (requiere `group_system`,
+  escalación temporal via shell cuando se necesite).
 - ⏸ **4.5** EDI: certificado digital + entornos test/prod en módulos
   AEAT. Pasos manuales documentados en `edi-setup.md`.
 - ⏸ **4.6** Smoke test contable: primera factura + SII test +
@@ -429,7 +464,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
     documentados en `migration-from-holded.md`)
 15. ✅ Fase 4.3 (8 diarios + posiciones fiscales validadas + plan
     analítico; script journal_setup.py parchado para Odoo 19)
-16. ⏸ Fase 4.4 (bot user + permisos + record rules)
+16. ✅ Fase 4.4 (bot tightening + snapshot; 5 scripts del agente
+    parchados Odoo 19)
 17. ⏸ Fase 4.5 (EDI: certificado + entornos)
 18. ⏸ Fase 4.6 (smoke test: primera factura)
 19. ⏸ Fase 4.7 (commit + bitácora)
@@ -465,6 +501,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.2.2 (preparado) | API key de Holded rotada por el operador tras incidente menor (key compartida en chat → revocada en Holded → Settings → Developers, generada nueva, persistida en `.env` local). Skill lista para ejecutar el dump. Plan de ejecución documentado paso a paso en `Fase 4.2.2` (7 pasos: smoke test → inspect → confirmar plan → dump completo → validar → inspección humana → commit). Próxima sesión puede retomar leyendo solo `docs/PLAN.md`. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — 1er pase) | Primer dump de inpr3mium: 43.4 MB / 490 docs / 439 PDFs. Operador detectó que SOLO contenía datos de 2026: el endpoint `/documents` de Holded SIN filtro de fechas devuelve únicamente el año en curso. 4º bug encontrado. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — histórico completo) | Dump real definitivo: **969 MB** en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (gitignored). 3.363 contactos + 1.569 productos + 440 servicios + 148 cuentas de gasto + 103 taxes + 708 pagos + 12 tesorerías + 85 remesas + 38 saleschannels + 16 numbering series + **12.212 documentos** (3.430 invoice + 678 creditnote + 7.998 purchase + 69 purchaserefund + 34 proform + 3 estimate) + 2.250 asientos contables (histórico 2018-2026 chunkeado por años) + **7.489 PDFs** (3.430 invoice 142.6 MB + 4.059 purchase 801.4 MB; 3.939 purchases sin PDF = asientos manuales). errors.jsonl: 0 líneas. 4 bugs del cliente arreglados durante el proceso: (1) `paginate()` sin `page_size` capaba a 500 items; (2) paths `/warehouse` y `/expensesaccount` devuelven HTML SPA — reales `/warehouses` y `/expensesaccounts` plurales; (3) `dailyledger` ventana ≤ 1 año, chunking auto por años; (4) `/documents` sin starttmp/endtmp devuelve solo año en curso, ahora chunking auto por años con defaults sensatos (2018-01-01 → now). 68/68 tests offline OK. `migration-from-holded.md` actualizado con volúmenes reales + 3 tablas (sequences, mapeo IVA, cuentas de gasto). Próximo: Fase 4.3. |
+| 2026-05-11 | Bloque C Fase 4.4 | Bot uid=8 tightenado: quitado `base.group_system`, dejados 6 grupos least-privilege (`base.group_user` + `base.group_erp_manager` + `base.group_multi_company` + `base.group_partner_manager` + `account.group_account_manager` + `analytic.group_analytic_accounting`). Validado vía RPC: bot puede CRUD partners, draft account.move, ir.rule, leer ir.model.data + ir.module.module + journals + fiscal positions + analytic plans. Pierde `ir.config_parameter` y instalar módulos (acepta escalación temporal). Regla multi-company global de `res.partner` ya existe en Odoo core (id=2, dominio con `partner_share` + `parent_of` — más correcto que el del runbook). Snapshot manual en `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.4.json` (1 company / 2 users / 12 journals / 29 FPs / 2 analytic plans / 13 record rules sobre modelos críticos / 75 modules installed). 5 scripts del agente parchados para Odoo 19: `groups_id`→`group_ids` (group_assign, audit_admin_state, _drift, user_provision), `res.groups.category_id` removido (audit_admin_state), `account.journal.sequence_id` removido (audit_admin_state). 4 gotchas Odoo 19 nuevos en memoria: cambios grupos requieren restart worker HTTP; perfil mínimo bot post-tightening; el runbook .claude/skills/CLAUDE.md está desactualizado al prescribir un perfil demasiado restrictivo; bugs históricos en scripts. |
 | 2026-05-11 | Bloque C Fase 4.3 | Diarios + posiciones fiscales + plan analítico. 8 `account.journal` configurados preservando prefijos Holded para auditoría AEAT: 6 sale (A-, AC-, AF-, KD-, FVU-, L-) + 2 purchase (PB-, PI-). Renombrados stock INV→A- y FACTU→PB-. PB- con `refund_sequence=True` para PR- (69 purchaserefund). AC- como diario separado (no `refund_sequence` en A-) porque Holded mezcla creditnote + rectificativas de aumento en AC-. Posiciones fiscales: `l10n_es_pymes` ya creó las 4 esenciales (Intra-community, Extra-community, Equivalence surcharge, ISP) + 10 IRPF withholding — 0 RPC. Plan analítico "Granularidad gasto" (id=2) creado para granularidad futura de las 148 cuentas Holded. Gotchas Odoo 19 nuevos: (1) `account.journal.sequence_id` y `ir.sequence` por journal desaparecieron — `code` es el prefijo, `refund_sequence` boolean para abonos; (2) `account.analytic.plan` ya no tiene `company_id` (cross-company); (3) bot necesita `analytic.group_analytic_accounting` para gestionar `account.analytic.plan`. Script `journal_setup.py` parchado para Odoo 19. |
 
 ---

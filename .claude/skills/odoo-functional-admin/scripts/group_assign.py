@@ -88,7 +88,7 @@ def main() -> int:
     if not ops:
         raise OdooError("Nada que hacer; indica --add y/o --remove.")
 
-    client.call("res.users", "write", [[uid], {"groups_id": ops}])
+    client.call("res.users", "write", [[uid], {"group_ids": ops}])
     json.dump(
         {
             "user_id": uid,
