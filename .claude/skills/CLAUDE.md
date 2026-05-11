@@ -245,10 +245,79 @@ expansion is safe:
   --force
 ```
 
+### 5.5. Tax mapping from external source (only when migrating)
+
+**When applicable**: the tenant migrates from an external system
+(Holded, Axional, another Odoo, etc.) and historical data will be
+loaded into Odoo. **Skip this step** for greenfield tenants with no
+prior accounting history.
+
+**Why before smoke test, not after**: the smoke test should exercise
+the same `account.tax` ids that the ETL will use. Otherwise the test
+moves end up with default `l10n_es_pymes` taxes pointing to generic
+chart accounts (`477000`, `472000`, `475100`), and once the histórico
+is loaded the balance no cuadra against the source-system extracts.
+Doing this earlier means we trash less work later.
+
+Recipe (validated on inpr3mium 2026-05-11, see
+`docs/tenants/inpr3mium/migration-from-holded.md` for the worked
+example):
+
+1. **Identify real usage in source dump**. Cross-reference every doc
+   line against its tax keys. Most source systems' tax catalog is
+   larger than what the tenant actually uses (inpr3mium: 17 keys
+   used of 103 in catalog). Operate only on the used subset.
+2. **Audit Odoo's `account.tax` lineup** after `l10n_es_pymes` (or
+   equivalent localization). Note the active sale/purchase taxes,
+   their `repartition_line.account_id`, and whether reverse-charge /
+   intracom variants have the correct double-entry (one +100% to
+   input VAT, one -100% mirror to output VAT).
+3. **Sample edge-case keys**. Don't trust the key name. Open a few
+   real documents using each key and read the line descriptions —
+   often you'll find that a key like `s_iva_exento` is not actually
+   Art.20 exempt but Art.84 ISP (Inversión Sujeto Pasivo), which
+   maps to a completely different Odoo tax. The source UI's column
+   labels can be misleading.
+4. **Replicate source's analytical chart granularity**, not Odoo's
+   default. If the source uses subaccounts like `47700000021`
+   (HP IVA repercutido 21%), `47200000121` (HP IVA soportado
+   servicios intracom 21%), create those as children of the generic
+   `477000` / `472000` / `475100`. Continuity with the historical
+   extracts pays off at cuadre time. Account_types: `liability_current`
+   for `477x` and `4751x`, `asset_current` for `472x`.
+5. **Build mapping table** (`migration-from-<source>.md` section):
+   per source.key → (Odoo tax_id, action: REWIRE_ACCOUNT /
+   REASSIGN_TO_DIFFERENT_TAX / DEACTIVATE / CREATE_NEW / MERGE).
+   Validate with operator before applying.
+6. **Apply via RPC**:
+   - Create the subaccounts (`account.account.create`).
+   - Rewire `account.tax.repartition.line.account_id` (NOT
+     `account.tax.repartition_line` — model is dotted
+     `repartition.line` in Odoo 19).
+   - Annotate `account.tax.description` with
+     `[<source>: <key>]` so the ETL can resolve `tax_id` from the
+     source key via substring match.
+   - Archive Odoo taxes the tenant will never use (RE if B2B,
+     non-standard rates 2%/5%/7.5% if not used in source). Reduces
+     UI noise on the invoice form.
+7. **Do NOT touch tax tags** (AEAT 303 casillas). Those come correct
+   from `l10n_es_pymes` and connect to the AEAT report regardless of
+   which account the repartition_line points to.
+8. **Snapshot** to `docs/tenants/<slug>/snapshots/<date>_tax-mapping.json`
+   capturing: subaccounts created, taxes mapped (with
+   repartition_line state), taxes archived, stats.
+
+Heterogeneous source keys (catch-alls like `p_iva_exento` that mix
+ISP extra-EU + Art.20 + renting) are not 1:1-mappable; map to a
+sensible default and document as ETL deuda técnica for case-by-case
+reclassification when historical docs load.
+
 ### 6. Smoke test with first invoice — `odoo-accounting-es`
 
 Use the existing accounting skill scripts to post a test invoice and
-trigger SII/Veri*Factu pipelines.
+trigger SII/Veri*Factu pipelines. If step 5.5 ran, verify that the
+posted `account.move.line` touches the per-rate subaccounts
+(`47700000021`, `47200000021`, etc.) and not the generic parents.
 
 ## Versioning
 

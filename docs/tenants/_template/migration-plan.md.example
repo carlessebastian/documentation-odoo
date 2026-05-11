@@ -32,6 +32,60 @@ Decisión: **`<scope_elegido>`** — justificación: …
 | ¿payments? | `account.payment` | … |
 | ¿chart of accounts? | `account.account` | mapear vs PGCE elegido |
 
+## Mapeo de impuestos (Fase 4.5b — antes del smoke test)
+
+Hacerlo **antes** del smoke test contable (Fase 4.6) para que las
+facturas de prueba usen las taxes definitivas. Receta completa en
+`.claude/skills/CLAUDE.md` paso 5.5.
+
+### Uso real en el dump
+
+Cruzar `<origen>-export/<date>/documents/*.jsonl` con las líneas de
+impuestos para extraer las keys realmente usadas (no las del catálogo
+completo del origen). Tabla típica:
+
+| Scope | tax_key del origen | n líneas | n docs |
+|-------|--------------------|---------:|-------:|
+| ventas  | … | | |
+| compras | … | | |
+
+### Tabla de mapeo
+
+Para cada key usada:
+
+| origen.key | n líneas | Cuenta origen | → Odoo tax | id | Cuenta Odoo (rewire) | Acción | Notas |
+|---|---|---|---|---|---|---|---|
+| | | | | | | REWIRE / REASSIGN / DEACTIVATE / CREATE / MERGE | |
+
+### Subcuentas a crear en `account.account`
+
+Replicar la granularidad analítica del origen para que el balance
+cuadre contra extractos históricos. Padres habituales: `477000`
+(HP IVA repercutido, `liability_current`), `472000` (HP IVA
+soportado, `asset_current`), `475100` (HP retenciones acreedora,
+`liability_current`).
+
+| Code | Name | account_type |
+|------|------|---|
+| | | |
+
+### Taxes a archivar (no usadas por el tenant)
+
+Lista de `account.tax` activas en Odoo que el origen nunca utilizó
+(típicamente Recargo de Equivalencia si B2B, tipos no-estándar 2/5/7.5%
+si no aparecen en el dump). Reduce ruido en el formulario de facturas.
+
+### Anotación de trazabilidad
+
+Cada tax mapeada se anota con `description += "[<origen>: <key>]"`
+para que el script de ETL resuelva `tax_id` por substring de la
+descripción. Patrón: `[holded: s_iva_21]`, `[axional: <key>]`, etc.
+
+### Snapshot
+
+Tras aplicar: `docs/tenants/<slug>/snapshots/<YYYY-MM-DD>_tax-mapping.json`
+con `subaccounts_created`, `taxes_mapped`, `taxes_archived` y `stats`.
+
 ## ETL
 
 1. **Export del origen** — script o exportación manual; formato CSV.
