@@ -245,6 +245,74 @@ PGCE Pymes y mover granularidad (proveedor/centro de coste/contrato)
 a `account.analytic.account`. La granularidad real está en el `name`
 de la cuenta (ej. "ALQUILER FACTORIAL", "AMAZON AWS"), no en el código.
 
+## Configuración Odoo aplicada (Fase 4.3, 2026-05-11)
+
+### Diarios
+
+8 `account.journal` configurados en company_id=1 — uno por cada
+secuencia identificada en Holded, para preservar continuidad de
+numeración bajo auditoría AEAT:
+
+| id | code | type | name | refund_seq | hash | Origen |
+|---:|---|---|---|---|---|---|
+| 7 | `A-` | sale | Facturas Ventas | False | False | renombrado desde INV stock |
+| 13 | `AC-` | sale | Abonos Ventas | False | False | nuevo (out_refund + rectificativas aumento) |
+| 14 | `AF-` | sale | Autofacturas | False | False | nuevo (self-billing) |
+| 15 | `KD-` | sale | Facturas Kit Digital | False | False | nuevo (subvención) |
+| 16 | `FVU-` | sale | Facturas Especiales | False | False | nuevo |
+| 17 | `L-` | sale | Facturas Laboratorios | False | False | nuevo |
+| 8 | `PB-` | purchase | Facturas Gastos | True | False | renombrado desde FACTU stock |
+| 18 | `PI-` | purchase | Facturas Inmovilizado | False | False | nuevo (activo fijo) |
+
+**Decisión `AC-` como diario separado** (no como `refund_sequence`
+dentro de `A-`): Holded trata `AC-` como serie independiente, incluye
+tanto `creditnote` (negativo) como invoices tipo "Abonos" (rectificativas
+de aumento, positivas). Si fuera `refund_sequence=True` en `A-`, solo
+los `out_refund` recibirían prefijo `AC-`; las rectificativas de
+aumento (que en Odoo son `out_invoice` con referencia al original)
+quedarían con prefijo `A-`, rompiendo continuidad. UX cost asumido:
+al rectificar facturas hay que cambiar journal_id manualmente durante
+la ETL.
+
+**Decisión `PB-` con `refund_sequence=True`**: 69 `purchaserefund` en
+Holded numerados con prefijo `PR`. Cantidad baja y siempre negativos
+→ `refund_sequence=True` natural en Odoo. Durante ETL, primer
+`in_refund` posteado se nombra manualmente como `PR-00001` y Odoo
+auto-continúa.
+
+`restrict_mode_hash_table=False` en todos: activar es irreversible y
+sellar moves debe esperar al post-cutover.
+
+### Posiciones fiscales
+
+`l10n_es_pymes` ya creó las nativas que necesitamos. No se crea
+ninguna manualmente:
+
+| Holded → Odoo `account.fiscal.position` | Auto-apply | Uso |
+|---|---|---|
+| Nacional (default) | `ES Domestic` (id=3) | auto | IVA 21/10/4 estándar interno |
+| `Adq.Intracom.*` (compras UE B2B) | `Intra-community` (id=5) | auto, vat_required | inversión sujeto pasivo intracom |
+| `s_iva_exento` UE B2C | `EU private` (id=4) | auto | UE consumidor final |
+| `s_iva_0_export` USA / extra-UE | `Extra-community` (id=6) | auto | servicios extra-UE |
+| `RE Recargo` | `Equivalence surcharge` (id=8) | manual | clientes en RE |
+| `ISP nacional` | `National Reverse charge` (id=24) | manual | ISP servicios nacionales |
+| `IRPF s_iva_re_*` | `Personal income tax withholding *%` (id=10-22) | manual | profesionales / arrendamientos |
+| DUA importaciones | `DUA` (id=27) | manual | importaciones extra-UE de bienes |
+
+Confirmar match exacto durante ETL leyendo `taxes.jsonl` de Holded por
+`key` y resolviendo al template de l10n_es por `amount` + `type_tax_use`.
+
+### Plan analítico
+
+Creado `account.analytic.plan` id=2 "Granularidad gasto" (cross-company,
+`default_applicability=optional`). Vacío por ahora: durante Fase 5 ETL
+se cargarán las cuentas analíticas (`account.analytic.account`) que
+preserven la granularidad de las 148 cuentas Holded de 11 dígitos al
+colapsar al PGCE Pymes de 4-7 dígitos.
+
+Bot user uid=8 escalado con grupo `analytic.group_analytic_accounting`
+para poder gestionar el modelo `account.analytic.plan` vía RPC.
+
 ## Particularidades a resolver durante el ETL
 
 - **Códigos de cuenta de 11 dígitos en Holded** vs 4-8 dígitos en

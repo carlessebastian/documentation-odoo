@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Crea o actualiza un `account.journal`. Idempotente sobre `(company_id, code)`.
 
-Si --auto-sequence, crea/asigna una `ir.sequence` con prefijo
-`<CODE>/%(range_year)s/` para diarios de tipo sale/purchase.
+En Odoo 19, account.journal ya no tiene `sequence_id` Many2one a
+`ir.sequence`: el campo `code` (max 5 chars) es directamente el prefijo
+de la numeración, y `refund_sequence` (bool) habilita numeración
+dedicada para abonos en el mismo diario.
 
 Uso:
-    python3 journal_setup.py --type sale --code VENT --company 2 \\
-        --name "Customer Invoices" --auto-sequence --no-gap
+    python3 journal_setup.py --type sale --code A- --company 1 \\
+        --name "Facturas Ventas" --refund-sequence
 """
 from __future__ import annotations
 
@@ -21,27 +23,6 @@ from odoo_client import OdooClient
 VALID_TYPES = ("sale", "purchase", "bank", "cash", "general")
 
 
-def upsert_sequence_for_journal(
-    client: OdooClient, code: str, company_id: int, no_gap: bool
-) -> int:
-    seq_code = f"account.journal.{code.lower()}"
-    domain = [("code", "=", seq_code), ("company_id", "=", company_id)]
-    existing = client.call("ir.sequence", "search", [domain], {"limit": 1})
-    vals = {
-        "name": f"{code} Sequence",
-        "code": seq_code,
-        "prefix": f"{code}/%(range_year)s/",
-        "padding": 5,
-        "implementation": "no_gap" if no_gap else "standard",
-        "use_date_range": True,
-        "company_id": company_id,
-    }
-    if existing:
-        client.call("ir.sequence", "write", [[existing[0]], vals])
-        return existing[0]
-    return client.call("ir.sequence", "create", [vals])
-
-
 def upsert_journal(
     client: OdooClient,
     *,
@@ -49,7 +30,7 @@ def upsert_journal(
     code: str,
     name: str,
     company_id: int,
-    sequence_id: int | None,
+    refund_sequence: bool,
     restrict_mode_hash_table: bool,
 ) -> tuple[int, str]:
     if type_ not in VALID_TYPES:
@@ -67,10 +48,9 @@ def upsert_journal(
         "type": type_,
         "code": code,
         "company_id": company_id,
+        "refund_sequence": refund_sequence,
         "restrict_mode_hash_table": restrict_mode_hash_table,
     }
-    if sequence_id:
-        vals["sequence_id"] = sequence_id
     if existing:
         client.call("account.journal", "write", [[existing[0]], vals])
         return existing[0], "updated"
@@ -85,30 +65,18 @@ def main() -> int:
     parser.add_argument("--name", required=True)
     parser.add_argument("--company", type=int, required=True)
     parser.add_argument(
-        "--auto-sequence",
+        "--refund-sequence",
         action="store_true",
-        help="Crea/asigna ir.sequence con prefix CODE/%(range_year)s/.",
-    )
-    parser.add_argument(
-        "--no-gap",
-        action="store_true",
-        help="Usar implementation=no_gap (obligatorio para facturas ES).",
+        help="Numeracion dedicada para out_refund / in_refund en este diario.",
     )
     parser.add_argument(
         "--hash-chain",
         action="store_true",
-        help="Activar restrict_mode_hash_table (irreversible).",
+        help="Activar restrict_mode_hash_table (irreversible, sellar moves).",
     )
     ns = parser.parse_args()
 
     client = OdooClient()
-
-    seq_id = None
-    if ns.auto_sequence and ns.type in ("sale", "purchase"):
-        no_gap_default = ns.type == "sale" or ns.no_gap
-        seq_id = upsert_sequence_for_journal(
-            client, ns.code, ns.company, no_gap_default
-        )
 
     rec_id, action = upsert_journal(
         client,
@@ -116,7 +84,7 @@ def main() -> int:
         code=ns.code,
         name=ns.name,
         company_id=ns.company,
-        sequence_id=seq_id,
+        refund_sequence=ns.refund_sequence,
         restrict_mode_hash_table=ns.hash_chain,
     )
     json.dump(
@@ -126,7 +94,8 @@ def main() -> int:
             "code": ns.code,
             "type": ns.type,
             "company_id": ns.company,
-            "sequence_id": seq_id,
+            "refund_sequence": ns.refund_sequence,
+            "restrict_mode_hash_table": ns.hash_chain,
         },
         sys.stdout,
         indent=2,

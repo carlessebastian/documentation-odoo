@@ -17,8 +17,23 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11 (Fase 4.2.2 cerrada)
-- **Última fase completada**: **Bloque C — Fase 4.2.2 (dump real de
+- **Última actualización**: 2026-05-11 (Fase 4.3 cerrada)
+- **Última fase completada**: **Bloque C — Fase 4.3 (diarios,
+  secuencias, posiciones fiscales)**. 8 `account.journal` configurados
+  en company_id=1 preservando continuidad Holded: 6 sale (A-, AC-,
+  AF-, KD-, FVU-, L-) + 2 purchase (PB-, PI-). INV stock → A-, FACTU
+  stock → PB-. PB- con `refund_sequence=True` (69 purchaserefund PR-
+  bajo volumen). AC- como diario separado (no refund_sequence en A-)
+  porque Holded usa AC- tanto para creditnote como para rectificativas
+  positivas. Posiciones fiscales: `l10n_es_pymes` ya creó las 4
+  necesarias (Intra-community, Extra-community, Equivalence surcharge,
+  ISP) + 10 IRPF withholding — sin crear nada nuevo. Plan analítico
+  "Granularidad gasto" (id=2) creado para futura migración. Script
+  `journal_setup.py` parchado para Odoo 19 (eliminado `sequence_id` y
+  `ir.sequence`; en Odoo 19+ el `code` del journal es directamente el
+  prefijo). Detalle completo en `migration-from-holded.md` sección
+  "Configuración Odoo aplicada en Fase 4.3".
+- **Fase 4.2.2 (previa)**: **Bloque C — Fase 4.2.2 (dump real de
   Holded — histórico completo 2018-2026)**. Dump en
   `docs/tenants/inpr3mium/holded-export/2026-05-11/`: **969 MB**, 23
   resources, 3.363 contactos + 1.569 productos + **12.212 documentos**
@@ -56,19 +71,16 @@ contexto entre conversaciones de Claude Code.
   - Decisión: la skill se llama **`holded-export`** (no
     `odoo-data-migration` como reservaba el plan original). Una skill
     por origen externo; `fedefarma` tendrá `axional-export`.
-- **Próximo paso**: abrir **Fase 4.3** (diarios, secuencias,
-  posiciones fiscales) informada por el dump de Holded:
-  - 6 secuencias de invoice distintas en Holded (A-, AC-, AF-, KD-,
-    FVU-, L-) → decidir 6 diarios separados o 1 con selector.
-  - Mapeo de IVA: usar campo `key` de Holded (ej. `s_iva_21`) como
-    join contra `l10n_es` (ej. `s_iva21b`).
-  - 148 cuentas de gasto de 11 dígitos → colapsar a PGCE Pymes 4-7
-    dígitos + analítica para granularidad.
-  - Posiciones fiscales: intracomunitario UE (clave `Adq.Intracom.*`
-    presente en taxes), ISP servicios extra-UE, RE (varios `s_iva_re_*`
-    en el dump).
-  Detalle completo en `docs/tenants/inpr3mium/migration-from-holded.md`
-  sección "Hallazgos del dump del 2026-05-11".
+- **Próximo paso**: abrir **Fase 4.4** (bot user permisos + record
+  rules + `audit_admin_state`). El bot tiene actualmente
+  `base.group_system` (admin pleno) heredado del Bloque C, más
+  `analytic.group_analytic_accounting` añadido en 4.3. Toca tightening:
+  reducir a `account.group_account_manager` + `base.group_partner_manager`
+  + `base.group_multi_company` (lo definido en `expected_modules` /
+  workflow canónico del runbook), retirar `base.group_system`, validar
+  que sigue pudiendo postear facturas y crear cuentas analíticas via
+  RPC, y persistir `record_rule_create.py` para la regla multi-company
+  global de `res.partner`.
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -322,11 +334,20 @@ ejecutable del agente, pero el agente lo necesita).
 
   Tras esto, Fase 4.2.2 se marca ✅ y pasamos a **Fase 4.3**.
 
-- ⏸ **4.3** Plan contable, diarios (incluidos COMI / COMX / QONT del
-  profile), secuencias con prefijo de año, posiciones fiscales
-  (intracom UE, ISP servicios extra-UE). **Informado por el dump de
-  Holded de 4.2.1 + 4.2.2** — preservar continuidad de numeración y
-  mapear cuentas/diarios reales en uso.
+- ✅ **4.3** Diarios + posiciones fiscales + plan analítico (2026-05-11).
+  8 `account.journal` creados/renombrados en company_id=1 preservando
+  prefijos de Holded para auditoría AEAT: 6 sale (A-, AC-, AF-, KD-,
+  FVU-, L-) + 2 purchase (PB-, PI-). Stock INV→A-, FACTU→PB-. Decisión
+  `AC-` como diario separado (no `refund_sequence` en `A-`) porque
+  Holded mezcla creditnote + rectificativas de aumento en AC-. `PB-`
+  con `refund_sequence=True` para PR- (69 purchaserefund). Posiciones
+  fiscales: `l10n_es_pymes` ya creó las 4 esenciales + 10 IRPF — sin
+  acción RPC. Plan analítico "Granularidad gasto" (id=2) creado para
+  Fase 5. Script `journal_setup.py` parchado para Odoo 19 (gotcha:
+  `account.journal.sequence_id` desapareció — el `code` es el prefijo,
+  `refund_sequence` es boolean). `account.analytic.plan` ya no tiene
+  `company_id` (cross-company en Odoo 19). Bot escalado con
+  `analytic.group_analytic_accounting`.
 - ⏸ **4.4** Bot user + permisos + record rules + `audit_admin_state`.
 - ⏸ **4.5** EDI: certificado digital + entornos test/prod en módulos
   AEAT. Pasos manuales documentados en `edi-setup.md`.
@@ -406,8 +427,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 14. ✅ Fase 4.2.2 (dump real de Holded de inpr3mium ejecutado;
     3 bugs del cliente arreglados durante el proceso; hallazgos
     documentados en `migration-from-holded.md`)
-15. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales — informado
-    por el dump de 4.2.2)
+15. ✅ Fase 4.3 (8 diarios + posiciones fiscales validadas + plan
+    analítico; script journal_setup.py parchado para Odoo 19)
 16. ⏸ Fase 4.4 (bot user + permisos + record rules)
 17. ⏸ Fase 4.5 (EDI: certificado + entornos)
 18. ⏸ Fase 4.6 (smoke test: primera factura)
@@ -444,6 +465,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.2.2 (preparado) | API key de Holded rotada por el operador tras incidente menor (key compartida en chat → revocada en Holded → Settings → Developers, generada nueva, persistida en `.env` local). Skill lista para ejecutar el dump. Plan de ejecución documentado paso a paso en `Fase 4.2.2` (7 pasos: smoke test → inspect → confirmar plan → dump completo → validar → inspección humana → commit). Próxima sesión puede retomar leyendo solo `docs/PLAN.md`. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — 1er pase) | Primer dump de inpr3mium: 43.4 MB / 490 docs / 439 PDFs. Operador detectó que SOLO contenía datos de 2026: el endpoint `/documents` de Holded SIN filtro de fechas devuelve únicamente el año en curso. 4º bug encontrado. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — histórico completo) | Dump real definitivo: **969 MB** en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (gitignored). 3.363 contactos + 1.569 productos + 440 servicios + 148 cuentas de gasto + 103 taxes + 708 pagos + 12 tesorerías + 85 remesas + 38 saleschannels + 16 numbering series + **12.212 documentos** (3.430 invoice + 678 creditnote + 7.998 purchase + 69 purchaserefund + 34 proform + 3 estimate) + 2.250 asientos contables (histórico 2018-2026 chunkeado por años) + **7.489 PDFs** (3.430 invoice 142.6 MB + 4.059 purchase 801.4 MB; 3.939 purchases sin PDF = asientos manuales). errors.jsonl: 0 líneas. 4 bugs del cliente arreglados durante el proceso: (1) `paginate()` sin `page_size` capaba a 500 items; (2) paths `/warehouse` y `/expensesaccount` devuelven HTML SPA — reales `/warehouses` y `/expensesaccounts` plurales; (3) `dailyledger` ventana ≤ 1 año, chunking auto por años; (4) `/documents` sin starttmp/endtmp devuelve solo año en curso, ahora chunking auto por años con defaults sensatos (2018-01-01 → now). 68/68 tests offline OK. `migration-from-holded.md` actualizado con volúmenes reales + 3 tablas (sequences, mapeo IVA, cuentas de gasto). Próximo: Fase 4.3. |
+| 2026-05-11 | Bloque C Fase 4.3 | Diarios + posiciones fiscales + plan analítico. 8 `account.journal` configurados preservando prefijos Holded para auditoría AEAT: 6 sale (A-, AC-, AF-, KD-, FVU-, L-) + 2 purchase (PB-, PI-). Renombrados stock INV→A- y FACTU→PB-. PB- con `refund_sequence=True` para PR- (69 purchaserefund). AC- como diario separado (no `refund_sequence` en A-) porque Holded mezcla creditnote + rectificativas de aumento en AC-. Posiciones fiscales: `l10n_es_pymes` ya creó las 4 esenciales (Intra-community, Extra-community, Equivalence surcharge, ISP) + 10 IRPF withholding — 0 RPC. Plan analítico "Granularidad gasto" (id=2) creado para granularidad futura de las 148 cuentas Holded. Gotchas Odoo 19 nuevos: (1) `account.journal.sequence_id` y `ir.sequence` por journal desaparecieron — `code` es el prefijo, `refund_sequence` boolean para abonos; (2) `account.analytic.plan` ya no tiene `company_id` (cross-company); (3) bot necesita `analytic.group_analytic_accounting` para gestionar `account.analytic.plan`. Script `journal_setup.py` parchado para Odoo 19. |
 
 ---
 
