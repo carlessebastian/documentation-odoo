@@ -18,9 +18,44 @@ sociedad) vive como un perfil bajo `docs/tenants/<slug>/`. La sesión
 activa se selecciona con la env var `ODOO_AGENT_TENANT`. Tenant activo
 en este momento: **`inpr3mium`** (Inteligencia del Negocio Pr3mium S.L.,
 sociedad única, migra desde Holded). Tenants futuros previstos:
-`fedefarma` (migra desde Axional). Lee
-`docs/tenants/$ODOO_AGENT_TENANT/profile.yaml` al inicio de cada
-sesión para conocer la sociedad activa antes de operar.
+`fedefarma` (migra desde Axional).
+
+**Al inicio de cada sesión que toque un tenant**, leer en este orden:
+
+1. `docs/tenants/$ODOO_AGENT_TENANT/profile.yaml` — datos legales,
+   plan contable, EDI stack, expected_modules.
+2. `docs/tenants/$ODOO_AGENT_TENANT/memory/MEMORY.md` — discoveries y
+   decisiones específicas del tenant acumuladas durante el bootstrap y
+   migración. Es el equivalente versionado de la memoria del agente,
+   pero específica del tenant.
+3. `docs/tenants/$ODOO_AGENT_TENANT/migration-from-<source>.md` — plan
+   ETL del tenant (si está en proceso de migración).
+
+## Memoria del agente vs memoria del tenant
+
+Hay **dos planos de memoria persistente** y conviene no mezclarlos:
+
+- **Agent memory** (`~/.claude/projects/<hash>/memory/`, no versionada,
+  cross-tenant): patrones genéricos, principios, reglas que aplican a
+  cualquier tenant futuro — cómo se comporta Holded como sistema, qué
+  módulos OCA existen, gotchas Odoo 19, reglas EDI/AEAT genéricas,
+  feedback del operador sobre cómo trabajar.
+- **Tenant memory** (`docs/tenants/<slug>/memory/`, versionada en el
+  repo): discoveries específicos del tenant — cuentas contables
+  concretas, particularidades fiscales del cliente, counters de
+  secuencias en momentos puntuales, decisiones tomadas con su razón.
+
+**Regla de decisión** al aprender algo nuevo: si aplica solo al
+tenant activo → tenant memory. Si aplica a cualquier futuro tenant →
+agent memory. Si es mixto (patrón genérico + ejemplo tenant),
+separar: el patrón en agent memory, la evidencia en tenant memory
+con un puntero recíproco.
+
+**Por qué importa**: agent memory no es versionada (se pierde si
+Anthropic resetea, invisible a colaboradores que clonen el repo), y
+contamina entre tenants (al arrancar fedefarma, no quiero leer
+"BIDAFARMA usa ISP" como si fuera regla genérica). Tenant memory
+vive con el tenant y viaja con el repo.
 
 La documentación oficial de Odoo está vendorizada en `vendor/odoo-docs/`
 como **material de referencia de solo lectura**. Cuando necesites

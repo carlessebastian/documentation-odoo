@@ -27,6 +27,11 @@ greenfield sin migración).
 - `README.md` (este archivo) describiendo brevemente quién es el cliente
   y particularidades fiscales relevantes (RE, IVA Caja, intracom UE,
   exportación, etc.).
+- `memory/` con `MEMORY.md` como índice — discoveries y decisiones
+  acumuladas durante bootstrap y migración. Ver
+  `docs/tenants/_template/memory/MEMORY.md`. Es la versión versionada
+  del conocimiento del tenant: viaja con el repo, sobrevive resets de
+  agent memory, visible a cualquier colaborador.
 
 ## Notas operativas
 

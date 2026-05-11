@@ -17,8 +17,9 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11 (Fase 4.7 cerrada; Bloque C
-  completo — inpr3mium lista para facturar en modo local)
+- **Última actualización**: 2026-05-11 (Fase 5.0 planificada tras
+  audit cruzado dump↔UI Holded; pendiente tabla bancos del operador
+  para arrancar)
 - **Última fase completada**: **Bloque C — Fase 4.7 (commit +
   bitácora cerrando Bloque C)**. Commit `4587fabe9` con el smoke
   test y los snapshots. Sello "inpr3mium lista para facturar en
@@ -143,21 +144,23 @@ contexto entre conversaciones de Claude Code.
   - Decisión: la skill se llama **`holded-export`** (no
     `odoo-data-migration` como reservaba el plan original). Una skill
     por origen externo; `fedefarma` tendrá `axional-export`.
-- **Próximo paso**: abrir **Fase 5.1** (Bloque D — diseño ETL
-  Holded → Odoo). Insumos disponibles: dump completo de 12.212
-  documentos + 7.489 PDFs en
-  `docs/tenants/inpr3mium/holded-export/2026-05-11/`; tabla de mapeo
-  de impuestos Holded → Odoo en `migration-from-holded.md`; pipeline
-  contable validado por Fase 4.6 sobre las taxes definitivas.
-  Trabajo de 5.1: diseñar el ETL detalladamente en
-  `migration-from-holded.md`, decidir orden de carga (maestros →
-  documentos → asientos), idempotencia (mapping IDs Holded → Odoo
-  persistente), estrategia para los 3.939 purchases sin PDF
-  (asientos manuales Holded — ¿`account.move` directo o
-  `in_invoice` ficticia?), y casos heterogéneos documentados como
-  deuda técnica en 4.5b. Fase 4.5a (EDI cert) sigue diferida sin
-  driver de negocio. Fase 5.2 ya se cerró anticipadamente en
-  4.2.1 (skill `holded-export` creada).
+- **Próximo paso**: abrir **Fase 5.0** (Bloque D — fundaciones
+  financieras pre-ETL). Audit cruzado dump↔UI Holded (2026-05-11)
+  reveló brechas a cubrir antes del ETL masivo: 4 bank journals
+  Odoo a crear (Santander, Sabadell, Qonto, BBVA) + 1 línea
+  crédito + cuentas auxiliares para tarjetas; pre-loading de
+  `ir.sequence.number_next` con counters Holded +1 (cutover);
+  activar `15 Days` como payment term default. Detalle completo en
+  Fase 5.0 más abajo. **Bloqueante operativo**: tabla
+  `treasury_name → cuenta Holded 11 dig` pendiente de pasar el
+  operador (Holded > Contabilidad > Plan contable). Heurística
+  detectada en dailyledger sugiere que las pos 5-8 del código son
+  el código de entidad BdE (`0049` Santander, `0182` BBVA, `0081`
+  Sabadell, `6888` Qonto) — validar antes de aplicar.
+
+  Fase 5.1 (diseño ETL) viene después de 5.0. Fase 4.5a (EDI cert)
+  sigue diferida sin driver de negocio. Fase 5.2 ya se cerró
+  anticipadamente en 4.2.1 (skill `holded-export` creada).
 
   ---
 
@@ -522,6 +525,89 @@ ejecutable del agente, pero el agente lo necesita).
 **Objetivo**: importar maestros y, según scope acordado, histórico
 completo + año en curso. Validación previa con subset 2024-2025.
 
+- ⏸ **5.0** **Fundaciones financieras pre-ETL** (audit cruzado
+  dump↔UI Holded, 2026-05-11). Antes del ETL masivo hay que cerrar
+  brechas detectadas en la configuración real inpr3mium que no
+  vinieron por defecto con `l10n_es_pymes` o con Fase 4.3:
+
+  **5.0.1 — Bank journals** (4 reales + 1 línea crédito):
+  Crear `account.journal` tipo `bank` para cada cuenta Holded
+  productiva, con `res.partner.bank` IBAN asociado y subcuenta
+  analítica del grupo `5720XXXXXXX` replicando la granularidad
+  Holded (mismo patrón que Fase 4.5b con IVA: respetar 11 dígitos
+  para continuidad con el histórico). Mapeo treasury Holded →
+  journal Odoo:
+
+  | Treasury Holded | Tipo | IBAN | Holded acct (PGCE 11d) | Acción Odoo |
+  |---|---|---|---|---|
+  | Santander | bank | ES15 0049 3764 3127 1410 9882 | `<pendiente>` | journal + `res.partner.bank` + subcuenta |
+  | Banco Sabadell | bank | ES14 0081 0646 3700 0123 4632 | `<pendiente>` | idem |
+  | Qonto | bank | ES21 6888 0001 6002 2535 0289 | `<pendiente>` | idem |
+  | BBVA | bank | ES65 0182 8682 2602 0012 8502 | `<pendiente>` | idem |
+  | Linea descuento Sabadell | bank | — | `<pendiente, prob. 52X>` | journal con cuenta `5208`/`5209` (deudas C/P por desc. efectos) |
+  | Visa BBVA Carles | card | — | n/a | `account.journal` cash o cuenta `552`/`555` socio |
+  | Visa Santander Carles | card | — | n/a | idem |
+  | Visa Sabadell Carles | card | — | n/a | idem |
+  | Sabadell Geraldine MC | card | — | n/a | idem (titular distinto) |
+  | BBVA1 | bank | — | `<pendiente>` | revisar dailyledger; archivar si sin movs |
+  | TRASHOLDED | bank | — | n/a (técnica) | **omitir**: equivale a `account.journal.suspense_account_id` Odoo |
+  | `55500000007` | "bank" | — | `55500000007` | **NO es journal**: cuenta PGCE 555 "Partidas pendientes de aplicación" — registrar como `account.account` puro |
+
+  **Decisión arquitectónica** (consistente con Fase 4.5b): replicar
+  el patrón de 11 dígitos de Holded como subcuentas hijas de las
+  cuentas PGCE Pymes raíz (`572000`, `552000`, `555000`). Mantener
+  esto preserva continuidad con todos los asientos del histórico al
+  cargar.
+
+  **Heurística confirmada en dailyledger**: la posición 5-8 del
+  código Holded `5720XXXX___` parece corresponder al **código de
+  entidad bancaria** del Banco de España (4 dígitos): `0049`
+  Santander, `0182` BBVA, `0081` Sabadell, `6888` Qonto. Sufijos
+  `__XX` distinguirían cuenta dentro del banco. Validar con el
+  operador antes de aplicar.
+
+  **5.0.2 — Sequence pre-loading**: cargar
+  `ir.sequence.number_next` de cada `account.journal` con los
+  counters del dump +1, para no romper correlatividad AEAT:
+
+  | Journal Odoo | Holded counter | `number_next` a setear |
+  |---|---:|---:|
+  | A- (id=7) | 9098 | 9099 |
+  | AC- (id=13) | 1845 | 1846 |
+  | L- | 1313 | 1314 |
+  | FVU- | 14 | 15 |
+  | KD- | 163 | 164 |
+  | AF- | 14 | 15 |
+  | PB- (id=8) | 12017 | 12018 |
+  | PI- | 361 | 362 |
+  | PB- refund_sequence (PR-) | 71 | 72 |
+
+  **Crítico**: hacer esto **inmediatamente antes del cutover**
+  (Fase 5.5), no antes del subset de validación (5.3). Si se hace
+  antes, los moves de validación 5.3 consumirán los huecos `A-9099`,
+  `A-9100`... y al borrarlos para cargar el histórico real quedarán
+  huecos en la numeración (AEAT rechaza).
+
+  **5.0.3 — Payment terms y defaults de empresa**:
+  - Activar `account.payment.term` "15 Days" (id=2) como default de
+    `res.company` (`property_payment_term_id`).
+  - Confirmar default `account.tax` venta=`21% S` (id=6) y
+    compra=`21% S` (id=8) ya en `account.fiscal.position` ES Domestic.
+  - Default `account.account` ventas: decidir entre `705000 Services
+    rendered` (servicios) vs `700000 Merchandise sold` (mercaderías)
+    o ambas con tax_unit propio. inpr3mium = mix
+    (consultoría + paquetes PLV) → ambas activas, default `705000`.
+
+  **5.0.4 — Snapshot 5.0**: persistir mapeo treasury→journal en
+  `docs/tenants/inpr3mium/snapshots/<YYYY-MM-DD>_fase-5.0.json`
+  para que el ETL Fase 5.1+ resuelva `payment.treasury_id` →
+  `account.payment.journal_id`.
+
+  **Bloqueante para arrancar 5.0**: tabla `treasury_name → cuenta
+  Holded 11 dig` la tiene el operador en Holded > Contabilidad >
+  Plan contable (o en la propia configuración de cada cuenta de
+  tesorería). Pendiente de pasarla.
+
 - ⏸ **5.1** Diseño ETL detallado en `migration-from-holded.md`
   (ya con esqueleto; detalle pendiente). El esqueleto debe basarse en
   el dump real obtenido en 4.2.1.
@@ -608,7 +694,9 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 
 ### Bloque D — Migración de datos
 
-20. ⏸ Fase 5.1 (diseño ETL Holded → Odoo, basado en el dump de 4.2.2)
+20. ⏸ Fase 5.0 (fundaciones financieras pre-ETL: bank journals,
+    sequence number_next, payment terms, snapshot)
+21. ⏸ Fase 5.1 (diseño ETL Holded → Odoo, basado en el dump de 4.2.2)
 21. ⏸ Fase 5.3 (validación con 2024+2025; lado escritura: scripts
     ad-hoc o nueva skill `holded-to-odoo`)
 22. ⏸ Fase 5.4 (histórico completo + año en curso)
@@ -640,6 +728,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.5 (diferida) | Decisión: saltar 4.5 (EDI cert) sin acción operativa hoy. Motivo: inpr3mium no es gran empresa ni REDEME (no obligada a SII), Veri\*Factu no es obligatorio hasta 2027, y no factura a Administración Pública (único caso que activaría FACe/FacturaE de forma inmediata). Coste de instalar el certificado FNMT hoy = 0 valor de negocio. Cuando aparezca un driver real (cliente AAPP o se acerque 2027), volvemos a abrir 4.5 — el módulo `l10n_es_facturae` ya está instalado, solo falta importar el .p12 y configurar entornos. Avance al runbook: pasamos directos a 4.6 (smoke test contable sin SII). |
 | 2026-05-11 | Bloque C Fase 4.4 | Bot uid=8 tightenado: quitado `base.group_system`, dejados 6 grupos least-privilege (`base.group_user` + `base.group_erp_manager` + `base.group_multi_company` + `base.group_partner_manager` + `account.group_account_manager` + `analytic.group_analytic_accounting`). Validado vía RPC: bot puede CRUD partners, draft account.move, ir.rule, leer ir.model.data + ir.module.module + journals + fiscal positions + analytic plans. Pierde `ir.config_parameter` y instalar módulos (acepta escalación temporal). Regla multi-company global de `res.partner` ya existe en Odoo core (id=2, dominio con `partner_share` + `parent_of` — más correcto que el del runbook). Snapshot manual en `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.4.json` (1 company / 2 users / 12 journals / 29 FPs / 2 analytic plans / 13 record rules sobre modelos críticos / 75 modules installed). 5 scripts del agente parchados para Odoo 19: `groups_id`→`group_ids` (group_assign, audit_admin_state, _drift, user_provision), `res.groups.category_id` removido (audit_admin_state), `account.journal.sequence_id` removido (audit_admin_state). 4 gotchas Odoo 19 nuevos en memoria: cambios grupos requieren restart worker HTTP; perfil mínimo bot post-tightening; el runbook .claude/skills/CLAUDE.md está desactualizado al prescribir un perfil demasiado restrictivo; bugs históricos en scripts. |
 | 2026-05-11 | Bloque C Fase 4.5b | Mapeo impuestos Holded → Odoo. Cruzado `products[].taxes` de los 12.212 docs del dump contra catálogo Holded: 17 keys realmente usadas de las 103 disponibles. Hallazgo crítico: `s_iva_exento` (998 líneas, cliente principal BIDAFARMA) es **ISP en ventas Art.84.Uno.2.g LIVA**, NO exención Art.20 — descripción literal de las facturas lo confirma; mapeada a `0% RC` (id=109). Aplicado vía RPC: 14 subcuentas analíticas creadas hijas de 472000/477000/475100 (47200000021/121/010/004/000, 47700000021/010/004/000/121/221, 47510000001/005/010) replicando granularidad Holded; 16 taxes mapeadas y anotadas con `description [holded: <key>]` para trazabilidad ETL; 34 `account.tax.repartition.line.account_id` rewired a las subcuentas; doble anotación ISP/intracom verificada en `21% RC` (id=112, p_iva_invsuj), `21% EU S` (id=9, p_iva_adqintras_21), `21% EU G` (id=10, p_iva_adqintrab_21) — Odoo modela el devengado+soportado simultáneo con 2 repartition_lines (+input 100% / -mirror 100%) que sustituyen el `type:group` + `items:[_1,_2]` de Holded; 27 taxes archivadas (6 SE recargo equivalencia + 21 rates 2%/5%/7.5% no usados). Tags AEAT (casillas modelo 303) no se tocaron — vienen correctas de l10n_es_pymes. Casos heterogéneos documentados como deuda técnica para ETL Fase 5: `p_iva_exento` (2.306 docs catch-all: ISP extra-UE no detectada + Art.20 + renting), 2 líneas anómalas con `s_ret_19` en purchases. Snapshot `2026-05-11_fase-4.5b.json` (14 subcuentas + 16 taxes mapeadas + 27 archived + stats). Detalle completo en `migration-from-holded.md` sección "Mapeo de impuestos Holded → Odoo". |
+| 2026-05-11 | Bloque D Fase 5.0 (planificación) | Audit cruzado dump↔UI Holded reveló brechas pre-ETL. Documentada nueva Fase 5.0 "Fundaciones financieras": (a) crear 4 bank journals reales (Santander/Sabadell/Qonto/BBVA) + 1 línea crédito Sabadell + cuentas auxiliares para 4 tarjetas (BBVA/Santander/Sabadell Carles + Sabadell Geraldine MC); (b) replicar granularidad 11-dig de Holded como subcuentas hijas de `572000`/`552000`/`555000` (consistente con Fase 4.5b para IVA); (c) pre-cargar `ir.sequence.number_next` con counters Holded +1 inmediatamente antes del cutover Fase 5.5; (d) activar `15 Days` como payment term default. Heurística detectada en dailyledger: posiciones 5-8 del código Holded 11-dig parecen código entidad BdE (`0049` Santander, `0182` BBVA, `0081` Sabadell, `6888` Qonto) — pendiente validar con operador. 3 cuentas Holded a omitir: TRASHOLDED (suspense técnica → `account.journal.suspense_account_id` Odoo), `55500000007` (NO es journal, es cuenta PGCE 555 "Partidas pendientes de aplicación"), BBVA1 (revisar y archivar si 0 movs). Memoria nueva: `feedback_dump_audit_flow_over_balances.md` (auditar estructura, no saldos puntuales que cambian al re-dumpear). Bloqueante: tabla `treasury_name → cuenta Holded 11d` pendiente de pasar el operador. |
 | 2026-05-11 | Bloque C Fase 4.7 | Commit `4587fabe9` cerrando Bloque C: smoke test 4.6 + snapshot persistidos. Sello "inpr3mium lista para facturar en modo local" puesto. Próximo: Bloque D (Fase 5 — migración desde Holded). Fase 5.2 ya se cerró anticipadamente en 4.2.1 (skill `holded-export`). |
 | 2026-05-11 | Bloque C Fase 4.6 | Smoke test contable end-to-end. 3 moves posteados sobre las taxes definitivas de 4.5b: out_invoice `A-/2026/00001` (1.210€, base 1.000 + IVA 21% repercutido a subcuenta `47700000021` ✅), in_invoice `PB-/2026/05/0001` (605€, base 500 + IVA 21% soportado a subcuenta `47200000021` ✅), out_refund `AC-/2026/00001` (1.210€) vía `account.move.reversal` con `reversed_entry_id=2`, prefijo `AC-` y `journal_id=13` confirmados — la numeración del refund es independiente del A- original. 2 partners ES test creados con DC válido (ESB12345674 cliente, ESB87654323 proveedor). Reporting cuadra: D=1.815 C=1.815 sobre 6 cuentas (430 cliente, 705 ingreso, 477 IVA rep, 410 proveedor, 629 gasto, 472 IVA sop). Snapshot `2026-05-11_fase-4.6.json` (2.2 KB). Hallazgo no bloqueante: Odoo 19 usa formato `CODE/YYYY/NNNNN` para journals tipo sale (A-, AC-) y `CODE/YYYY/MM/NNNN` para purchase (PB-, mes intercalado) por defecto. Comportamiento estándar; auditoría AEAT solo exige correlatividad sin huecos dentro del año, que se cumple. Si se necesitara homogeneizar para fedefarma, hacerlo vía `sequence_override_regex`. Cierra Bloque C salvo 4.7 (commit). |
 | 2026-05-11 | Bloque C Fase 4.3 | Diarios + posiciones fiscales + plan analítico. 8 `account.journal` configurados preservando prefijos Holded para auditoría AEAT: 6 sale (A-, AC-, AF-, KD-, FVU-, L-) + 2 purchase (PB-, PI-). Renombrados stock INV→A- y FACTU→PB-. PB- con `refund_sequence=True` para PR- (69 purchaserefund). AC- como diario separado (no `refund_sequence` en A-) porque Holded mezcla creditnote + rectificativas de aumento en AC-. Posiciones fiscales: `l10n_es_pymes` ya creó las 4 esenciales (Intra-community, Extra-community, Equivalence surcharge, ISP) + 10 IRPF withholding — 0 RPC. Plan analítico "Granularidad gasto" (id=2) creado para granularidad futura de las 148 cuentas Holded. Gotchas Odoo 19 nuevos: (1) `account.journal.sequence_id` y `ir.sequence` por journal desaparecieron — `code` es el prefijo, `refund_sequence` boolean para abonos; (2) `account.analytic.plan` ya no tiene `company_id` (cross-company); (3) bot necesita `analytic.group_analytic_accounting` para gestionar `account.analytic.plan`. Script `journal_setup.py` parchado para Odoo 19. |
