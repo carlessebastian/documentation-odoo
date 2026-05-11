@@ -19,20 +19,25 @@ contexto entre conversaciones de Claude Code.
 
 - **Última actualización**: 2026-05-11 (Fase 4.2.2 cerrada)
 - **Última fase completada**: **Bloque C — Fase 4.2.2 (dump real de
-  Holded ejecutado)**. Dump completo de inpr3mium en
-  `docs/tenants/inpr3mium/holded-export/2026-05-11/`: 43.4 MB, 23
-  resources, 3.363 contactos + 1.569 productos + 490 documentos +
-  2.250 asientos contables (histórico 2018-2026) + **439 PDFs**
-  originales escaneados de facturas. 3 bugs del cliente descubiertos
-  y corregidos durante el dump: (1) paginación sin `page_size` que
-  capaba a 500 items en contacts/products/payments; (2) paths
-  `/warehouse` y `/expensesaccount` no existen — los reales son
-  `/warehouses` y `/expensesaccounts` (plurales); (3) `dailyledger`
-  requiere ventanas ≤ 1 año, ahora chunkea automáticamente por años.
-  68/68 tests offline OK tras los fixes. Inspección humana del dump
-  añadida a `migration-from-holded.md` (3 tablas: 16 sequences,
-  mapeo IVA via key, distribución de 148 cuentas de gasto). Input
-  directo para Fase 4.3.
+  Holded — histórico completo 2018-2026)**. Dump en
+  `docs/tenants/inpr3mium/holded-export/2026-05-11/`: **969 MB**, 23
+  resources, 3.363 contactos + 1.569 productos + **12.212 documentos**
+  (3.430 invoice + 7.998 purchase + 678 creditnote + 69 purchaserefund
+  + 34 proform + 3 estimate) + 2.250 asientos contables + **7.489
+  PDFs** (3.430 invoice 142.6 MB + 4.059 purchase 801.4 MB; 3.939
+  purchases sin PDF original = asientos manuales). errors.jsonl: 0
+  líneas. 4 bugs del cliente descubiertos y corregidos durante el
+  proceso: (1) paginación sin `page_size` capaba a 500 items en
+  contacts/products/payments; (2) paths `/warehouse` y
+  `/expensesaccount` no existen — los reales son `/warehouses` y
+  `/expensesaccounts` (plurales); (3) `dailyledger` requiere ventanas
+  ≤ 1 año, ahora chunkea automáticamente por años; (4) `/documents`
+  sin filtro `starttmp`/`endtmp` devuelve SOLO el año en curso —
+  detectado tras dump inicial parcial (solo 490 docs / 2026), ahora
+  chunkea por años con defaults sensatos (2018-01-01 → now+1d).
+  68/68 tests offline OK tras los fixes. `migration-from-holded.md`
+  actualizado con volúmenes reales + 3 tablas (sequences, mapeo IVA,
+  cuentas de gasto). Input directo para Fase 4.3.
 - **Fase 4.2.1 (previa)**: skill `holded-export` MVP creada con:
   - `SKILL.md` con triggers ("exportar holded", "dump holded",
     "facturas recibidas escaneadas", ...) y garantía read-only.
@@ -437,7 +442,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.2 | Company id=1 reconfigurada con datos legales reales (Inteligencia del negocio pr3mium S.L., NIF, Spain/Barcelona, dirección y contacto). Chart `es_pymes` cargado (51 generic_coa → 646 PGCE Pymes). Idiomas es_ES + ca_ES activos. Bot tz Europe/Madrid + grupos account/partner manager (group_system conservado para 4.3). `web.base.url.freeze=True`. Gotchas nuevos: chart template codes en Odoo 19 son strings cortos (`es_pymes`), no XML-IDs; `try_loading` via XML-RPC tiene bug en arg posicional — usar `odoo shell`. |
 | 2026-05-11 | Bloque C Fase 4.2.1 | Skill `holded-export` creada (renombrada desde `odoo-data-migration` para mejor encaje multi-origen: una skill por origen externo). Cliente HTTP read-only con whitelist de 28 endpoints GET, backoff 429/5xx, masking de API key, test que asserta ausencia de verbos de escritura. Scraper vendoriza 59 `.md` de developers.holded.com (376 KB offline). Scripts `inspect/export/dump_summary` end-to-end. 68/68 tests offline ok. `.env.example` ampliado con `HOLDED_API_KEY` + `HOLDED_API_BASE`. `.gitignore` excluye `docs/tenants/*/holded-export/`. Dump real pendiente de configuración local de la API key. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (preparado) | API key de Holded rotada por el operador tras incidente menor (key compartida en chat → revocada en Holded → Settings → Developers, generada nueva, persistida en `.env` local). Skill lista para ejecutar el dump. Plan de ejecución documentado paso a paso en `Fase 4.2.2` (7 pasos: smoke test → inspect → confirmar plan → dump completo → validar → inspección humana → commit). Próxima sesión puede retomar leyendo solo `docs/PLAN.md`. |
-| 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada) | Dump real de inpr3mium completado: 43.4 MB en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (gitignored). 3.363 contactos + 1.569 productos + 440 servicios + 148 cuentas de gasto + 103 taxes + 708 pagos + 12 tesorerías + 85 remesas + 38 saleschannels + 16 numbering series + 490 documentos (166 invoice + 44 creditnote + 273 purchase + 4 purchaserefund + 3 proform) + 2.250 asientos contables (histórico 2018-2026 chunkeado por años) + 439 PDFs originales escaneados (166 invoice 7.2 MB + 273 purchase 29.8 MB, 0 errores). Durante el dump se detectaron y arreglaron 3 bugs del cliente: (1) `paginate()` sin `page_size` capaba a 500 items — perdíamos 85% de contacts, 68% products, 30% payments; (2) paths `/warehouse` y `/expensesaccount` devuelven HTML SPA (no JSON) — los reales son `/warehouses` y `/expensesaccounts` plurales; (3) `dailyledger` requiere ventanas ≤ 1 año, ahora chunkea automáticamente. 68/68 tests offline OK tras fixes. Inspección humana añadida a `migration-from-holded.md` (3 tablas: 16 sequences con prefijos reales, mapeo IVA Holded `key` → `l10n_es`, distribución de 148 cuentas de gasto por prefijo PGCE). Próximo: Fase 4.3. |
+| 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — 1er pase) | Primer dump de inpr3mium: 43.4 MB / 490 docs / 439 PDFs. Operador detectó que SOLO contenía datos de 2026: el endpoint `/documents` de Holded SIN filtro de fechas devuelve únicamente el año en curso. 4º bug encontrado. |
+| 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — histórico completo) | Dump real definitivo: **969 MB** en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (gitignored). 3.363 contactos + 1.569 productos + 440 servicios + 148 cuentas de gasto + 103 taxes + 708 pagos + 12 tesorerías + 85 remesas + 38 saleschannels + 16 numbering series + **12.212 documentos** (3.430 invoice + 678 creditnote + 7.998 purchase + 69 purchaserefund + 34 proform + 3 estimate) + 2.250 asientos contables (histórico 2018-2026 chunkeado por años) + **7.489 PDFs** (3.430 invoice 142.6 MB + 4.059 purchase 801.4 MB; 3.939 purchases sin PDF = asientos manuales). errors.jsonl: 0 líneas. 4 bugs del cliente arreglados durante el proceso: (1) `paginate()` sin `page_size` capaba a 500 items; (2) paths `/warehouse` y `/expensesaccount` devuelven HTML SPA — reales `/warehouses` y `/expensesaccounts` plurales; (3) `dailyledger` ventana ≤ 1 año, chunking auto por años; (4) `/documents` sin starttmp/endtmp devuelve solo año en curso, ahora chunking auto por años con defaults sensatos (2018-01-01 → now). 68/68 tests offline OK. `migration-from-holded.md` actualizado con volúmenes reales + 3 tablas (sequences, mapeo IVA, cuentas de gasto). Próximo: Fase 4.3. |
 
 ---
 

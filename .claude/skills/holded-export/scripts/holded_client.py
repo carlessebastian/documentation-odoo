@@ -456,9 +456,32 @@ def iter_services(client: HoldedClient) -> Iterator[dict]:
 
 
 def iter_documents(client: HoldedClient, doc_type: str, **filters: Any) -> Iterator[dict]:
+    # Sin filtros, Holded /documents devuelve SOLO el anyo en curso. Para
+    # histórico completo hay que pasar starttmp/endtmp; ademas Holded exige
+    # AMBOS (400 si pasas solo starttmp). Chunkeamos por anyos para evitar
+    # el cap de 500 items/pagina con muchos anyos. Default: 2018-01-01 -> now+1d.
     if doc_type not in DOC_TYPES:
         raise ValueError(f"doc_type invalido: {doc_type!r}. Validos: {DOC_TYPES}")
-    yield from client.paginate("invoicing", f"/documents/{doc_type}", params=filters or None, page_size=500)
+    DEFAULT_START = 1514764800  # 2018-01-01 UTC
+    YEAR_S = 365 * 86400
+    params = dict(filters)
+    start = int(params.pop("starttmp", DEFAULT_START))
+    end = int(params.pop("endtmp", int(time.time()) + 86400))
+    if start <= 0:
+        start = DEFAULT_START
+    chunk_start = start
+    while chunk_start < end:
+        chunk_end = min(chunk_start + YEAR_S, end)
+        chunk_params = dict(params)
+        chunk_params["starttmp"] = chunk_start
+        chunk_params["endtmp"] = chunk_end
+        yield from client.paginate(
+            "invoicing",
+            f"/documents/{doc_type}",
+            params=chunk_params,
+            page_size=500,
+        )
+        chunk_start = chunk_end
 
 
 def iter_dailyledger(client: HoldedClient, **filters: Any) -> Iterator[dict]:

@@ -118,8 +118,33 @@ no puede modificar nada en la cuenta Holded.
 
 ## Hallazgos del dump del 2026-05-11 (Fase 4.2.2)
 
-Dump real ejecutado en `holded-export/2026-05-11/`. Datos extraídos
-directamente de la cuenta para informar Fase 4.3.
+Dump real ejecutado en `holded-export/2026-05-11/` (969 MB total,
+gitignored). Datos extraídos directamente de la cuenta para informar
+Fase 4.3.
+
+### Volúmenes reales (histórico completo 2018-2026)
+
+| Resource | Items | Notas |
+|---|---:|---|
+| contacts | 3.363 | partners (clientes + proveedores) |
+| products | 1.569 | productos físicos |
+| services | 440 | servicios |
+| expensesaccount | 148 | cuentas de gasto (códigos 11 dígitos) |
+| taxes | 103 | impuestos (IVA/IRPF/RE + intracom + ISP) |
+| payments | 708 | pagos registrados |
+| treasuries | 12 | cuentas de tesorería |
+| saleschannels | 38 | canales de venta |
+| remittances | 85 | remesas SEPA |
+| numbering_series | 16 | series de numeración (6 invoice + 2 purchase + 8 resto) |
+| documents.invoice | **3.430** | facturas emitidas — todas con PDF generado por Holded |
+| documents.creditnote | 678 | abonos emitidos |
+| documents.purchase | **7.998** | facturas recibidas (gastos) — 4.059 con PDF original escaneado, 3.939 sin PDF (asientos manuales) |
+| documents.purchaserefund | 69 | abonos recibidos |
+| documents.proform | 34 | facturas proforma |
+| documents.estimate | 3 | presupuestos |
+| documents.{salesreceipt,salesorder,waybill,purchaseorder} | 0 | inpr3mium no usa estos flujos |
+| dailyledger | 2.250 | asientos contables completos 2018-2026 (chunkeados por años) |
+| **PDFs descargados** | **7.489** | 3.430 invoice (142.6 MB) + 4.059 purchase (801.4 MB) |
 
 ### Secuencias de numeración (`numbering_series.json`)
 
