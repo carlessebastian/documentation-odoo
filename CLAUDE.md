@@ -57,6 +57,18 @@ contamina entre tenants (al arrancar fedefarma, no quiero leer
 "BIDAFARMA usa ISP" como si fuera regla genérica). Tenant memory
 vive con el tenant y viaja con el repo.
 
+**Mantener la memoria viva**: tras cada fase ejecutada o
+descubrimiento sobre el tenant activo, actualizar el archivo
+correspondiente de `docs/tenants/<slug>/memory/` igual que se
+actualiza `docs/PLAN.md`. Concretamente: pasar tablas planificadas
+a ejecutadas con ids reales (account_id, journal_id, partner_bank_id,
+ir.default ids, etc.), corregir afirmaciones que el dump o la
+ejecución demostraron inexactas (sin acumular notas "actualizado:"
+que confunden), y refrescar la descripción en `MEMORY.md` cuando un
+archivo cambie significativamente. El diff de cualquier commit que
+cierra una fase debería tocar `memory/` además de `PLAN.md` y
+`snapshots/`.
+
 La documentación oficial de Odoo está vendorizada en `vendor/odoo-docs/`
 como **material de referencia de solo lectura**. Cuando necesites
 entender una feature funcional o un módulo del core (cómo funciona

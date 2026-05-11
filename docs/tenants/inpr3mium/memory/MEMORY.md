@@ -14,7 +14,7 @@ cualquier colaborador que clone el repo.
 
 - [Workspace Holded](holded-workspace.md) — `farmapremium` ≠ legal name; equivalencias y gotchas de identificación
 - [Tax mapping Holded → Odoo](holded-tax-mapping.md) — 17 keys reales de 103 catálogo; BIDAFARMA = ISP Art.84; 14 subcuentas; deuda técnica ETL
-- [Treasury accounts](holded-treasury-accounts.md) — 4 bancos (5720XXXX01) + 3 tarjetas Carles (521x) + 3 TELETAC (521x) + omits
+- [Treasury accounts](holded-treasury-accounts.md) — Fase 5.0 aplicada: 4 bank journals (SAN/BBVA/SAB/QON) + 6 cuentas 521x tarjetas + IBANs; ids reales y BNK1 legacy
 - [Numbering sequences](holded-sequences.md) — counters del dump 2026-05-11 + regla pre-loading cutover
 - [EDI obligations](edi-obligations.md) — NO SII (no es gran empresa), Veri\*Factu post-2027, sin FACe hoy
 - [Dump analysis 2026-05-11](dump-analysis-2026-05-11.md) — volumen, concentración (BIDAFARMA+UNNEFAR+P&G=48%), distribución temporal 2018-2026, top clientes/proveedores, sales channels, expensesaccount, limitaciones dailyledger (solo manuales)
