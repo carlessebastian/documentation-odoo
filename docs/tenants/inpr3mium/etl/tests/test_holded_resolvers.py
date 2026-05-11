@@ -105,29 +105,55 @@ class TestDerivePgceParent:
     @pytest.mark.parametrize(
         "code,expected",
         [
+            # Reglas especificas (padre NO termina en 000)
             ("57200049002", "572000"),  # Santander 11d
             ("57200018201", "572000"),  # BBVA 11d
             ("52100000014", "521000"),  # tarjeta BBVA
             ("47200000121", "472000"),  # IVA soportado intracom
             ("47700000021", "477000"),  # IVA repercutido 21
-            ("47510000019", "475100"),  # IRPF 19%
-            ("60000000001", "600000"),  # compras
+            ("47510000019", "475100"),  # IRPF 19% (4751 -> 475100)
+            # Fallback generico 6XX -> 6XX000
+            ("60000000001", "600000"),  # compras mercaderias
+            ("60900000010", "609000"),  # rappels compras (Holded uso real)
+            ("61000000001", "610000"),  # variacion existencias
+            ("62100000001", "621000"),  # arrendamientos
             ("62300000010", "623000"),  # servicios profesionales
-            ("70500000099", "705000"),  # prestacion servicios
+            ("62700000099", "627000"),  # publicidad
+            ("62900000099", "629000"),  # otros servicios
+            ("63010000002", "630000"),  # impuesto sobre beneficios
+            ("63100000001", "631000"),  # otros tributos
+            ("64000000001", "640000"),  # sueldos
+            ("64200000001", "642000"),  # seguridad social
+            ("65000000001", "650000"),  # perdidas creditos incobrables
+            ("66200000001", "662000"),  # intereses de deudas
+            ("67000000001", "670000"),  # perdidas inmov intangible
+            ("67800000001", "678000"),  # gastos excepcionales
+            ("68000000001", "680000"),  # amort intangible
+            ("68100000001", "681000"),  # amort material
+            ("69300000001", "693000"),  # perdidas deterioro existencias
+            ("69400000001", "694000"),  # perdidas deterioro creditos
+            # Fallback generico 7XX -> 7XX000
             ("70000000001", "700000"),  # ventas mercaderias
+            ("70500000099", "705000"),  # prestacion servicios
+            ("70800111902", "708000"),  # descuentos sobre ventas
+            ("70900000001", "709000"),  # rappels sobre ventas (saleschannels real)
         ],
     )
     def test_maps_known_prefixes(self, code, expected):
         assert derive_pgce_parent(code) == expected
 
     def test_longest_prefix_wins(self):
-        # 4751 (IRPF) gana sobre 47 (IVA), aunque "47" no esta en rules
+        # 4751 (IRPF) gana sobre 472/477 aunque no esta "47" en rules
         assert derive_pgce_parent("47510000099") == "475100"
 
-    def test_unknown_prefix(self):
-        # 13X no esta mapeado (capital, no aparece en compras/ventas/iva)
-        assert derive_pgce_parent("10000000001") is None
-        assert derive_pgce_parent("12900000001") is None
+    def test_no_fallback_for_non_67_chapters(self):
+        # Chapters 1XX/2XX/3XX/4XX/5XX/8XX/9XX NO tienen fallback generico
+        # (4751/472/477/521/5720 son las unicas reglas explicitas activas).
+        assert derive_pgce_parent("10000000001") is None  # capital
+        assert derive_pgce_parent("12900000001") is None  # resultado pendiente
+        assert derive_pgce_parent("40000000001") is None  # proveedores
+        assert derive_pgce_parent("43000000001") is None  # clientes
+        assert derive_pgce_parent("80000000001") is None  # gastos imputados a PN
 
     @pytest.mark.parametrize("bad", [None, "", "abc", "123ABC456", "  "])
     def test_invalid_input(self, bad):

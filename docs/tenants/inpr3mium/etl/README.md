@@ -18,8 +18,8 @@ Odoo 19 destino. Diseño completo en
 |---|---|---:|---|
 |   | `holded_resolvers.py` | — | **scaffold** (Fase 5.1) |
 |   | `tax_reclassification.yaml` | — | **schema vacío** — operador rellena en 5.3 |
-| 0a | `loader_expenseaccounts.py` | 148 | TODO |
-| 0b | `loader_saleschannels.py` | 38 | TODO |
+| 0a | `loader_expenseaccounts.py` | 148 | **dry-run verde** (186/186 padres PGCE resueltos en Odoo) — pendiente run real |
+| 0b | `loader_saleschannels.py` | 38 | **dry-run verde** (incluido en el 186) — pendiente run real |
 | 1 | `loader_partners.py` | 3.363 + 1 unknown | TODO |
 | 2 | `loader_products.py` | 2.009 | TODO |
 | 3 | `loader_invoices.py` | 3.430 | TODO |
@@ -48,10 +48,14 @@ etl/
 ├── README.md                     # este archivo
 ├── holded_resolvers.py           # 4 resolvers + helpers puros + cache
 ├── tax_reclassification.yaml     # heurísticas catch-all (rellena operador en 5.3)
-├── loader_*.py                   # 11 loaders + validate (TODO)
+├── _loader_common.py             # shared para loaders 0a/0b
+├── loader_expenseaccounts.py     # paso 0a — dry-run verde 148/148
+├── loader_saleschannels.py       # paso 0b — dry-run verde 38/38
+├── loader_*.py                   # 8 loaders + validate (TODO)
 └── tests/
     ├── conftest.py
-    └── test_holded_resolvers.py
+    ├── test_holded_resolvers.py
+    └── test_loader_common.py
 ```
 
 ## Convenciones

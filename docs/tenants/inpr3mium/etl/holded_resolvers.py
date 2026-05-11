@@ -40,28 +40,26 @@ JOURNAL_PREFIX_TO_CODE: dict[str, str] = {
 # Mapeo prefijo 11-dig Holded -> codigo padre PGCE Pymes Odoo. El padre
 # debe existir antes de invocar resolve_account (Fases 4.5b y 5.0
 # crearon 47200/47700/47510 y 57200/52100; pasos 0a/0b de 5.1 crearan
-# subcuentas 6XX/70X bajo sus padres).
+# subcuentas 6XX/70X bajo sus padres del fallback generico).
+#
+# Solo listamos prefijos cuyo padre NO es trivialmente `<3digits>000`
+# (e.g., IRPF 4751 -> 475100, no 475000). Para chapters 6 y 7
+# (gastos/ingresos), `derive_pgce_parent` aplica fallback generico
+# `<first3>000` cubriendo cualquier prefijo PGCE futuro sin necesidad
+# de mantener una lista.
 PGCE_PARENT_RULES: list[tuple[str, str]] = [
     # prefix      parent_code
-    ("5720", "572000"),  # bancos productivos
-    ("521",  "521000"),  # tarjetas (cuentas decorativas Fase 5.0)
-    ("472",  "472000"),  # HP IVA soportado (subcuentas Fase 4.5b)
-    ("477",  "477000"),  # HP IVA repercutido (subcuentas Fase 4.5b)
-    ("4751", "475100"),  # HP IRPF (subcuentas Fase 4.5b)
-    ("60",   "600000"),  # compras (mercaderias, mat. primas, otros aprov.)
-    ("621",  "621000"),  # arrendamientos
-    ("622",  "622000"),  # reparaciones
-    ("623",  "623000"),  # servicios profesionales independientes
-    ("624",  "624000"),  # transportes
-    ("625",  "625000"),  # primas de seguros
-    ("626",  "626000"),  # servicios bancarios
-    ("627",  "627000"),  # publicidad
-    ("628",  "628000"),  # suministros
-    ("629",  "629000"),  # otros servicios
-    ("7000", "700000"),  # ventas mercaderias
-    ("7050", "705000"),  # prestaciones de servicios
-    ("7080", "708000"),  # devoluciones de ventas
+    ("5720", "572000"),  # bancos productivos (Fase 5.0)
+    ("521",  "521000"),  # tarjetas decorativas (Fase 5.0)
+    ("472",  "472000"),  # HP IVA soportado (Fase 4.5b)
+    ("477",  "477000"),  # HP IVA repercutido (Fase 4.5b)
+    ("4751", "475100"),  # HP IRPF (Fase 4.5b) - NO termina en 000
 ]
+# Chapters donde aplica el fallback generico `<first3>000` si no hay
+# regla especifica. Mantener restringido para evitar autocrear
+# subcuentas bajo padres semanticamente incorrectos en chapters
+# 1XX/2XX/3XX/4XX/5XX que tienen sus propios casos especiales.
+PGCE_FALLBACK_CHAPTERS: tuple[str, ...] = ("6", "7")
 
 NO_USAR_RE = re.compile(r"\s*\(NO\s*USAR\)\s*", re.IGNORECASE)
 VAT_CLEAN_RE = re.compile(r"[\s.\-_/]+")
@@ -113,9 +111,16 @@ def parse_journal_prefix(doc_number: Any) -> str | None:
 def derive_pgce_parent(holded_code: Any) -> str | None:
     """Dada una cuenta 11-dig Holded, devuelve el codigo PGCE padre.
 
-    Resolucion por prefijo mas largo (orden de PGCE_PARENT_RULES no
-    importa: ordenamos internamente por longitud descendente). Devuelve
-    `None` si ningun prefijo casa o si el input no parece 11-dig.
+    Resolucion en dos pasos:
+    1. Match contra `PGCE_PARENT_RULES` por prefijo mas largo. Cubre
+       padres con codigo NO trivial (5720, 472, 477, 4751, 521).
+    2. Fallback `<first3>000` si el primer digito esta en
+       `PGCE_FALLBACK_CHAPTERS` (6, 7). Cubre cualquier subcuenta
+       Holded de gastos o ingresos sin necesidad de listar prefijos
+       explicitos.
+
+    Devuelve `None` si el input no es numerico de 4-11 digitos o si
+    ninguna regla casa.
     """
     if not holded_code:
         return None
@@ -125,6 +130,8 @@ def derive_pgce_parent(holded_code: Any) -> str | None:
     for prefix, parent in sorted(PGCE_PARENT_RULES, key=lambda r: -len(r[0])):
         if s.startswith(prefix):
             return parent
+    if len(s) >= 3 and s[0] in PGCE_FALLBACK_CHAPTERS:
+        return s[:3] + "000"
     return None
 
 
