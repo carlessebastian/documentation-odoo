@@ -95,19 +95,45 @@ expected_modules:
   - l10n_es_aeat_mod390                   # resumen anual IVA
   - l10n_es_aeat_mod111                   # retenciones IRPF rendimientos trabajo y profesionales
   - l10n_es_aeat_mod115                   # retenciones IRPF arrendamientos
-  - l10n_es_aeat_mod232                   # operaciones partes vinculadas (relevante: capital social participado)
   # EDI
-  - l10n_es_aeat_sii_oca
-  - l10n_es_verifactu_oca
-  - l10n_es_facturae
+  # NO se incluye l10n_es_aeat_sii_oca: SII solo es obligatorio para gran
+  # empresa (facturacion > 6.010.121,04 EUR/anyo), grupos de IVA, o
+  # inscritos en REDEME. inpr3mium es S.L. de servicios B2B muy por
+  # debajo del umbral, sociedad unica, sin interes en devolucion mensual
+  # de IVA. Acogerse voluntariamente solo anyadiria coste operativo.
+  - l10n_es_facturae                      # FacturaE XML firmado (FACe B2G + futuro B2B Ley Crea y Crece). Disponible 19.0.1.0.0
   # Reporting y operativa
-  - mis_builder
-  - account_financial_report
-  - account_payment_mode
-  - account_banking_sepa_direct_debit
-  - account_banking_sepa_credit_transfer
+  - account_financial_report              # reporting ES estandar (P&L, balance) — paliativo de mis_builder mientras se porta a 19.0
+  - account_payment_mode                  # base de pagos OCA, disponible 19.0
   - auditlog
   - queue_job
+
+# Modulos diferidos: necesarios pero no disponibles/aplicables hoy en 19.0 ---
+# Reauditar antes de cada release de l10n-spain / bank-payment.
+
+deferred_modules:
+  - name: l10n_es_aeat_mod232
+    reason: "No portado a 19.0 (ni a 18/17 OCA). Declaracion anual; no bloquea operativa diaria."
+    revisit_on: "Antes del cierre fiscal anual (oct-nov) o si OCA publica el modulo."
+    options: "Port custom desde framework l10n_es_aeat (ya en 19.0) o aceptar declaracion manual el primer anyo."
+
+  - name: l10n_es_verifactu_oca
+    reason: "No portado a 19.0; PR bulk #4783 cerrado feb-2026. Obligatorio AEAT en 2027, no en 2026 — no bloquea go-live."
+    revisit_on: "Q4-2026: verificar PR especifico de migracion 18.0->19.0 o evaluar self-port via oca-port."
+    options: "Self-port desde 18.0.1.2.5 (delta pequenyo, framework l10n_es_aeat ya en 19.0) o esperar OCA/Tecnativa/AuresTIC."
+
+  - name: mis_builder
+    reason: "Port 19.0 en PR #752 (OCA/mis-builder), no merged. Paliativo: account_financial_report ya cubre reporting estatutario ES."
+    revisit_on: "Cuando se necesite reporting managerial ad-hoc (KPIs, cash flow custom) o cuando PR #752 entre en main."
+
+  - name: account_banking_sepa_credit_transfer
+    reason: "No portado a 19.0; sin PR abierto. Base deps (account_payment_mode, _order, pain_base) si estan en 19.0."
+    revisit_on: "Antes de activar operativa de pagos masivos a proveedores via fichero bancario."
+    options: "Self-port desde 18.0 (delta pequenyo, solo capa SEPA sobre pain_base)."
+
+  - name: account_banking_sepa_direct_debit
+    reason: "Estado en 19.0 sin verificar (mismo repo OCA/bank-payment que credit_transfer, probable port pendiente). No critico para arranque B2B-only."
+    revisit_on: "Si se activa cobro por domiciliacion SEPA (B2C o suscripciones). Verificar disponibilidad 19.0 antes."
 
 # Modulos opcionales recomendados por sector y particularidades --------------
 

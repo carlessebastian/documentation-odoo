@@ -93,6 +93,20 @@ expected_modules:
   - auditlog
   - queue_job
 
+# Modulos diferidos: necesarios pero no disponibles/aplicables hoy ----------
+# Usar para modulos OCA aun no portados a 19.0, modulos cuya necesidad
+# depende de una fase futura, o modulos que el tenant evitara por
+# politica (ej. SII voluntario que solo anyade coste). NO los lee
+# /onboard — son documentacion de decision para revisar trimestralmente.
+
+deferred_modules: []
+# Ejemplo:
+# deferred_modules:
+#   - name: l10n_es_verifactu_oca
+#     reason: "No portado a 19.0; obligatorio en 2027."
+#     revisit_on: "Q4-<year>: verificar PR de migracion."
+#     options: "Self-port desde 18.0 o esperar OCA."
+
 # OCA repos a sincronizar (para repos.yaml de doodba) -------------------------
 
 oca_repos:

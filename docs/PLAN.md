@@ -17,22 +17,20 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-10
-- **Última fase completada**: **Bloque B completo (pasos 7-10)**.
-  Modo A del runbook ejecutado end-to-end: doodba + Odoo 19 +
-  Postgres 16 corriendo en `localhost:19069`, DB `inpr3mium_dev`
-  creada con `es_ES`, bot `bot.contable@inpr3mium.com` (uid=8) con
-  API key, `.env` del agente configurado, `/onboard` ejecutado con
-  resultado conocido y documentado. **Agente conectado a Odoo 19
-  real**.
+- **Última actualización**: 2026-05-11
+- **Última fase completada**: **Bloque B + auditoría OCA 19.0** de los
+  módulos en `expected_modules`. Resultado: `l10n_es_facturae` es el
+  único "missing" que está realmente disponible (19.0.1.0.0); el resto
+  se ha reclasificado. `expected_modules` de inpr3mium limpiado a la
+  lista efectivamente instalable hoy; los demás pasan a un nuevo
+  bloque `deferred_modules` con razón y `revisit_on`.
 - **Próximo paso**: **Bloque C — Fase 4.1** (instalación de módulos
-  OCA via `odoo-module-admin`). Antes hay que resolver bloqueantes
-  identificados en `/onboard`: (a) bug `_json2` del cliente (forzar
-  XML-RPC mientras tanto vía `ODOO_FORCE_XMLRPC=1` ya funciona),
-  (b) revisar `expected_modules` contra disponibilidad OCA 19.0
-  (6 missing: `mod232`, `sii_oca`, `verifactu_oca`, `facturae`,
-  `mis_builder`, `sepa_credit_transfer`), (c) campos renombrados en
-  Odoo 19 (`groups_id` → `group_ids`).
+  OCA via `odoo-module-admin`) con la lista limpia. Bloqueante (b)
+  resuelto. Quedan pendientes (no bloquean Fase 4.1):
+  (a) bug `_json2` del cliente — workaround `ODOO_FORCE_XMLRPC=1`
+  estable;
+  (c) campos renombrados Odoo 19 (`groups_id` → `group_ids`) — se
+  arregla cuando aparezca en operativa de skills.
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -219,6 +217,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-10 | Bloque B paso 7 (Fase 3) | Runbook `doodba-bootstrap.md` con Modo A (Docker local) + Modo B (gcloud). Añadidos `infra/README.md` y `infra/secrets.md`. |
 | 2026-05-10 | Lateral (no roadmap) | `docs/infra/scaling.md` — guía de buenas prácticas de escalado Odoo 19 (workers, gevent, cron dedicado, Nginx, PG bajo carga, filestore externo, multi-nodo, `queue_job`, monitorización). Agnóstica al tenant; referencia para `fedefarma`. `Próximo paso` no cambia. |
 | 2026-05-10 | Bloque B pasos 8-10 | Modo A ejecutado end-to-end: doodba 9.5.0 + Odoo 19 + PG16 corriendo, DB `inpr3mium_dev`, bot uid=8 con API key, `.env` configurado. `/onboard`: 5🟢 3🟡 1🔴 — agente conectado. Bloqueantes para Bloque C identificados (bug `_json2`, campos renombrados Odoo 19, 6 módulos OCA missing). |
+| 2026-05-11 | Bloque C pre-flight | Auditoría OCA 19.0 de los 6 módulos missing vía `oca-module-scout` (paralelo). Solo `l10n_es_facturae` (19.0.1.0.0) está disponible. `l10n_es_aeat_sii_oca` eliminado del profile (inpr3mium no es gran empresa; fedefarma sí lo necesitará — memoria guardada). `mod232`, `verifactu_oca` (obligatorio 2027, no 2026), `mis_builder`, `sepa_credit_transfer`, `sepa_direct_debit` movidos a nuevo bloque `deferred_modules` con razón y `revisit_on`. Template de tenant actualizado con la convención. |
 
 ---
 
