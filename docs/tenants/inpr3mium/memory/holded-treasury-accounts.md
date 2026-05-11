@@ -9,47 +9,53 @@ análisis del dump 2026-05-11 (`treasuries.jsonl` cruzado contra
 > ver agent memory `project_holded_treasury_card_pattern`. Este
 > archivo solo contiene los mapeos concretos de inpr3mium.
 
-## Bancos (4) — crear `account.journal` tipo bank
+## Bancos (4) — creados en Fase 5.0 (2026-05-11)
 
-Heurística confirmada por el operador (Fase 5.0): la cuenta Holded
-`5720XXXXXXX` (11 dig) sigue el patrón `5720 + 4-dig código BdE + 01`:
+Heurística confirmada por el operador: la cuenta Holded
+`5720XXXXXXX` (11 dig) sigue el patrón `5720 + 4-dig código BdE + 01`.
 
-| Treasury Holded | Cuenta Holded | Código BdE | IBAN | Movs en dailyledger |
-|---|---|---|---|---:|
-| BBVA | `57200018201` | `0182` | ES65 0182 8682 2602 0012 8502 | **130** (la más operativa) |
-| Banco Sabadell | `57200008101` | `0081` | ES14 0081 0646 3700 0123 4632 | 95 |
-| Santander | `57200004901` | `0049` | ES15 0049 3764 3127 1410 9882 | 44 |
-| Qonto | `57200688801` | `6888` | ES21 6888 0001 6002 2535 0289 | 2 |
+| Treasury | Cuenta 11d | BdE | IBAN | Acct id | Journal id | Code | partner.bank id |
+|---|---|---|---|---:|---:|---|---:|
+| BBVA | `57200018201` | `0182` | ES65 0182 8682 2602 0012 8502 | 713 | 20 | BBVA | 3 |
+| Banco Sabadell | `57200008101` | `0081` | ES14 0081 0646 3700 0123 4632 | 714 | 21 | SAB | 4 |
+| Santander | `57200004901` | `0049` | ES15 0049 3764 3127 1410 9882 | 712 | 19 | SAN | 2 |
+| Qonto | `57200688801` | `6888` | ES21 6888 0001 6002 2535 0289 | 715 | 22 | QON | 5 |
 
-**Para cada uno**: en Fase 5.0 crear (a) `account.account` con el
-código 11-dig como hija de `572000` (account_type=`asset_cash`); (b)
-`account.journal` tipo `bank` apuntando a esa cuenta como
-`default_account_id`; (c) `res.partner.bank` con el IBAN linkado a
-`res.company.partner_id`.
+Estructura aplicada por cada banco: (a) `account.account` 11-dig hija
+de `572000` con `account_type='asset_cash'`; (b) `account.journal`
+type=`bank` con `default_account_id` y `suspense_account_id=388`; (c)
+`res.partner.bank` con IBAN sobre `res.company.partner_id=1`,
+enlazado vía `account.journal.bank_account_id` (NO vía
+`res.partner.bank.journal_id` — es one2many reverse, ver agent
+memory `project_odoo19_doodba_gotchas`).
 
-## Tarjetas — crear solo `account.account` 521x (sin journal)
+**Legacy**: BNK1 (id=12, account 572001 id=694) placeholder de
+`l10n_es_pymes` queda activo sin movimientos — archivar tras
+confirmación operador.
+
+## Tarjetas — creadas en Fase 5.0 como `account.account` 521x (sin journal)
 
 Las tarjetas en Holded son treasury decorativo (saldo 0 en UI). El
-flujo real va por cuentas `521xxxxxxx`. Identificación por
-descripciones literales en dailyledger:
+flujo real va por cuentas `521xxxxxxx` con `account_type=liability_current`.
+Identificación por descripciones literales en dailyledger:
 
-| Treasury Holded UI | Cuenta `521` real | Descripción literal |
-|---|---|---|
-| Visa BBVA Carles | `52100000014` | "LIQUIDACION VISA BBVA C.S." |
-| Visa Sabadell Carles | `52100000006` | "TARJETA B.S. C.S. DICIEMBRE" |
-| Sabadell Geraldine MC | `52100000017` | "TARJETA G.G. B.S. DICIEMBRE" |
-| Visa Santander Carles | — | sin movimientos en dailyledger → **omitir** |
+| Treasury Holded UI | Cuenta `521` | Acct id | Descripción literal |
+|---|---|---:|---|
+| Visa BBVA Carles | `52100000014` | 716 | "LIQUIDACION VISA BBVA C.S." |
+| Visa Sabadell Carles | `52100000006` | 717 | "TARJETA B.S. C.S. DICIEMBRE" |
+| Sabadell Geraldine MC | `52100000017` | 718 | "TARJETA G.G. B.S. DICIEMBRE" |
+| Visa Santander Carles | — | — | sin movimientos en dailyledger → **omitida** |
 
 Plus **3 tarjetas TELETAC** (peajes) NO presentes en UI Holded pero
-con movimientos en dailyledger — son tarjetas por conductor:
+con movimientos en dailyledger — tarjetas por conductor:
 
-| Cuenta `521` | Descripción literal | Conductor |
-|---|---|---|
-| `52100000015` | "LIQUIDACION TELETAC DICIEMBRE J.T." | J.T. |
-| `52100000016` | "LIQUIDACION TELETAC DICIEMBRE J.R." | J.R. |
-| `52100000018` | "LIQUIDACION TELETAC DICIEMBRE H.S." | H.S. |
+| Cuenta `521` | Acct id | Descripción literal | Conductor |
+|---|---:|---|---|
+| `52100000015` | 719 | "LIQUIDACION TELETAC DICIEMBRE J.T." | J.T. |
+| `52100000016` | 720 | "LIQUIDACION TELETAC DICIEMBRE J.R." | J.R. |
+| `52100000018` | 721 | "LIQUIDACION TELETAC DICIEMBRE H.S." | H.S. |
 
-Total tarjetas a crear como `account.account 521x` en Odoo: **6**.
+Total tarjetas creadas como `account.account 521x` en Odoo: **6**.
 
 ## Cuentas a omitir
 

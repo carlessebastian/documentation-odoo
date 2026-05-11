@@ -1,0 +1,205 @@
+{
+  "phase": "5.0",
+  "tenant": "inpr3mium",
+  "company_id": 1,
+  "date": "2026-05-11",
+  "summary": "Fundaciones financieras pre-ETL: bancos + tarjetas + payment term + defaults empresa",
+  "bank_journals": [
+    {
+      "journal_id": 19,
+      "code": "SAN",
+      "name": "Santander",
+      "default_account": {
+        "id": 712,
+        "code": "57200004901",
+        "name": "Banco Santander 5882",
+        "type": "asset_cash"
+      },
+      "bank_account": {
+        "id": 2,
+        "acc_number": "ES15 0049 3764 3127 1410 9882",
+        "partner_id": [
+          1,
+          "Inteligencia del negocio pr3mium S.L."
+        ]
+      }
+    },
+    {
+      "journal_id": 20,
+      "code": "BBVA",
+      "name": "BBVA",
+      "default_account": {
+        "id": 713,
+        "code": "57200018201",
+        "name": "BBVA 8502",
+        "type": "asset_cash"
+      },
+      "bank_account": {
+        "id": 3,
+        "acc_number": "ES65 0182 8682 2602 0012 8502",
+        "partner_id": [
+          1,
+          "Inteligencia del negocio pr3mium S.L."
+        ]
+      }
+    },
+    {
+      "journal_id": 21,
+      "code": "SAB",
+      "name": "Banco Sabadell",
+      "default_account": {
+        "id": 714,
+        "code": "57200008101",
+        "name": "Banco Sabadell 4632",
+        "type": "asset_cash"
+      },
+      "bank_account": {
+        "id": 4,
+        "acc_number": "ES14 0081 0646 3700 0123 4632",
+        "partner_id": [
+          1,
+          "Inteligencia del negocio pr3mium S.L."
+        ]
+      }
+    },
+    {
+      "journal_id": 22,
+      "code": "QON",
+      "name": "Qonto",
+      "default_account": {
+        "id": 715,
+        "code": "57200688801",
+        "name": "Qonto 0289",
+        "type": "asset_cash"
+      },
+      "bank_account": {
+        "id": 5,
+        "acc_number": "ES21 6888 0001 6002 2535 0289",
+        "partner_id": [
+          1,
+          "Inteligencia del negocio pr3mium S.L."
+        ]
+      }
+    }
+  ],
+  "card_accounts": [
+    {
+      "id": 717,
+      "code": "52100000006",
+      "name": "Visa Sabadell Carles",
+      "account_type": "liability_current"
+    },
+    {
+      "id": 716,
+      "code": "52100000014",
+      "name": "Visa BBVA Carles",
+      "account_type": "liability_current"
+    },
+    {
+      "id": 719,
+      "code": "52100000015",
+      "name": "TELETAC J.T.",
+      "account_type": "liability_current"
+    },
+    {
+      "id": 720,
+      "code": "52100000016",
+      "name": "TELETAC J.R.",
+      "account_type": "liability_current"
+    },
+    {
+      "id": 718,
+      "code": "52100000017",
+      "name": "Sabadell Geraldine MC",
+      "account_type": "liability_current"
+    },
+    {
+      "id": 721,
+      "code": "52100000018",
+      "name": "TELETAC H.S.",
+      "account_type": "liability_current"
+    }
+  ],
+  "omitted": [
+    {
+      "name": "Visa Santander Carles",
+      "reason": "sin movimientos en dailyledger"
+    },
+    {
+      "name": "Linea descuento Sabadell",
+      "reason": "sin movimientos (operador 2026-05-11)"
+    },
+    {
+      "name": "TRASHOLDED",
+      "reason": "suspense técnica Holded → mapea a account.journal.suspense_account_id (id=388)"
+    },
+    {
+      "name": "BBVA1",
+      "reason": "sin movimientos visibles, revisar al cargar histórico"
+    },
+    {
+      "name": "55500000007",
+      "reason": "no es treasury — es cuenta PGCE 555 (Items pending application, id=370)"
+    }
+  ],
+  "payment_terms_default": {
+    "ir_default_records": [
+      {
+        "id": 13,
+        "field_id": [
+          6023,
+          "Customer Payment Terms (Contact)"
+        ],
+        "json_value": "2",
+        "company_id": [
+          1,
+          "Inteligencia del negocio pr3mium S.L."
+        ]
+      },
+      {
+        "id": 14,
+        "field_id": [
+          6024,
+          "Vendor Payment Terms (Contact)"
+        ],
+        "json_value": "2",
+        "company_id": [
+          1,
+          "Inteligencia del negocio pr3mium S.L."
+        ]
+      }
+    ],
+    "resolved_payment_term_id": 2,
+    "resolved_payment_term_name": "15 Days"
+  },
+  "company_defaults": {
+    "account_sale_tax_id": [
+      6,
+      "21% S"
+    ],
+    "account_purchase_tax_id": [
+      8,
+      "21% S"
+    ],
+    "income_account_id": [
+      551,
+      "Services rendered"
+    ]
+  },
+  "legacy": {
+    "BNK1_placeholder": {
+      "id": 12,
+      "name": "Bank",
+      "code": "BNK1",
+      "default_account_id": [
+        694,
+        "Bank"
+      ],
+      "active": true
+    },
+    "note": "Placeholder de l10n_es_pymes, sin movimientos. Mantenido activo; archivar tras decisión del operador"
+  },
+  "deferred": {
+    "sequence_pre_loading": "Diferido a cutover Fase 5.5. NO aplicar antes para no quemar números en validación 5.3"
+  }
+}

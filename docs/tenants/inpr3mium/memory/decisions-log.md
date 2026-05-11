@@ -8,6 +8,28 @@ revisión.
 
 ---
 
+## 2026-05-11 — Fase 5.0 ejecutada: 4 bancos + 6 tarjetas + payment term + defaults
+
+**Decisión**: aplicar 5.0 sin pre-loading de `ir.sequence.number_next`
+(diferido a cutover 5.5). BNK1 placeholder de `l10n_es_pymes` queda
+activo sin archivar.
+
+**Razón**: el pre-loading consume números si el subset 2024-2025 (5.3)
+añade moves antes del cutover — los huecos quedan en la numeración
+AEAT. BNK1 no estorba mientras no tenga movimientos; archivarlo
+requiere validar que no es default de pagos en módulos third-party.
+
+**Defaults company aplicados**: `account_sale_tax_id=6` (21% S),
+`account_purchase_tax_id=8` (21% S), `income_account_id=551` (705000
+Services rendered). Sustituyen los defaults de `l10n_es_pymes` que
+apuntaban a 21% G y 700000 (mercaderías) — inpr3mium es
+services-heavy.
+
+**Payment term default**: `15 Days` (id=2) para `property_payment_term_id`
+y `property_supplier_payment_term_id` vía `ir.default` con `company_id=1`.
+
+---
+
 ## 2026-05-11 — Fase 5.0: replicar granularidad 11-dig de Holded en `account.account`
 
 **Decisión**: las cuentas analíticas creadas en Odoo para inpr3mium
