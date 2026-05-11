@@ -33,6 +33,13 @@ contexto entre conversaciones de Claude Code.
     S.L." --vat ESB65758682 --chart-template l10n_es.l10n_es_pymes`.
   - `settings_param` con `web.base.url`.
   - Reasignar compañía del bot a la nueva.
+
+  Tras 4.2 viene **Fase 4.2.1 (nueva, insertada)** — crear el skill
+  `odoo-data-migration` MVP solo-lectura para hacer dump de Holded
+  antes de Fase 4.3. Razón: la configuración de diarios y secuencias
+  (4.3) depende del formato de numeración real usado en Holded para
+  preservar continuidad. Sin el dump, configuraríamos a ciegas y
+  romperíamos secuencia al migrar.
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -128,10 +135,24 @@ ejecutable del agente, pero el agente lo necesita).
   migración histórico completo con validación 24-25.
 - ⏸ **4.2** Empresa, idiomas y settings vía `odoo-functional-admin`
   (`language_install --langs es_ES,ca_ES`, `settings_param`,
-  `subsidiary_bootstrap` con datos del profile).
+  `subsidiary_bootstrap` con datos del profile). No depende de Holded.
+- ⏸ **4.2.1** **Skill `odoo-data-migration` MVP (solo lectura Holded)**.
+  Objetivo: poder hacer una radiografía completa de la instancia Holded
+  origen antes de tocar la configuración Fase 4.3. Outputs:
+  - SKILL.md + scripts/ (`holded_export.py`, `holded_inspect.py`).
+  - Endpoints relevantes para configuración: empresa, plan de cuentas,
+    contactos, diarios y series de numeración (CRÍTICO: el formato
+    real de secuencia condiciona Fase 4.3).
+  - Dump JSON local en `docs/tenants/inpr3mium/holded-export/` con
+    snapshot 2024 + 2025 + año en curso.
+  - **Sin escritura a Odoo todavía** (esa mitad se completa en Fase 5).
+  - Credenciales Holded: añadir `HOLDED_API_KEY` a `.env.example` con
+    apuntador a `https://developers.holded.com/`.
 - ⏸ **4.3** Plan contable, diarios (incluidos COMI / COMX / QONT del
   profile), secuencias con prefijo de año, posiciones fiscales
-  (intracom UE, ISP servicios extra-UE).
+  (intracom UE, ISP servicios extra-UE). **Informado por el dump de
+  Holded de 4.2.1** — preservar continuidad de numeración y mapear
+  cuentas/diarios reales en uso.
 - ⏸ **4.4** Bot user + permisos + record rules + `audit_admin_state`.
 - ⏸ **4.5** EDI: certificado digital + entornos test/prod en módulos
   AEAT. Pasos manuales documentados en `edi-setup.md`.
@@ -145,9 +166,13 @@ ejecutable del agente, pero el agente lo necesita).
 completo + año en curso. Validación previa con subset 2024-2025.
 
 - ⏸ **5.1** Diseño ETL detallado en `migration-from-holded.md`
-  (ya con esqueleto; detalle pendiente).
-- ⏸ **5.2** Decisión diferida: ¿abrir un cuarto skill
-  `odoo-data-migration`? (no abrir hasta primera prueba real).
+  (ya con esqueleto; detalle pendiente). El esqueleto debe basarse en
+  el dump real obtenido en 4.2.1.
+- ✅ **5.2** *(decisión tomada anticipadamente en Fase 4.2.1)* — Sí se
+  abre el skill `odoo-data-migration`. Inicialmente solo lado de
+  lectura (4.2.1); completar con lado escritura (Odoo create/write
+  vía RPC) en 5.3+. Beneficio adicional: ya útil para futuros tenants
+  que migren desde otros sistemas (`fedefarma`/Axional, etc.).
 - ⏸ **5.3** Validación con subset 2024+2025: ETL + cuadre balance +
   conteo partners.
 - ⏸ **5.4** Histórico completo + año en curso tras OK del subset.
@@ -160,8 +185,9 @@ completo + año en curso. Validación previa con subset 2024-2025.
 Axional. No tocar hasta que `inpr3mium` esté en producción.
 
 - ⏸ **6** `docs/tenants/fedefarma/{profile.yaml,
-  migration-from-axional.md}`. Reusar todas las skills tal cual.
-  Posible justificación para abrir el skill `odoo-data-migration`.
+  migration-from-axional.md}`. Reusar las 4 skills tal cual (incluido
+  `odoo-data-migration` ya creado en Fase 4.2.1, que necesitará una
+  segunda fuente "axional" además de "holded").
 
 ---
 
@@ -199,23 +225,27 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 ### Bloque C — Bootstrap funcional (primer uso real del agente)
 
 11. ✅ Fase 4.1 (instalación de módulos)
-12. ⏸ Fase 4.2 (empresa + idiomas + settings)
-13. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales)
-14. ⏸ Fase 4.4 (bot user + permisos + record rules)
-15. ⏸ Fase 4.5 (EDI: certificado + entornos)
-16. ⏸ Fase 4.6 (smoke test: primera factura)
-17. ⏸ Fase 4.7 (commit + bitácora)
+12. ⏸ Fase 4.2 (empresa + idiomas + settings) — no depende de Holded
+13. ⏸ Fase 4.2.1 (skill `odoo-data-migration` MVP solo-lectura + dump
+    de Holded) — desbloquea 4.3
+14. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales — informado
+    por el dump)
+15. ⏸ Fase 4.4 (bot user + permisos + record rules)
+16. ⏸ Fase 4.5 (EDI: certificado + entornos)
+17. ⏸ Fase 4.6 (smoke test: primera factura)
+18. ⏸ Fase 4.7 (commit + bitácora)
 
 ### Bloque D — Migración de datos
 
-18. ⏸ Fase 5.1 (diseño ETL Holded → Odoo)
-19. ⏸ Fase 5.3 (validación con 2024+2025)
-20. ⏸ Fase 5.4 (histórico completo + año en curso)
-21. ⏸ Fase 5.5 (cutover día D)
+19. ⏸ Fase 5.1 (diseño ETL Holded → Odoo, basado en el dump de 4.2.1)
+20. ⏸ Fase 5.3 (validación con 2024+2025; completar lado escritura
+    del skill `odoo-data-migration`)
+21. ⏸ Fase 5.4 (histórico completo + año en curso)
+22. ⏸ Fase 5.5 (cutover día D)
 
 ### Bloque E — Futuro
 
-22. ⏸ Fase 6 (fedefarma) — diferida.
+23. ⏸ Fase 6 (fedefarma) — diferida.
 
 ---
 
@@ -230,6 +260,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-10 | Bloque B pasos 8-10 | Modo A ejecutado end-to-end: doodba 9.5.0 + Odoo 19 + PG16 corriendo, DB `inpr3mium_dev`, bot uid=8 con API key, `.env` configurado. `/onboard`: 5🟢 3🟡 1🔴 — agente conectado. Bloqueantes para Bloque C identificados (bug `_json2`, campos renombrados Odoo 19, 6 módulos OCA missing). |
 | 2026-05-11 | Bloque C pre-flight | Auditoría OCA 19.0 de los 6 módulos missing vía `oca-module-scout` (paralelo). Solo `l10n_es_facturae` (19.0.1.0.0) está disponible. `l10n_es_aeat_sii_oca` eliminado del profile (inpr3mium no es gran empresa; fedefarma sí lo necesitará — memoria guardada). `mod232`, `verifactu_oca` (obligatorio 2027, no 2026), `mis_builder`, `sepa_credit_transfer`, `sepa_direct_debit` movidos a nuevo bloque `deferred_modules` con razón y `revisit_on`. Template de tenant actualizado con la convención. Commit `ddfde7ddb`. |
 | 2026-05-11 | Bloque C Fase 4.1 | Install de los 12 `expected_modules` completado (state=installed). Camino largo: descubrir 3 repos OCA faltantes (`reporting-engine`, `server-ux`, `community-data-files`), 9 módulos adicionales en `addons.yaml` para cerrar closure de `depends`, 5 pip pkgs en `pip.txt`, `invoke img-build` para rebuild image, chown del filestore (UID mismatch `exec` vs `run --rm`). DB final: 75 módulos installed, 0 colgados. Gotchas en memoria, runbook actualizado, profile/addons.yaml/pip.txt persistidos. |
+| 2026-05-11 | Restructura plan | Insertada Fase 4.2.1 entre 4.2 y 4.3: skill `odoo-data-migration` MVP solo-lectura para dumpear Holded antes de configurar diarios/secuencias. Decisión diferida en Fase 5.2 (`¿abrir cuarto skill?`) resuelta anticipadamente: SÍ, ahora en 4.2.1 lado-lectura; 5.3 completa lado-escritura. Numeración del Bloque C/D ajustada. |
 
 ---
 
