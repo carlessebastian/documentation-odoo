@@ -313,6 +313,155 @@ colapsar al PGCE Pymes de 4-7 dígitos.
 Bot user uid=8 escalado con grupo `analytic.group_analytic_accounting`
 para poder gestionar el modelo `account.analytic.plan` vía RPC.
 
+## Mapeo de impuestos Holded → Odoo (Fase 4.5b, 2026-05-11)
+
+### Resumen ejecutivo
+
+- Holded tiene 103 taxes en catálogo; **inpr3mium realmente usa 17**
+  (extraído cruzando `products[].taxes` de los 12.212 docs del dump).
+- El resto (Bienes usados, Recargo de Equivalencia, IVA 7.5%/12%/5%/2%,
+  Importación, Intracom UE en ventas, etc.) **nunca se han utilizado**.
+- Hallazgo crítico: `s_iva_exento` (998 líneas) NO es exención Art.20.
+  Es **Inversión del Sujeto Pasivo en ventas (Art. 84.Uno.2.g LIVA)**,
+  facturado mayoritariamente a GRUPO BIDAFARMA. La descripción literal
+  de las facturas lo confirma. En Odoo se mapea a `0% RC` (id=109).
+- Holded marca cuentas analíticas tipo `47700000021`, `47200000021`,
+  etc. (4 base + 7 analítica). Replicamos esa granularidad creando 14
+  subcuentas hijas de `477000`, `472000`, `475100`. Justificación:
+  trazabilidad continuity con extractos Holded para Fase 5.
+
+### Tabla de uso real en docs (cross-check del dump)
+
+| Scope | tax key | n líneas | n docs |
+|-------|---------|---------:|-------:|
+| ventas  | `s_iva_21`              | 15 938 | 3 383 |
+| ventas  | `s_iva_exento`          | 998    |    84 (BIDAFARMA → ISP Art.84) |
+| ventas  | `s_iva_10`              | 18     |    17 |
+| ventas  | `s_iva_4`               | 6      |     6 |
+| ventas  | `s_ret_19_prestamos`    | 2      |     2 |
+| compras | `p_iva_21`              | 5 913  | 3 968 |
+| compras | `p_iva_invsuj`          | 2 749  | 2 595 |
+| compras | `p_iva_exento`          | 2 306  | 2 146 (catch-all heterogéneo) |
+| compras | `p_iva_adqintras_21`    | 814    |   577 |
+| compras | `p_iva_10`              | 762    |   727 |
+| compras | `p_ret_19`              | 95     |    95 (préstamos) |
+| compras | `p_retrent_19`          | 71     |    71 (alquileres) |
+| compras | `p_ret_15`              | 59     |    58 (IRPF profesionales) |
+| compras | `p_iva_4`               | 22     |    21 |
+| compras | `p_iva_adqintrab_21`    | 3      |     3 |
+| compras | `p_ret_7`               | 2      |     2 |
+| compras | `s_ret_19` (anómalo)    | 2      |     2 (error captura Holded — ETL Fase 5) |
+
+### Subcuentas creadas en `account.account`
+
+Padres ya existentes: `472000` (input VAT), `477000` (output VAT),
+`475100` (HP retenciones acreedora).
+
+| Code | Name | account_type | id |
+|------|------|---|----|
+| 47200000000 | HP IVA soportado exento | asset_current | 702 |
+| 47200000004 | HP IVA soportado 4% | asset_current | 701 |
+| 47200000010 | HP IVA soportado 10% | asset_current | 700 |
+| 47200000021 | HP IVA soportado 21% | asset_current | 698 |
+| 47200000121 | HP IVA soportado servicios intracom 21% | asset_current | 699 |
+| 47510000001 | HP Acreedora retenciones IRPF | liability_current | 709 |
+| 47510000005 | HP Acreedora retenciones préstamos (cap. mobiliario) | liability_current | 710 |
+| 47510000010 | HP Acreedora retenciones alquileres (cap. inmobiliario) | liability_current | 711 |
+| 47700000000 | HP IVA repercutido exento | liability_current | 706 |
+| 47700000004 | HP IVA repercutido 4% | liability_current | 705 |
+| 47700000010 | HP IVA repercutido 10% | liability_current | 704 |
+| 47700000021 | HP IVA repercutido 21% | liability_current | 703 |
+| 47700000121 | HP IVA repercutido ISP servicios intracom 21% | liability_current | 707 |
+| 47700000221 | HP IVA repercutido Inv. Sujeto Pasivo 21% | liability_current | 708 |
+
+### Mapeo Holded.key → Odoo.account_tax
+
+Las 16 taxes mapeadas tienen `description` anotada con `[holded: <key>]`
+para trazabilidad — el script de ETL (Fase 5) resuelve `tax_id` por
+substring de la `key`.
+
+#### Ventas
+
+| Holded key | Odoo tax | id | Cuenta repartición (tax) | Notas |
+|---|---|---:|---|---|
+| `s_iva_21`           | 21% S          |   6 | 47700000021 | mainstream |
+| `s_iva_10`           | 10% S          |  92 | 47700000010 | residual |
+| `s_iva_4`            | 4% S           |  87 | 47700000004 | residual |
+| `s_iva_exento`       | 0% RC          | 109 | (sin cuenta — solo tag ISP) | **ISP Art.84.Uno.2.g** — no exención Art.20 |
+| `s_ret_19_prestamos` | 19% WHI (sale) | 125 | 279 (HP deudora 4730 genérica) | marginal — 2 líneas |
+
+#### Compras
+
+| Holded key | Odoo tax | id | Cuenta(s) repartición | Notas |
+|---|---|---:|---|---|
+| `p_iva_21`            | 21% S      |   8 | 47200000021 | mainstream |
+| `p_iva_invsuj`        | 21% RC     | 112 | +input 47200000021 / −espejo 47700000221 | **ISP compras** (alquileres B + no-establecidos), 2.749 líneas |
+| `p_iva_exento`        | 0% EXEMPT OP |  95 | 47200000000 | catch-all — reclasificar individual en ETL Fase 5 |
+| `p_iva_adqintras_21`  | 21% EU S   |   9 | +input 47200000121 / −espejo 47700000121 | adq. intracom. servicios (Google, AWS, SaaS UE) |
+| `p_iva_10`            | 10% S      |  64 | 47200000010 | |
+| `p_iva_4`             | 4% S       |  55 | 47200000004 | residual |
+| `p_iva_adqintrab_21`  | 21% EU G   |  10 | +input 47200000000 / −espejo 47700000000 | adq. intracom. bienes (3 líneas) |
+| `p_ret_19`            | 19% WH L   | 159 | 47510000005 | préstamos / capital mobiliario |
+| `p_retrent_19`        | 19% WH lease | 131 | 47510000010 | alquileres / capital inmobiliario |
+| `p_ret_15`            | 15% WHI    | 148 | 47510000001 | profesionales |
+| `p_ret_7`             | 7% WHI     | 133 | 47510000001 | profesionales recién dados de alta |
+
+### Taxes archivadas (27, no usadas por inpr3mium)
+
+Para limpiar el formulario de facturas. Listado por categoría:
+
+- **Recargo de Equivalencia (RE)** — 6 sale: `0% SE`, `0.26% SE`,
+  `0.5% SE`, `1% SE`, `1.4% SE`, `5.2% SE`. inpr3mium no factura a
+  clientes en RE.
+- **Tipos no-estándar (2%, 5%, 7.5%)** — 21 entre sale + purchase
+  (`2% G/S`, `2% EU G/S`, `2% EX G/S`, `2% ND`, `5% EU IG`, `5% EX IG`,
+  `5% IG`, `7.5% G/S`, `7.5% EU G/S`, `7.5% EX G/S`, `7.5% ND`).
+  Rates COVID/transitorios que inpr3mium no aplicó.
+
+Se conservan activos los Withholding (IRPF) en todos los porcentajes
+(1/2/7/9/15/18/19/19.5/20/21/24/35%) por si en el futuro aplica algún
+caso distinto al actual.
+
+### Doble anotación / Reverse charge en Odoo
+
+Holded modela ISP/intracom con `type:"group"` + `items:[key_1, key_2]`
+(dos asientos espejo simultáneos). En Odoo se modela con UNA `account.tax`
+que tiene múltiples `account.tax.repartition.line`:
+
+- `21% RC` (id=112) — para `p_iva_invsuj`. Tax lines: +100% a
+  `47200000021` (input deducible) y −100% a `47700000221`
+  (output devengado como sujeto pasivo). Saldo neto = 0; ambos lados
+  pasan al 303 vía tags AEAT distintos.
+- `21% EU S` (id=9) — para `p_iva_adqintras_21`. Idem con cuentas
+  `47200000121` / `47700000121`.
+- `21% EU G` (id=10) — para `p_iva_adqintrab_21`. Idem con cuentas
+  `47200000000` / `47700000000`.
+
+Las **tags AEAT** (casillas modelo 303) que vienen con `l10n_es_pymes`
+NO se han tocado. Cada repartition line ya apunta a las casillas
+correctas (tax tags `[33,34,35,...]`, `[62,63,66,67]`, `[90,91,104,105]`, etc.).
+La granularidad analítica de cuentas es ortogonal a las tags 303.
+
+### Casos heterogéneos para resolver en ETL Fase 5
+
+1. **`p_iva_exento` (2.306 docs)** — mezcla:
+   - Servicios extra-UE no-detectados como ISP (Nexmo, Zendesk,
+     Atlassian) → reclasificar a `21% RC` con `p_iva_invsuj` equivalente.
+   - Cheques restaurante (Deujener), prevención (Quirón), transporte
+     viajeros → mantener exento Art.20.
+   - Renting (Arval, Lease Plan) → revisar IVA implícito en factura.
+2. **`s_ret_19` (2 líneas en compras)** — clave de ventas usada en
+   purchases. Normalizar al cargar.
+3. **`s_iva_exento` con líneas no-Bidafarma** — verificar manualmente
+   si todas son ISP Art.84 o hay algún caso real de Art.20.
+
+### Snapshot
+
+`docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.5b.json` con el
+estado final post-mapeo: 14 cuentas creadas, 16 taxes con `description`
+anotada, 34 repartition lines rewired, 27 taxes archivadas. Total
+final: 127 active / 41 inactive.
+
 ## Particularidades a resolver durante el ETL
 
 - **Códigos de cuenta de 11 dígitos en Holded** vs 4-8 dígitos en

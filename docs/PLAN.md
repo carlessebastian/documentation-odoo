@@ -17,9 +17,28 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11 (Fase 4.4 cerrada; 4.5
-  diferida sin driver de negocio)
-- **Última fase completada**: **Bloque C — Fase 4.4 (bot tightening +
+- **Última actualización**: 2026-05-11 (Fase 4.5b cerrada; mapeo
+  impuestos Holded → Odoo aplicado)
+- **Última fase completada**: **Bloque C — Fase 4.5b (mapeo de
+  impuestos Holded → Odoo)**. Análisis cruzado del dump (12.212 docs)
+  revela que inpr3mium realmente usa 17 tax keys (de las 103 del
+  catálogo Holded). Hallazgo crítico: `s_iva_exento` (998 líneas) NO
+  es exención Art.20 sino **ISP en ventas Art.84.Uno.2.g LIVA**
+  (cliente principal BIDAFARMA). Aplicado: 14 subcuentas analíticas
+  creadas (47200000021/121/010/004/000, 47700000021/010/004/000/121/221,
+  47510000001/005/010) hijas de 472000/477000/475100; 16 taxes con
+  `description` anotada `[holded: <key>]` para trazabilidad ETL; 34
+  `account.tax.repartition.line.account_id` reescritos a las
+  subcuentas; doble anotación ISP/intracom verificada en taxes
+  `21% RC` (id=112), `21% EU S` (id=9), `21% EU G` (id=10); 27 taxes
+  archivadas (6 SE/recargo equivalencia + 21 rates 2%/5%/7.5% no
+  usados). Snapshot en
+  `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.5b.json`.
+  Mapeo completo documentado en `migration-from-holded.md` (sección
+  "Mapeo de impuestos Holded → Odoo"). Casos heterogéneos
+  documentados como deuda técnica para ETL Fase 5
+  (`p_iva_exento` catch-all, 2 líneas anómalas).
+- **Fase 4.4 (previa)**: **Bloque C — Fase 4.4 (bot tightening +
   record rules + snapshot)**. Fase 4.5 (EDI cert) **diferida**: sin
   obligación regulatoria hoy (SII no aplica, Veri\*Factu obligatorio
   desde 2027) y sin factura a Administración Pública pendiente. Se
@@ -97,8 +116,14 @@ contexto entre conversaciones de Claude Code.
   - Decisión: la skill se llama **`holded-export`** (no
     `odoo-data-migration` como reservaba el plan original). Una skill
     por origen externo; `fedefarma` tendrá `axional-export`.
-- **Próximo paso**: abrir **Fase 4.6** (smoke test contable). Fase
-  4.5 (EDI cert) queda diferida — inpr3mium no necesita SII
+- **Próximo paso**: abrir **Fase 4.6** (smoke test contable) ya con
+  las taxes definitivas mapeadas Holded → Odoo. El smoke test usará
+  ahora `21% S` (id=6) anotada como `[holded: s_iva_21]` que repercute
+  a `47700000021` (no a `477000` genérica), y `21% S` purchase (id=8)
+  con `[holded: p_iva_21]` que soporta a `47200000021`. Validar también
+  que el `account.move.line` resultante toca las subcuentas correctas
+  (no las genéricas 477000/472000 padres).
+  Fase 4.5a (EDI cert) sigue diferida — inpr3mium no necesita SII
   (no es gran empresa) y Veri\*Factu no es obligatorio hasta 2027,
   así que no hay driver de negocio para invertir esfuerzo hoy en
   instalar el certificado FNMT. Volveremos a 4.5 cuando se acerque
@@ -415,7 +440,7 @@ ejecutable del agente, pero el agente lo necesita).
   memoria. Trade-offs aceptados: bot no puede escribir
   `ir.config_parameter` ni instalar módulos (requiere `group_system`,
   escalación temporal via shell cuando se necesite).
-- 🔵 **4.5** **DIFERIDA — no bloqueante para inpr3mium**. EDI:
+- 🔵 **4.5a** **DIFERIDA — no bloqueante para inpr3mium**. EDI:
   certificado digital + entornos test/prod en módulos AEAT. Razón:
   inpr3mium NO está obligada a SII (no es gran empresa ni REDEME), y
   Veri\*Factu no es obligatorio hasta 2027 (memoria
@@ -424,13 +449,27 @@ ejecutable del agente, pero el agente lo necesita).
   Administración Pública (FACe) — no es el caso hoy. Pendiente
   operativo aislado: el operador descarga certificado FNMT-CERES con
   DNI electrónico y lo importa cuando se acerque 2027 o cuando facture
-  a un organismo público. Decisión: **saltamos 4.5 hasta que haya un
+  a un organismo público. Decisión: **saltamos 4.5a hasta que haya un
   driver de negocio real** (factura a Admin Pública o aproximación
   2027). NO bloquea 4.6, 4.7 ni Fase 5.
+- ✅ **4.5b** Mapeo de impuestos Holded → Odoo (2026-05-11). Cruzado
+  dump del 2026-05-11 contra catálogo Holded: 17 keys realmente usadas
+  de las 103 disponibles. Aplicado: 14 subcuentas analíticas creadas
+  (47200000021/121/010/004/000, 47700000021/010/004/000/121/221,
+  47510000001/005/010); 16 taxes mapeadas y anotadas con
+  `description [holded: <key>]`; 34 `account.tax.repartition.line`
+  rewired a las subcuentas; doble anotación ISP/intracom verificada
+  en taxes `21% RC` (id=112), `21% EU S` (id=9), `21% EU G` (id=10);
+  27 taxes archivadas (RE + tipos 2%/5%/7.5%). Hallazgo crítico:
+  `s_iva_exento` (998 líneas, BIDAFARMA) es ISP venta Art.84.Uno.2.g,
+  NO Art.20 → mapeada a `0% RC` (id=109). Snapshot
+  `2026-05-11_fase-4.5b.json`. Detalle completo en
+  `migration-from-holded.md` sección "Mapeo de impuestos".
 - ⏸ **4.6** Smoke test contable: primera factura emitida + primera
-  factura recibida + reporting básico. Sin SII test (4.5 diferida).
-  Valida que el pipeline funcional A- → out_invoice → posted →
-  account.move.line → balance reflejado funciona en company_id=1.
+  factura recibida + reporting básico. Sin SII test (4.5a diferida).
+  Validar pipeline A- → out_invoice → posted → account.move.line →
+  balance reflejado en company_id=1 con las taxes definitivas
+  (subcuentas 47700000021 / 47200000021 etc.).
 - ⏸ **4.7** Checkpoint y commit con bitácora del bootstrap. Sello
   "inpr3mium lista para facturar en modo local" cerrando Bloque C.
 
@@ -510,12 +549,16 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
     analítico; script journal_setup.py parchado para Odoo 19)
 16. ✅ Fase 4.4 (bot tightening + snapshot; 5 scripts del agente
     parchados Odoo 19)
-17. 🔵 Fase 4.5 (EDI cert) — **DIFERIDA**, sin driver de negocio
+17. 🔵 Fase 4.5a (EDI cert) — **DIFERIDA**, sin driver de negocio
     (inpr3mium no usa SII; Veri\*Factu obligatorio solo desde 2027).
     Volveremos cuando se acerque 2027 o si surge factura a Admin
     Pública.
-18. ⏸ Fase 4.6 (smoke test: 4 moves end-to-end + reporting básico)
-19. ⏸ Fase 4.7 (commit + bitácora cerrando Bloque C)
+18. ✅ Fase 4.5b (mapeo impuestos Holded → Odoo: 14 subcuentas
+    creadas, 16 taxes mapeadas con anotación `[holded: <key>]`,
+    27 taxes archivadas, doble anotación ISP/intracom verificada)
+19. ⏸ Fase 4.6 (smoke test: 4 moves end-to-end + reporting básico
+    sobre las taxes mapeadas)
+20. ⏸ Fase 4.7 (commit + bitácora cerrando Bloque C)
 
 ### Bloque D — Migración de datos
 
@@ -550,6 +593,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — histórico completo) | Dump real definitivo: **969 MB** en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (gitignored). 3.363 contactos + 1.569 productos + 440 servicios + 148 cuentas de gasto + 103 taxes + 708 pagos + 12 tesorerías + 85 remesas + 38 saleschannels + 16 numbering series + **12.212 documentos** (3.430 invoice + 678 creditnote + 7.998 purchase + 69 purchaserefund + 34 proform + 3 estimate) + 2.250 asientos contables (histórico 2018-2026 chunkeado por años) + **7.489 PDFs** (3.430 invoice 142.6 MB + 4.059 purchase 801.4 MB; 3.939 purchases sin PDF = asientos manuales). errors.jsonl: 0 líneas. 4 bugs del cliente arreglados durante el proceso: (1) `paginate()` sin `page_size` capaba a 500 items; (2) paths `/warehouse` y `/expensesaccount` devuelven HTML SPA — reales `/warehouses` y `/expensesaccounts` plurales; (3) `dailyledger` ventana ≤ 1 año, chunking auto por años; (4) `/documents` sin starttmp/endtmp devuelve solo año en curso, ahora chunking auto por años con defaults sensatos (2018-01-01 → now). 68/68 tests offline OK. `migration-from-holded.md` actualizado con volúmenes reales + 3 tablas (sequences, mapeo IVA, cuentas de gasto). Próximo: Fase 4.3. |
 | 2026-05-11 | Bloque C Fase 4.5 (diferida) | Decisión: saltar 4.5 (EDI cert) sin acción operativa hoy. Motivo: inpr3mium no es gran empresa ni REDEME (no obligada a SII), Veri\*Factu no es obligatorio hasta 2027, y no factura a Administración Pública (único caso que activaría FACe/FacturaE de forma inmediata). Coste de instalar el certificado FNMT hoy = 0 valor de negocio. Cuando aparezca un driver real (cliente AAPP o se acerque 2027), volvemos a abrir 4.5 — el módulo `l10n_es_facturae` ya está instalado, solo falta importar el .p12 y configurar entornos. Avance al runbook: pasamos directos a 4.6 (smoke test contable sin SII). |
 | 2026-05-11 | Bloque C Fase 4.4 | Bot uid=8 tightenado: quitado `base.group_system`, dejados 6 grupos least-privilege (`base.group_user` + `base.group_erp_manager` + `base.group_multi_company` + `base.group_partner_manager` + `account.group_account_manager` + `analytic.group_analytic_accounting`). Validado vía RPC: bot puede CRUD partners, draft account.move, ir.rule, leer ir.model.data + ir.module.module + journals + fiscal positions + analytic plans. Pierde `ir.config_parameter` y instalar módulos (acepta escalación temporal). Regla multi-company global de `res.partner` ya existe en Odoo core (id=2, dominio con `partner_share` + `parent_of` — más correcto que el del runbook). Snapshot manual en `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.4.json` (1 company / 2 users / 12 journals / 29 FPs / 2 analytic plans / 13 record rules sobre modelos críticos / 75 modules installed). 5 scripts del agente parchados para Odoo 19: `groups_id`→`group_ids` (group_assign, audit_admin_state, _drift, user_provision), `res.groups.category_id` removido (audit_admin_state), `account.journal.sequence_id` removido (audit_admin_state). 4 gotchas Odoo 19 nuevos en memoria: cambios grupos requieren restart worker HTTP; perfil mínimo bot post-tightening; el runbook .claude/skills/CLAUDE.md está desactualizado al prescribir un perfil demasiado restrictivo; bugs históricos en scripts. |
+| 2026-05-11 | Bloque C Fase 4.5b | Mapeo impuestos Holded → Odoo. Cruzado `products[].taxes` de los 12.212 docs del dump contra catálogo Holded: 17 keys realmente usadas de las 103 disponibles. Hallazgo crítico: `s_iva_exento` (998 líneas, cliente principal BIDAFARMA) es **ISP en ventas Art.84.Uno.2.g LIVA**, NO exención Art.20 — descripción literal de las facturas lo confirma; mapeada a `0% RC` (id=109). Aplicado vía RPC: 14 subcuentas analíticas creadas hijas de 472000/477000/475100 (47200000021/121/010/004/000, 47700000021/010/004/000/121/221, 47510000001/005/010) replicando granularidad Holded; 16 taxes mapeadas y anotadas con `description [holded: <key>]` para trazabilidad ETL; 34 `account.tax.repartition.line.account_id` rewired a las subcuentas; doble anotación ISP/intracom verificada en `21% RC` (id=112, p_iva_invsuj), `21% EU S` (id=9, p_iva_adqintras_21), `21% EU G` (id=10, p_iva_adqintrab_21) — Odoo modela el devengado+soportado simultáneo con 2 repartition_lines (+input 100% / -mirror 100%) que sustituyen el `type:group` + `items:[_1,_2]` de Holded; 27 taxes archivadas (6 SE recargo equivalencia + 21 rates 2%/5%/7.5% no usados). Tags AEAT (casillas modelo 303) no se tocaron — vienen correctas de l10n_es_pymes. Casos heterogéneos documentados como deuda técnica para ETL Fase 5: `p_iva_exento` (2.306 docs catch-all: ISP extra-UE no detectada + Art.20 + renting), 2 líneas anómalas con `s_ret_19` en purchases. Snapshot `2026-05-11_fase-4.5b.json` (14 subcuentas + 16 taxes mapeadas + 27 archived + stats). Detalle completo en `migration-from-holded.md` sección "Mapeo de impuestos Holded → Odoo". |
 | 2026-05-11 | Bloque C Fase 4.3 | Diarios + posiciones fiscales + plan analítico. 8 `account.journal` configurados preservando prefijos Holded para auditoría AEAT: 6 sale (A-, AC-, AF-, KD-, FVU-, L-) + 2 purchase (PB-, PI-). Renombrados stock INV→A- y FACTU→PB-. PB- con `refund_sequence=True` para PR- (69 purchaserefund). AC- como diario separado (no `refund_sequence` en A-) porque Holded mezcla creditnote + rectificativas de aumento en AC-. Posiciones fiscales: `l10n_es_pymes` ya creó las 4 esenciales (Intra-community, Extra-community, Equivalence surcharge, ISP) + 10 IRPF withholding — 0 RPC. Plan analítico "Granularidad gasto" (id=2) creado para granularidad futura de las 148 cuentas Holded. Gotchas Odoo 19 nuevos: (1) `account.journal.sequence_id` y `ir.sequence` por journal desaparecieron — `code` es el prefijo, `refund_sequence` boolean para abonos; (2) `account.analytic.plan` ya no tiene `company_id` (cross-company); (3) bot necesita `analytic.group_analytic_accounting` para gestionar `account.analytic.plan`. Script `journal_setup.py` parchado para Odoo 19. |
 
 ---
