@@ -17,11 +17,39 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11 (Fase 5.0 planificada tras
-  audit cruzado dump↔UI Holded; pendiente tabla bancos del operador
-  para arrancar)
+- **Última actualización**: 2026-05-11 (Fase 5.0 lista para ejecutar
+  — todas las cuentas contables confirmadas; tenant memory creada;
+  dump analizado a fondo)
 - **Última fase completada**: **Bloque C — Fase 4.7 (commit +
-  bitácora cerrando Bloque C)**. Commit `4587fabe9` con el smoke
+  bitácora cerrando Bloque C)**.
+
+## Para retomar en una sesión nueva
+
+Leer en este orden (regla en `CLAUDE.md`):
+
+1. **`docs/PLAN.md`** — este archivo, fase actual y próximo paso.
+2. **`docs/tenants/inpr3mium/profile.yaml`** — datos del tenant.
+3. **`docs/tenants/inpr3mium/memory/MEMORY.md`** — índice 8 archivos
+   con todo el conocimiento acumulado sobre inpr3mium (workspace
+   farmapremium, tax mapping, treasury, sequences, EDI, decisions,
+   dump-analysis 2026-05-11).
+4. **`docs/tenants/inpr3mium/migration-from-holded.md`** — plan ETL.
+
+Lo que la siguiente sesión necesita saber resumido aquí:
+
+- **Estado funcional**: instancia local Odoo 19 lista para facturar
+  (Bloque C completo). Smoke test 4.6 verde sobre las taxes
+  definitivas con subcuentas `47700000021`/`47200000021`.
+- **Próxima acción**: aplicar **Fase 5.0** end-to-end (writes en
+  Odoo). Cuentas confirmadas: bancos Santander `57200004901`, BBVA
+  `57200018201`, Sabadell `57200008101`, Qonto `57200688801`;
+  tarjetas Carles `52100000014` (BBVA), `52100000006` (Sabadell),
+  `52100000017` (Geraldine MC); 3 tarjetas TELETAC
+  `52100000015/16/18`. Omitir Visa Santander Carles (sin movs),
+  línea descuento Sabadell, TRASHOLDED, BBVA1, `55500000007`.
+- **No aplicar** sequences pre-loading hasta cutover Fase 5.5.
+- **Bloqueante eliminado**: el operador confirmó cuentas bancos en
+  esta sesión; tarjetas resueltas vía análisis del dump. Commit `4587fabe9` con el smoke
   test y los snapshots. Sello "inpr3mium lista para facturar en
   modo local" formalmente puesto. Próximo bloque: **D — Migración
   de datos desde Holded** (Fase 5).
