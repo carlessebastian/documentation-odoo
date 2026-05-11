@@ -1,0 +1,79 @@
+# Reglas de reclasificacion para keys "catch-all" de Holded.
+#
+# Consumido por holded_resolvers.HoldedResolvers.resolve_tax via el
+# parametro `tax_rules` del constructor. Cada entrada de primer nivel
+# corresponde a una key Holded ambigua que no mapea 1:1 a un solo
+# account.tax de Odoo. Resolvers aplican las reglas en este orden:
+#   1. by_partner_country     -> match exacto ISO2 (upper)
+#   2. by_partner_in          -> substring match en partner.name (upper)
+#   3. by_doc_type            -> match exacto doc_type (lower)
+#   4. default_tax_id         -> fallback
+# Si ninguna casa y no hay default, resolve_tax devuelve -1 (abort).
+#
+# IDs `account.tax` referidos abajo provienen del snapshot Fase 4.5b
+# (`docs/tenants/inpr3mium/snapshots/2026-05-11_tax-mapping.json`):
+#   95  = "0% EXEMPT OP" (Art.20 LIVA exento)
+#   112 = "21% RC" (Reverse Charge intracom 21%)
+#   159 = "19% WH L" (retencion capital mobiliario 19%)
+# El operador debe validar estos ids antes del run 5.3 real.
+#
+# Esqueleto vacio - ESTE ARCHIVO ESTA PENDIENTE DE COMPLETAR EN BLOQUE
+# #1 DEL PRE-TRABAJO 5.3 (sesion con operador, sample 100 docs aleatorios
+# de los 2.306 con `p_iva_exento`). Hasta entonces, resolve_tax operara
+# unicamente con lookup directo `[holded: <key>]` y abortara batches que
+# contengan keys catch-all.
+
+# ----------------------------------------------------------------------
+# p_iva_exento -- 2.306 docs (~67% de docs sin tax explicito en compras)
+# ----------------------------------------------------------------------
+# Heuristicas a confirmar con operador:
+#   - Servicios SaaS extra-UE (US/AU/HK/CN/UK): ISP -> 21% RC (id=112)
+#     pero con flag `etl_review=True` porque "21% RC" en Odoo es intracom,
+#     no extra-UE estricto. La reclasificacion final puede requerir crear
+#     un nuevo account.tax "21% RC ExtraUE" en Fase 5.3.
+#   - Cheque Dejeuner / Quiron / RENFE / ARVAL / LEASE PLAN / renting:
+#     genuinamente exentos Art.20 -> mantener 0% EXEMPT OP (id=95).
+#   - Fallback: 0% EXEMPT OP + flag review.
+#
+# p_iva_exento:
+#   default_tax_id: 95
+#   by_partner_country:
+#     # US: 112
+#     # AU: 112
+#     # HK: 112
+#     # CN: 112
+#     # GB: 112    # UK post-Brexit
+#   by_partner_in:
+#     # saas_extraeu:
+#     #   - 112
+#     #   - "AMAZON WEB SERVICES"
+#     #   - "GOOGLE CLOUD"
+#     #   - "OPENAI"
+#     # renting_exempt:
+#     #   - 95
+#     #   - "ARVAL"
+#     #   - "LEASE PLAN"
+#     #   - "ALPHABET"
+#     # vouchers_exempt:
+#     #   - 95
+#     #   - "CHEQUE DEJEUNER"
+#     #   - "EDENRED"
+#     # healthcare_exempt:
+#     #   - 95
+#     #   - "QUIRON"
+#     #   - "ADESLAS"
+#     # transport_exempt:
+#     #   - 95
+#     #   - "RENFE"
+
+# ----------------------------------------------------------------------
+# s_ret_19 -- 2 lineas en doc_type purchase/purchaserefund (deuda tecnica
+# 4.5b: key de ventas usada por error en compras). Mapear a retencion
+# soportada 19% WH L (id=159) cuando aparece en compras.
+# ----------------------------------------------------------------------
+#
+# s_ret_19:
+#   default_tax_id: -1     # forzar abort para casos de ventas (lookup directo cubre)
+#   by_doc_type:
+#     # purchase: 159
+#     # purchaserefund: 159

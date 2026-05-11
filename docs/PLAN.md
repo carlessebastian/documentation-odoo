@@ -17,11 +17,11 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11 (Fase 5.1 redactada — diseño
-  ETL detallado en `migration-from-holded.md` con resolvers, orden de
-  carga, transformaciones por modelo, validaciones y riesgos)
-- **Última fase completada**: **Bloque D — Fase 5.1 (diseño ETL
-  detallado)**.
+- **Última actualización**: 2026-05-11 (Fase 5.1 — scaffolding ETL
+  entregado: `holded_resolvers.py` real + 65 tests offline verdes +
+  README + `tax_reclassification.yaml` esqueleto)
+- **Última fase completada**: **Bloque D — Fase 5.1 (diseño ETL +
+  scaffolding `etl/`)**.
 
 ## Para retomar en una sesión nueva
 
@@ -39,21 +39,25 @@ Lo que la siguiente sesión necesita saber resumido aquí:
 
 - **Estado funcional**: instancia local Odoo 19 con fundaciones
   financieras completas (Bloque D 5.0 cerrado) **+ diseño ETL
-  detallado redactado (5.1 cerrada)**. 12 bank/sale/purchase journals
-  operativos. Defaults company alineados con realidad inpr3mium
+  detallado (5.1 redactado) + scaffolding `etl/` entregado**.
+  `holded_resolvers.py` con 4 resolvers reales (no stubs) + cache +
+  helpers puros; **65/65 tests offline verdes**;
+  `tax_reclassification.yaml` esqueleto con schema comentado
+  (rellena operador). 12 bank/sale/purchase journals operativos.
+  Defaults company alineados con realidad inpr3mium
   (services-heavy: 21% S + 705000). Lista para arrancar 5.3
   (validación subset 2024+2025).
 - **Próxima acción**: pre-trabajo para **Fase 5.3**:
-  1. Sesión con operador para redactar `tax_reclassification.yaml`
-     (reglas catch-all `p_iva_exento` — ver 5.1 sección "Riesgos #1").
-  2. Crear scaffolding `docs/tenants/inpr3mium/etl/` con
-     `holded_resolvers.py` (esqueleto + tests offline) y los 11
-     loaders esqueleto definidos en 5.1 sección "Implementación".
-  3. Ejecutar paso 0 (pre-load subcuentas 6XX + 70X desde
-     `expensesaccount.jsonl` + `saleschannels.json`) en `--dry-run`
-     primero, validar resolución contra dump 2026-05-11.
-  4. Loader partners + products en dry-run, cuadre conteos
-     (3.363 + 2.009 ext_ids resueltos).
+  1. Sesión con operador para rellenar
+     `docs/tenants/inpr3mium/etl/tax_reclassification.yaml` con las
+     reglas catch-all `p_iva_exento` (sample 100 docs aleatorios
+     de los 2.306 — ver 5.1 sección "Riesgos #1").
+  2. Escribir los 11 loaders + `validate_etl.py` siguiendo el
+     diseño 5.1 y consumiendo `HoldedResolvers`. Empezar por
+     `loader_expenseaccounts.py` (148 records, paso 0a) en
+     `--dry-run` contra dump 2026-05-11.
+  3. Cuando 0a verde, encadenar 0b → 1 → 2 (partners + products)
+     en dry-run, cuadre conteos (3.363 + 2.009 ext_ids resueltos).
 - **No aplicar** sequences pre-loading hasta cutover Fase 5.5.
 - **Fase 5.1 (esta sesión, 2026-05-11)**: redactada sección "ETL Fase
   5.1 — Diseño detallado" en `migration-from-holded.md` (526 líneas
@@ -816,6 +820,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.4 | Bot uid=8 tightenado: quitado `base.group_system`, dejados 6 grupos least-privilege (`base.group_user` + `base.group_erp_manager` + `base.group_multi_company` + `base.group_partner_manager` + `account.group_account_manager` + `analytic.group_analytic_accounting`). Validado vía RPC: bot puede CRUD partners, draft account.move, ir.rule, leer ir.model.data + ir.module.module + journals + fiscal positions + analytic plans. Pierde `ir.config_parameter` y instalar módulos (acepta escalación temporal). Regla multi-company global de `res.partner` ya existe en Odoo core (id=2, dominio con `partner_share` + `parent_of` — más correcto que el del runbook). Snapshot manual en `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.4.json` (1 company / 2 users / 12 journals / 29 FPs / 2 analytic plans / 13 record rules sobre modelos críticos / 75 modules installed). 5 scripts del agente parchados para Odoo 19: `groups_id`→`group_ids` (group_assign, audit_admin_state, _drift, user_provision), `res.groups.category_id` removido (audit_admin_state), `account.journal.sequence_id` removido (audit_admin_state). 4 gotchas Odoo 19 nuevos en memoria: cambios grupos requieren restart worker HTTP; perfil mínimo bot post-tightening; el runbook .claude/skills/CLAUDE.md está desactualizado al prescribir un perfil demasiado restrictivo; bugs históricos en scripts. |
 | 2026-05-11 | Bloque C Fase 4.5b | Mapeo impuestos Holded → Odoo. Cruzado `products[].taxes` de los 12.212 docs del dump contra catálogo Holded: 17 keys realmente usadas de las 103 disponibles. Hallazgo crítico: `s_iva_exento` (998 líneas, cliente principal BIDAFARMA) es **ISP en ventas Art.84.Uno.2.g LIVA**, NO exención Art.20 — descripción literal de las facturas lo confirma; mapeada a `0% RC` (id=109). Aplicado vía RPC: 14 subcuentas analíticas creadas hijas de 472000/477000/475100 (47200000021/121/010/004/000, 47700000021/010/004/000/121/221, 47510000001/005/010) replicando granularidad Holded; 16 taxes mapeadas y anotadas con `description [holded: <key>]` para trazabilidad ETL; 34 `account.tax.repartition.line.account_id` rewired a las subcuentas; doble anotación ISP/intracom verificada en `21% RC` (id=112, p_iva_invsuj), `21% EU S` (id=9, p_iva_adqintras_21), `21% EU G` (id=10, p_iva_adqintrab_21) — Odoo modela el devengado+soportado simultáneo con 2 repartition_lines (+input 100% / -mirror 100%) que sustituyen el `type:group` + `items:[_1,_2]` de Holded; 27 taxes archivadas (6 SE recargo equivalencia + 21 rates 2%/5%/7.5% no usados). Tags AEAT (casillas modelo 303) no se tocaron — vienen correctas de l10n_es_pymes. Casos heterogéneos documentados como deuda técnica para ETL Fase 5: `p_iva_exento` (2.306 docs catch-all: ISP extra-UE no detectada + Art.20 + renting), 2 líneas anómalas con `s_ret_19` en purchases. Snapshot `2026-05-11_fase-4.5b.json` (14 subcuentas + 16 taxes mapeadas + 27 archived + stats). Detalle completo en `migration-from-holded.md` sección "Mapeo de impuestos Holded → Odoo". |
 | 2026-05-11 | Bloque D Fase 5.0 (planificación) | Audit cruzado dump↔UI Holded reveló brechas pre-ETL. Documentada nueva Fase 5.0 "Fundaciones financieras": (a) crear 4 bank journals reales (Santander/Sabadell/Qonto/BBVA) + 1 línea crédito Sabadell + cuentas auxiliares para 4 tarjetas (BBVA/Santander/Sabadell Carles + Sabadell Geraldine MC); (b) replicar granularidad 11-dig de Holded como subcuentas hijas de `572000`/`552000`/`555000` (consistente con Fase 4.5b para IVA); (c) pre-cargar `ir.sequence.number_next` con counters Holded +1 inmediatamente antes del cutover Fase 5.5; (d) activar `15 Days` como payment term default. Heurística detectada en dailyledger: posiciones 5-8 del código Holded 11-dig parecen código entidad BdE (`0049` Santander, `0182` BBVA, `0081` Sabadell, `6888` Qonto) — pendiente validar con operador. 3 cuentas Holded a omitir: TRASHOLDED (suspense técnica → `account.journal.suspense_account_id` Odoo), `55500000007` (NO es journal, es cuenta PGCE 555 "Partidas pendientes de aplicación"), BBVA1 (revisar y archivar si 0 movs). Memoria nueva: `feedback_dump_audit_flow_over_balances.md` (auditar estructura, no saldos puntuales que cambian al re-dumpear). Bloqueante: tabla `treasury_name → cuenta Holded 11d` pendiente de pasar el operador. |
+| 2026-05-11 | Bloque D Fase 5.1 (scaffolding) | Entregado scaffolding `docs/tenants/inpr3mium/etl/`: `holded_resolvers.py` con 4 resolvers reales (no stubs) — `resolve_partner` (cache por VAT + ext_id + placeholder `__holded__.contact__unknown`), `resolve_tax` (lookup `[holded: <key>]` + reglas `tax_reclassification.yaml` con prioridad country > partner_in > doc_type > default), `resolve_journal` (mapa prefijo→code Odoo hardcoded para 8 journals; rechaza PR-), `resolve_account` (lookup 11-dig + autocreate hijo de PGCE parent via `derive_pgce_parent`). 5 helpers puros (`normalize_vat` con heurística ES, `parse_journal_prefix` como tokenizer agnóstico, `derive_pgce_parent` por longest-prefix-match sobre 17 reglas PGCE, `partner_active_from_name` strip `(NO USAR)`, `iso_from_unix`). `ResolverStats` dataclass para telemetría. `tests/conftest.py` + `tests/test_holded_resolvers.py` (12 clases, **65 tests offline verdes en 0.04s**). README con tabla de estado de los 11 loaders + convenciones CLI uniformes (`--dump-dir`, `--dry-run`, `--limit`, `--resume`, `--batch-size`). `tax_reclassification.yaml` con schema comentado (default_tax_id, by_partner_country, by_partner_in, by_doc_type) y dos bloques esqueleto (p_iva_exento + s_ret_19) listos para que el operador rellene en bloque #1 del pre-trabajo 5.3. Siguiente: redactar `tax_reclassification.yaml` real con operador + escribir 11 loaders + `validate_etl.py`. |
 | 2026-05-11 | Bloque C Fase 4.7 | Commit `4587fabe9` cerrando Bloque C: smoke test 4.6 + snapshot persistidos. Sello "inpr3mium lista para facturar en modo local" puesto. Próximo: Bloque D (Fase 5 — migración desde Holded). Fase 5.2 ya se cerró anticipadamente en 4.2.1 (skill `holded-export`). |
 | 2026-05-11 | Bloque C Fase 4.6 | Smoke test contable end-to-end. 3 moves posteados sobre las taxes definitivas de 4.5b: out_invoice `A-/2026/00001` (1.210€, base 1.000 + IVA 21% repercutido a subcuenta `47700000021` ✅), in_invoice `PB-/2026/05/0001` (605€, base 500 + IVA 21% soportado a subcuenta `47200000021` ✅), out_refund `AC-/2026/00001` (1.210€) vía `account.move.reversal` con `reversed_entry_id=2`, prefijo `AC-` y `journal_id=13` confirmados — la numeración del refund es independiente del A- original. 2 partners ES test creados con DC válido (ESB12345674 cliente, ESB87654323 proveedor). Reporting cuadra: D=1.815 C=1.815 sobre 6 cuentas (430 cliente, 705 ingreso, 477 IVA rep, 410 proveedor, 629 gasto, 472 IVA sop). Snapshot `2026-05-11_fase-4.6.json` (2.2 KB). Hallazgo no bloqueante: Odoo 19 usa formato `CODE/YYYY/NNNNN` para journals tipo sale (A-, AC-) y `CODE/YYYY/MM/NNNN` para purchase (PB-, mes intercalado) por defecto. Comportamiento estándar; auditoría AEAT solo exige correlatividad sin huecos dentro del año, que se cumple. Si se necesitara homogeneizar para fedefarma, hacerlo vía `sequence_override_regex`. Cierra Bloque C salvo 4.7 (commit). |
 | 2026-05-11 | Bloque D Fase 5.1 | Diseño ETL Holded → Odoo redactado en `migration-from-holded.md` (sección "ETL Fase 5.1 — Diseño detallado", 526 líneas añadidas, doc total 1.030). Estrategia ext_id por resource (`__holded__.contact_<id>`, `__holded__.<doctype>_<id>`, etc.) reusando `ext_id_upsert.py`. 4 resolvers puros: `resolve_partner` (VAT normalizado → fuzzy → ext_id → placeholder único para 1.149 contactId no resolubles), `resolve_tax` (description `[holded: <key>]` + `tax_reclassification.yaml` para catch-alls), `resolve_journal` (lookup por prefijo `docNumber`; PR- vía `account.move.reversal`), `resolve_account` (subcuentas 11-dig autocreadas hijas de PGCE — 148 expensesaccount + 38 saleschannels en paso 0). Orden de carga 11 pasos con dependencias estrictas: 0a/0b accounts → 1 partners → 2 products → 3 invoices → 4 purchases → 5 creditnotes → 6 purchaserefunds → 7 payments → 8 dailyledger filtrado (sólo manuales) → 9 PDFs → 10 validate. Transformaciones por modelo documentadas campo Holded → campo Odoo con pseudocódigo (partners, products, account.move, account.payment, dailyledger filtrado por heurística doc-counterpart, PDFs → `ir.attachment`). Validaciones post-load: 4 queries SQL (cuadre por journal vs jq sobre dump, balance partners 430/410, cuadre IVA trimestral vs 303 presentado, conteos finales por modelo). Decisión arquitectónica: scripts ad-hoc en `docs/tenants/inpr3mium/etl/` (11 loaders + resolvers + validate), no skill nueva — fedefarma usa Axional, no reusable cross-tenant; si en 5.3 los scripts resultan limpios se promueve a skill `holded-to-odoo` en 5.4. 6 riesgos identificados con mitigación: (1) catch-all `p_iva_exento` 2.306 docs → spot-check 100 random con operador en 5.3; (2) 1.149 contactId no resolubles → placeholder único aceptado; (3) decimal mismatch ±0.02€/línea antes de abortar; (4) dailyledger heurística filtrado → dry-run con CSV de clasificación para revisión manual; (5) sequences pre-loading vs 5.3 → política BORRAR moves 2024-2025 antes de 5.4; (6) saleschannels no en `documents.*.jsonl` → confirmar campo `channelId` en 5.3. Entregables pendientes pre-5.3: `tax_reclassification.yaml` con operador + scaffolding `etl/` + pre-load dry-run paso 0. |

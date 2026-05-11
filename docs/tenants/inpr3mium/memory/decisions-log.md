@@ -8,6 +8,26 @@ revisión.
 
 ---
 
+## 2026-05-11 — Fase 5.1: scripts ETL ad-hoc en `etl/`, no skill nueva
+
+**Decisión**: los 11 loaders + `holded_resolvers.py` + `validate_etl.py`
+viven en `docs/tenants/inpr3mium/etl/`, no como cuarta skill
+`holded-to-odoo`.
+
+**Razón**: fedefarma migra desde Axional (no Holded) → no reusable
+cross-tenant. Los loaders dependen de decisiones concretas inpr3mium
+(catch-all `p_iva_exento`, sales channels específicos) → bundle
+reutilizable sería over-engineering. Si en 5.3 los scripts resultan
+limpios y un futuro tenant Holded aparece, se promueve a skill
+`holded-to-odoo` en 5.4.
+
+**Aplicación**: scaffolding entregado 2026-05-11 con
+`holded_resolvers.py` real (4 resolvers + 5 helpers puros + cache +
+`ResolverStats`), tests offline 65/65 verdes, schema esqueleto
+`tax_reclassification.yaml` y README. Loaders pendientes.
+
+---
+
 ## 2026-05-11 — Fase 5.0 ejecutada: 4 bancos + 6 tarjetas + payment term + defaults
 
 **Decisión**: aplicar 5.0 sin pre-loading de `ir.sequence.number_next`
