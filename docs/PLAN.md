@@ -17,9 +17,13 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11 (Fase 4.4 cerrada)
+- **Última actualización**: 2026-05-11 (Fase 4.4 cerrada; 4.5
+  diferida sin driver de negocio)
 - **Última fase completada**: **Bloque C — Fase 4.4 (bot tightening +
-  record rules + snapshot)**. Bot uid=8 reducido de
+  record rules + snapshot)**. Fase 4.5 (EDI cert) **diferida**: sin
+  obligación regulatoria hoy (SII no aplica, Veri\*Factu obligatorio
+  desde 2027) y sin factura a Administración Pública pendiente. Se
+  reabre cuando aparezca driver de negocio. Bot uid=8 reducido de
   `base.group_system` a perfil least-privilege: `base.group_user` +
   `base.group_erp_manager` + `base.group_multi_company` +
   `base.group_partner_manager` + `account.group_account_manager` +
@@ -93,15 +97,42 @@ contexto entre conversaciones de Claude Code.
   - Decisión: la skill se llama **`holded-export`** (no
     `odoo-data-migration` como reservaba el plan original). Una skill
     por origen externo; `fedefarma` tendrá `axional-export`.
-- **Próximo paso**: abrir **Fase 4.5** (EDI: certificado digital +
-  entornos test/prod en módulos AEAT). Pasos manuales: importar
-  certificado de firma electrónica en Odoo (FNMT o DigitalSign), crear
-  registros de configuración en `l10n_es_aeat` para entornos `test`
-  y `production`, activar Veri*Factu opcional (no obligatorio hasta
-  2027, pero útil para validar pipeline). Documentar en
-  `docs/tenants/inpr3mium/edi-setup.md`. Bloqueante operativo:
-  necesita certificado digital del operador (manual, fuera del
-  agente).
+- **Próximo paso**: abrir **Fase 4.6** (smoke test contable). Fase
+  4.5 (EDI cert) queda diferida — inpr3mium no necesita SII
+  (no es gran empresa) y Veri\*Factu no es obligatorio hasta 2027,
+  así que no hay driver de negocio para invertir esfuerzo hoy en
+  instalar el certificado FNMT. Volveremos a 4.5 cuando se acerque
+  2027 o cuando aparezca una factura a Administración Pública.
+  Plan 4.6:
+  1. Crear `res.partner` de prueba (cliente español ficticio con NIF
+     válido formato `ESB...`).
+  2. Crear `account.move` `out_invoice` en diario `A-` (id=7) con 1
+     línea de servicio + IVA 21% (`s_iva21b`). Verificar que la
+     posición fiscal `ES Domestic` se aplica automáticamente.
+  3. `action_post()` → comprobar que `name` recibe el prefijo `A-` y
+     se crea `account.move.line` por cada partida (base + IVA +
+     contrapartida cliente).
+  4. Crear `account.move` `in_invoice` en diario `PB-` (id=8) con
+     proveedor español y línea de gasto + IVA 21% soportado
+     (`p_iva21_bc`).
+  5. `action_post()` ídem.
+  6. Verificar reporting básico: balance refleja deuda cliente +
+     deuda con proveedor; estado de resultados muestra ingreso +
+     gasto.
+  7. Probar rectificativa (out_refund) en diario `AC-` (id=13) con
+     `move_type='out_refund'` y `reversed_entry_id` apuntando a la
+     factura del paso 2 — validar que el numero `AC-...` se genera
+     independiente del `A-...`.
+  8. Limpiar (`unlink` de los 4 moves + 1 partner test) o dejar como
+     "smoke test reference" según convenga. Probablemente dejar todo
+     y resetear en Fase 5 cuando se cargue el histórico real.
+  9. Snapshot `2026-MM-DD_fase-4.6.json` documentando estado
+     post-smoke.
+
+  Si el paso 7 falla por que Odoo no acepta crear out_refund en
+  journal distinto al de la factura original, replantear la decisión
+  AC-separado vs refund_sequence en A- (documentada en
+  `migration-from-holded.md`).
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -384,11 +415,24 @@ ejecutable del agente, pero el agente lo necesita).
   memoria. Trade-offs aceptados: bot no puede escribir
   `ir.config_parameter` ni instalar módulos (requiere `group_system`,
   escalación temporal via shell cuando se necesite).
-- ⏸ **4.5** EDI: certificado digital + entornos test/prod en módulos
-  AEAT. Pasos manuales documentados en `edi-setup.md`.
-- ⏸ **4.6** Smoke test contable: primera factura + SII test +
-  reporting.
-- ⏸ **4.7** Checkpoint y commit con bitácora del bootstrap.
+- 🔵 **4.5** **DIFERIDA — no bloqueante para inpr3mium**. EDI:
+  certificado digital + entornos test/prod en módulos AEAT. Razón:
+  inpr3mium NO está obligada a SII (no es gran empresa ni REDEME), y
+  Veri\*Factu no es obligatorio hasta 2027 (memoria
+  `project_tenant_edi_obligations.md`). El módulo `l10n_es_facturae`
+  está instalado pero solo se usa si el operador tiene que facturar a
+  Administración Pública (FACe) — no es el caso hoy. Pendiente
+  operativo aislado: el operador descarga certificado FNMT-CERES con
+  DNI electrónico y lo importa cuando se acerque 2027 o cuando facture
+  a un organismo público. Decisión: **saltamos 4.5 hasta que haya un
+  driver de negocio real** (factura a Admin Pública o aproximación
+  2027). NO bloquea 4.6, 4.7 ni Fase 5.
+- ⏸ **4.6** Smoke test contable: primera factura emitida + primera
+  factura recibida + reporting básico. Sin SII test (4.5 diferida).
+  Valida que el pipeline funcional A- → out_invoice → posted →
+  account.move.line → balance reflejado funciona en company_id=1.
+- ⏸ **4.7** Checkpoint y commit con bitácora del bootstrap. Sello
+  "inpr3mium lista para facturar en modo local" cerrando Bloque C.
 
 ### Fase 5 — Migración de datos desde Holded
 
@@ -466,9 +510,12 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
     analítico; script journal_setup.py parchado para Odoo 19)
 16. ✅ Fase 4.4 (bot tightening + snapshot; 5 scripts del agente
     parchados Odoo 19)
-17. ⏸ Fase 4.5 (EDI: certificado + entornos)
-18. ⏸ Fase 4.6 (smoke test: primera factura)
-19. ⏸ Fase 4.7 (commit + bitácora)
+17. 🔵 Fase 4.5 (EDI cert) — **DIFERIDA**, sin driver de negocio
+    (inpr3mium no usa SII; Veri\*Factu obligatorio solo desde 2027).
+    Volveremos cuando se acerque 2027 o si surge factura a Admin
+    Pública.
+18. ⏸ Fase 4.6 (smoke test: 4 moves end-to-end + reporting básico)
+19. ⏸ Fase 4.7 (commit + bitácora cerrando Bloque C)
 
 ### Bloque D — Migración de datos
 
@@ -501,6 +548,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.2.2 (preparado) | API key de Holded rotada por el operador tras incidente menor (key compartida en chat → revocada en Holded → Settings → Developers, generada nueva, persistida en `.env` local). Skill lista para ejecutar el dump. Plan de ejecución documentado paso a paso en `Fase 4.2.2` (7 pasos: smoke test → inspect → confirmar plan → dump completo → validar → inspección humana → commit). Próxima sesión puede retomar leyendo solo `docs/PLAN.md`. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — 1er pase) | Primer dump de inpr3mium: 43.4 MB / 490 docs / 439 PDFs. Operador detectó que SOLO contenía datos de 2026: el endpoint `/documents` de Holded SIN filtro de fechas devuelve únicamente el año en curso. 4º bug encontrado. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada — histórico completo) | Dump real definitivo: **969 MB** en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (gitignored). 3.363 contactos + 1.569 productos + 440 servicios + 148 cuentas de gasto + 103 taxes + 708 pagos + 12 tesorerías + 85 remesas + 38 saleschannels + 16 numbering series + **12.212 documentos** (3.430 invoice + 678 creditnote + 7.998 purchase + 69 purchaserefund + 34 proform + 3 estimate) + 2.250 asientos contables (histórico 2018-2026 chunkeado por años) + **7.489 PDFs** (3.430 invoice 142.6 MB + 4.059 purchase 801.4 MB; 3.939 purchases sin PDF = asientos manuales). errors.jsonl: 0 líneas. 4 bugs del cliente arreglados durante el proceso: (1) `paginate()` sin `page_size` capaba a 500 items; (2) paths `/warehouse` y `/expensesaccount` devuelven HTML SPA — reales `/warehouses` y `/expensesaccounts` plurales; (3) `dailyledger` ventana ≤ 1 año, chunking auto por años; (4) `/documents` sin starttmp/endtmp devuelve solo año en curso, ahora chunking auto por años con defaults sensatos (2018-01-01 → now). 68/68 tests offline OK. `migration-from-holded.md` actualizado con volúmenes reales + 3 tablas (sequences, mapeo IVA, cuentas de gasto). Próximo: Fase 4.3. |
+| 2026-05-11 | Bloque C Fase 4.5 (diferida) | Decisión: saltar 4.5 (EDI cert) sin acción operativa hoy. Motivo: inpr3mium no es gran empresa ni REDEME (no obligada a SII), Veri\*Factu no es obligatorio hasta 2027, y no factura a Administración Pública (único caso que activaría FACe/FacturaE de forma inmediata). Coste de instalar el certificado FNMT hoy = 0 valor de negocio. Cuando aparezca un driver real (cliente AAPP o se acerque 2027), volvemos a abrir 4.5 — el módulo `l10n_es_facturae` ya está instalado, solo falta importar el .p12 y configurar entornos. Avance al runbook: pasamos directos a 4.6 (smoke test contable sin SII). |
 | 2026-05-11 | Bloque C Fase 4.4 | Bot uid=8 tightenado: quitado `base.group_system`, dejados 6 grupos least-privilege (`base.group_user` + `base.group_erp_manager` + `base.group_multi_company` + `base.group_partner_manager` + `account.group_account_manager` + `analytic.group_analytic_accounting`). Validado vía RPC: bot puede CRUD partners, draft account.move, ir.rule, leer ir.model.data + ir.module.module + journals + fiscal positions + analytic plans. Pierde `ir.config_parameter` y instalar módulos (acepta escalación temporal). Regla multi-company global de `res.partner` ya existe en Odoo core (id=2, dominio con `partner_share` + `parent_of` — más correcto que el del runbook). Snapshot manual en `docs/tenants/inpr3mium/snapshots/2026-05-11_fase-4.4.json` (1 company / 2 users / 12 journals / 29 FPs / 2 analytic plans / 13 record rules sobre modelos críticos / 75 modules installed). 5 scripts del agente parchados para Odoo 19: `groups_id`→`group_ids` (group_assign, audit_admin_state, _drift, user_provision), `res.groups.category_id` removido (audit_admin_state), `account.journal.sequence_id` removido (audit_admin_state). 4 gotchas Odoo 19 nuevos en memoria: cambios grupos requieren restart worker HTTP; perfil mínimo bot post-tightening; el runbook .claude/skills/CLAUDE.md está desactualizado al prescribir un perfil demasiado restrictivo; bugs históricos en scripts. |
 | 2026-05-11 | Bloque C Fase 4.3 | Diarios + posiciones fiscales + plan analítico. 8 `account.journal` configurados preservando prefijos Holded para auditoría AEAT: 6 sale (A-, AC-, AF-, KD-, FVU-, L-) + 2 purchase (PB-, PI-). Renombrados stock INV→A- y FACTU→PB-. PB- con `refund_sequence=True` para PR- (69 purchaserefund). AC- como diario separado (no `refund_sequence` en A-) porque Holded mezcla creditnote + rectificativas de aumento en AC-. Posiciones fiscales: `l10n_es_pymes` ya creó las 4 esenciales (Intra-community, Extra-community, Equivalence surcharge, ISP) + 10 IRPF withholding — 0 RPC. Plan analítico "Granularidad gasto" (id=2) creado para granularidad futura de las 148 cuentas Holded. Gotchas Odoo 19 nuevos: (1) `account.journal.sequence_id` y `ir.sequence` por journal desaparecieron — `code` es el prefijo, `refund_sequence` boolean para abonos; (2) `account.analytic.plan` ya no tiene `company_id` (cross-company); (3) bot necesita `analytic.group_analytic_accounting` para gestionar `account.analytic.plan`. Script `journal_setup.py` parchado para Odoo 19. |
 
