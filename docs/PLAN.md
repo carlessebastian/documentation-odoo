@@ -17,9 +17,23 @@ contexto entre conversaciones de Claude Code.
 
 ## Estado actual
 
-- **Última actualización**: 2026-05-11
-- **Última fase completada**: **Bloque C — Fase 4.2.1 (skill
-  `holded-export` MVP solo-lectura)**. 4ª skill creada con:
+- **Última actualización**: 2026-05-11 (Fase 4.2.2 cerrada)
+- **Última fase completada**: **Bloque C — Fase 4.2.2 (dump real de
+  Holded ejecutado)**. Dump completo de inpr3mium en
+  `docs/tenants/inpr3mium/holded-export/2026-05-11/`: 43.4 MB, 23
+  resources, 3.363 contactos + 1.569 productos + 490 documentos +
+  2.250 asientos contables (histórico 2018-2026) + **439 PDFs**
+  originales escaneados de facturas. 3 bugs del cliente descubiertos
+  y corregidos durante el dump: (1) paginación sin `page_size` que
+  capaba a 500 items en contacts/products/payments; (2) paths
+  `/warehouse` y `/expensesaccount` no existen — los reales son
+  `/warehouses` y `/expensesaccounts` (plurales); (3) `dailyledger`
+  requiere ventanas ≤ 1 año, ahora chunkea automáticamente por años.
+  68/68 tests offline OK tras los fixes. Inspección humana del dump
+  añadida a `migration-from-holded.md` (3 tablas: 16 sequences,
+  mapeo IVA via key, distribución de 148 cuentas de gasto). Input
+  directo para Fase 4.3.
+- **Fase 4.2.1 (previa)**: skill `holded-export` MVP creada con:
   - `SKILL.md` con triggers ("exportar holded", "dump holded",
     "facturas recibidas escaneadas", ...) y garantía read-only.
   - Cliente HTTP `holded_client.py` con whitelist de 28 endpoints GET,
@@ -37,25 +51,19 @@ contexto entre conversaciones de Claude Code.
   - Decisión: la skill se llama **`holded-export`** (no
     `odoo-data-migration` como reservaba el plan original). Una skill
     por origen externo; `fedefarma` tendrá `axional-export`.
-- **Próximo paso**: ejecutar el **dump real de Holded** ahora que la
-  API key está rotada y configurada en `.env` local
-  (`HOLDED_API_KEY=...`). Subtareas concretas para la próxima sesión
-  (ver detalle en **Fase 4.2.2 — Ejecutar el dump** más abajo):
-  1. Validar conexión con un probe minimal (1 GET a `/contacts`,
-     `--limit 1`).
-  2. Lanzar `holded_inspect.py` para dimensionar.
-  3. Confirmar plan con el operador (resources, rango de fechas,
-     PDFs sí/no, espacio en disco estimado).
-  4. Ejecutar `holded_export.py` con `--include-pdfs` apuntando a
-     `docs/tenants/inpr3mium/holded-export/$(date +%F)/`.
-  5. Validar con `dump_summary.py`; revisar `errors.jsonl`.
-  6. Inspección humana de `numbering_series.json` y `taxes.jsonl` →
-     anotar formato de secuencias y mapeo IVA en
-     `migration-from-holded.md` para alimentar Fase 4.3.
-  7. Commit del bloque (skill + actualizaciones cross-skill ya
-     hechas; el dump NO se commitea — está gitignored).
-  8. Abrir **Fase 4.3** (diarios, secuencias, posiciones fiscales)
-     informada por los outputs anteriores.
+- **Próximo paso**: abrir **Fase 4.3** (diarios, secuencias,
+  posiciones fiscales) informada por el dump de Holded:
+  - 6 secuencias de invoice distintas en Holded (A-, AC-, AF-, KD-,
+    FVU-, L-) → decidir 6 diarios separados o 1 con selector.
+  - Mapeo de IVA: usar campo `key` de Holded (ej. `s_iva_21`) como
+    join contra `l10n_es` (ej. `s_iva21b`).
+  - 148 cuentas de gasto de 11 dígitos → colapsar a PGCE Pymes 4-7
+    dígitos + analítica para granularidad.
+  - Posiciones fiscales: intracomunitario UE (clave `Adq.Intracom.*`
+    presente en taxes), ISP servicios extra-UE, RE (varios `s_iva_re_*`
+    en el dump).
+  Detalle completo en `docs/tenants/inpr3mium/migration-from-holded.md`
+  sección "Hallazgos del dump del 2026-05-11".
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -177,8 +185,14 @@ ejecutable del agente, pero el agente lo necesita).
   - **Sin escritura a Odoo** (Fase 5).
   - **Pendiente operativo**: ejecutar el dump real contra inpr3mium
     cuando el operador configure `HOLDED_API_KEY` en `.env`.
-- ⏸ **4.2.2** **Ejecutar el dump real de Holded**. Subfase operativa
-  (no de código). El skill ya está construida; aquí se usa.
+- ✅ **4.2.2** **Dump real de Holded ejecutado** (2026-05-11).
+  Output en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (43.4
+  MB, gitignored). Detalle de hallazgos en
+  `migration-from-holded.md`. Durante el dump se detectaron y
+  arreglaron 3 bugs del cliente (paginación, paths plurales,
+  chunking dailyledger por años). 68/68 tests offline OK.
+
+  **Plan de ejecución original** (mantenido como referencia):
 
   **Pre-requisitos** (confirmar antes de empezar):
   - `HOLDED_API_KEY` presente en `.env` y rotada (no la compartida
@@ -384,10 +398,9 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 11. ✅ Fase 4.1 (instalación de módulos)
 12. ✅ Fase 4.2 (empresa + idiomas + chart template)
 13. ✅ Fase 4.2.1 (skill `holded-export` MVP solo-lectura)
-14. ⏸ **Fase 4.2.2 (próximo paso) — Ejecutar el dump real de Holded**.
-    Ver detalle paso a paso en Fase 4.2.2 arriba (7 pasos: smoke test
-    → inspect → confirmar plan → dump completo → validar → inspección
-    humana → commit).
+14. ✅ Fase 4.2.2 (dump real de Holded de inpr3mium ejecutado;
+    3 bugs del cliente arreglados durante el proceso; hallazgos
+    documentados en `migration-from-holded.md`)
 15. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales — informado
     por el dump de 4.2.2)
 16. ⏸ Fase 4.4 (bot user + permisos + record rules)
@@ -424,6 +437,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.2 | Company id=1 reconfigurada con datos legales reales (Inteligencia del negocio pr3mium S.L., NIF, Spain/Barcelona, dirección y contacto). Chart `es_pymes` cargado (51 generic_coa → 646 PGCE Pymes). Idiomas es_ES + ca_ES activos. Bot tz Europe/Madrid + grupos account/partner manager (group_system conservado para 4.3). `web.base.url.freeze=True`. Gotchas nuevos: chart template codes en Odoo 19 son strings cortos (`es_pymes`), no XML-IDs; `try_loading` via XML-RPC tiene bug en arg posicional — usar `odoo shell`. |
 | 2026-05-11 | Bloque C Fase 4.2.1 | Skill `holded-export` creada (renombrada desde `odoo-data-migration` para mejor encaje multi-origen: una skill por origen externo). Cliente HTTP read-only con whitelist de 28 endpoints GET, backoff 429/5xx, masking de API key, test que asserta ausencia de verbos de escritura. Scraper vendoriza 59 `.md` de developers.holded.com (376 KB offline). Scripts `inspect/export/dump_summary` end-to-end. 68/68 tests offline ok. `.env.example` ampliado con `HOLDED_API_KEY` + `HOLDED_API_BASE`. `.gitignore` excluye `docs/tenants/*/holded-export/`. Dump real pendiente de configuración local de la API key. |
 | 2026-05-11 | Bloque C Fase 4.2.2 (preparado) | API key de Holded rotada por el operador tras incidente menor (key compartida en chat → revocada en Holded → Settings → Developers, generada nueva, persistida en `.env` local). Skill lista para ejecutar el dump. Plan de ejecución documentado paso a paso en `Fase 4.2.2` (7 pasos: smoke test → inspect → confirmar plan → dump completo → validar → inspección humana → commit). Próxima sesión puede retomar leyendo solo `docs/PLAN.md`. |
+| 2026-05-11 | Bloque C Fase 4.2.2 (ejecutada) | Dump real de inpr3mium completado: 43.4 MB en `docs/tenants/inpr3mium/holded-export/2026-05-11/` (gitignored). 3.363 contactos + 1.569 productos + 440 servicios + 148 cuentas de gasto + 103 taxes + 708 pagos + 12 tesorerías + 85 remesas + 38 saleschannels + 16 numbering series + 490 documentos (166 invoice + 44 creditnote + 273 purchase + 4 purchaserefund + 3 proform) + 2.250 asientos contables (histórico 2018-2026 chunkeado por años) + 439 PDFs originales escaneados (166 invoice 7.2 MB + 273 purchase 29.8 MB, 0 errores). Durante el dump se detectaron y arreglaron 3 bugs del cliente: (1) `paginate()` sin `page_size` capaba a 500 items — perdíamos 85% de contacts, 68% products, 30% payments; (2) paths `/warehouse` y `/expensesaccount` devuelven HTML SPA (no JSON) — los reales son `/warehouses` y `/expensesaccounts` plurales; (3) `dailyledger` requiere ventanas ≤ 1 año, ahora chunkea automáticamente. 68/68 tests offline OK tras fixes. Inspección humana añadida a `migration-from-holded.md` (3 tablas: 16 sequences con prefijos reales, mapeo IVA Holded `key` → `l10n_es`, distribución de 148 cuentas de gasto por prefijo PGCE). Próximo: Fase 4.3. |
 
 ---
 

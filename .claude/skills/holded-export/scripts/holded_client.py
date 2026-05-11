@@ -83,11 +83,11 @@ ALLOWED_ENDPOINTS: tuple[tuple[str, str], ...] = (
     ("invoicing", "/products/{productId}"),
     ("invoicing", "/services"),
     ("invoicing", "/services/{serviceId}"),
-    ("invoicing", "/warehouse"),
-    ("invoicing", "/warehouse/{warehouseId}"),
+    ("invoicing", "/warehouses"),
+    ("invoicing", "/warehouses/{warehouseId}"),
     ("invoicing", "/treasury"),
     ("invoicing", "/treasury/{treasuryId}"),
-    ("invoicing", "/expensesaccount"),
+    ("invoicing", "/expensesaccounts"),
     ("invoicing", "/numberingseries/{type}"),
     ("invoicing", "/saleschannels"),
     ("invoicing", "/saleschannels/{salesChannelId}"),
@@ -444,58 +444,76 @@ class HoldedClient:
 # -----------------------------------------------------------------------------
 
 def iter_contacts(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/contacts")
+    yield from client.paginate("invoicing", "/contacts", page_size=500)
 
 
 def iter_products(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/products")
+    yield from client.paginate("invoicing", "/products", page_size=500)
 
 
 def iter_services(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/services")
+    yield from client.paginate("invoicing", "/services", page_size=500)
 
 
 def iter_documents(client: HoldedClient, doc_type: str, **filters: Any) -> Iterator[dict]:
     if doc_type not in DOC_TYPES:
         raise ValueError(f"doc_type invalido: {doc_type!r}. Validos: {DOC_TYPES}")
-    yield from client.paginate("invoicing", f"/documents/{doc_type}", params=filters or None)
+    yield from client.paginate("invoicing", f"/documents/{doc_type}", params=filters or None, page_size=500)
 
 
 def iter_dailyledger(client: HoldedClient, **filters: Any) -> Iterator[dict]:
-    yield from client.paginate(
-        "accounting",
-        "/dailyledger",
-        params=filters or None,
-        page_size=500,  # dailyledger SI pagina con page=N, hasta 500/pagina
-    )
+    # Holded impone: starttmp/endtmp obligatorios, starttmp > 0, y ventana
+    # <= 1 anyo entre start y end. Para histórico completo se chunkea por
+    # anyos de 365 dias. Default: 2018-01-01 -> now+1d (cubre Holded ~2014+
+    # pero limitamos a una decada razonable).
+    DEFAULT_START = 1514764800  # 2018-01-01 UTC
+    YEAR_S = 365 * 86400
+    params = dict(filters)
+    start = int(params.pop("starttmp", DEFAULT_START))
+    end = int(params.pop("endtmp", int(time.time()) + 86400))
+    if start <= 0:
+        start = DEFAULT_START
+    chunk_start = start
+    while chunk_start < end:
+        chunk_end = min(chunk_start + YEAR_S, end)
+        chunk_params = dict(params)
+        chunk_params["starttmp"] = chunk_start
+        chunk_params["endtmp"] = chunk_end
+        yield from client.paginate(
+            "accounting",
+            "/dailyledger",
+            params=chunk_params,
+            page_size=500,  # dailyledger SI pagina con page=N, hasta 500/pagina
+        )
+        chunk_start = chunk_end
 
 
 def iter_payments(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/payments")
+    yield from client.paginate("invoicing", "/payments", page_size=500)
 
 
 def iter_treasuries(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/treasury")
+    yield from client.paginate("invoicing", "/treasury", page_size=500)
 
 
 def iter_taxes(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/taxes")
+    yield from client.paginate("invoicing", "/taxes", page_size=500)
 
 
 def iter_warehouses(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/warehouse")
+    yield from client.paginate("invoicing", "/warehouses", page_size=500)
 
 
 def iter_expensesaccount(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/expensesaccount")
+    yield from client.paginate("invoicing", "/expensesaccounts", page_size=500)
 
 
 def iter_remittances(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/remittances")
+    yield from client.paginate("invoicing", "/remittances", page_size=500)
 
 
 def iter_saleschannels(client: HoldedClient) -> Iterator[dict]:
-    yield from client.paginate("invoicing", "/saleschannels")
+    yield from client.paginate("invoicing", "/saleschannels", page_size=500)
 
 
 def get_numbering_series(client: HoldedClient, type_: str) -> Any:

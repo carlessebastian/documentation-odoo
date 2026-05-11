@@ -116,6 +116,85 @@ no puede modificar nada en la cuenta Holded.
   esté maduro y la migración del subset 2024+2025 esté validada.
 - Pasos del día D — a detallar tras validación.
 
+## Hallazgos del dump del 2026-05-11 (Fase 4.2.2)
+
+Dump real ejecutado en `holded-export/2026-05-11/`. Datos extraídos
+directamente de la cuenta para informar Fase 4.3.
+
+### Secuencias de numeración (`numbering_series.json`)
+
+Holded usa placeholders `%%%%%%` para el contador y `[YY]` para el
+año. Mapeo a `ir.sequence` de Odoo (prefijo + padding del número):
+
+| Tipo Holded | Nombre Holded | Prefijo | Padding | `ir.sequence` Odoo |
+|---|---|---|---|---|
+| invoice | Facturas de Ventas | `A-` | 6 | `A-%(range_year)s-NNNNNN`* |
+| invoice | Facturas de Ventas Abonos | `AC-` | 6 | sequence dedicada |
+| invoice | Autofactura | `AF-` | 5 | sequence dedicada |
+| invoice | Facturas Kit Digital | `KD-` | 5 | sequence dedicada |
+| invoice | Facturas especiales | `FVU-` | 6 | sequence dedicada |
+| invoice | Laboratorios | `L-` | 6 | sequence dedicada |
+| creditnote | Línea CN | `AC-` | 6 | **misma sequence que Abonos** |
+| purchase | Factura de Gastos | `PB-` | 6 | sequence dedicada |
+| purchase | Facturas compras Inmovilizado | `PI-` | 6 | sequence dedicada |
+| purchaserefund | Predeterminada | `PR` | 5 | sequence dedicada |
+| salesreceipt/salesorder/proform/waybill/estimate/purchaseorder | varios `[YY]NNNN` | `T/SO/PRO/A/E/O` | 4 | sequences con prefijo de año |
+
+*Decidir en 4.3: ¿preservamos los códigos antiguos (continuidad
+histórica para auditoría AEAT) o reseteamos contadores en Odoo? Las
+ventas son `A-XXXXXX` (no `A-YYYY-XXXXXX`), así que el padding sí, el
+año no. → Crear `ir.sequence` con `prefix="A-"`, `padding=6`, NO
+`use_date_range`.
+
+→ 6 sequences distintas solo para `invoice` (≠ habitual: 1 por
+diario). Implica **6 diarios** o **1 diario + selector** durante la
+carga del histórico. Decisión 4.3.
+
+### Mapeo de impuestos (`taxes.jsonl`)
+
+Holded expone los taxes con `key` canónica que mapea limpio:
+
+| Holded key | Holded amount | Odoo (l10n_es) | scope |
+|---|---|---|---|
+| `s_iva_21` | 21 | `s_iva21b` | sales |
+| `s_iva_10` | 10 | `s_iva10b` | sales |
+| `s_iva_4` | 4 | `s_iva4b` | sales |
+| `s_iva_0` | 0 | `s_iva0_e` | sales |
+| `p_iva_21` | 21 | `p_iva21_bc` | purchases |
+| `p_iva_10` | 10 | `p_iva10_bc` | purchases |
+| `p_iva_4` | 4 | `p_iva4_bc` | purchases |
+| `p_iva_bi_21` | 21 | `p_iva21_ibc` (bien inversión) | purchases |
+| `s_iva_exento` / `p_iva_exento` | 0 | `s_iva0_e` / `p_iva0_e` | exento art.20 |
+
+Holded tiene además `IVA 12%`, `IVA 5%`, `IVA 7,5%`, `IVA 2%` (vigentes
+ES temporales 2023-2024 para electricidad/alimentos). Mapearlos al
+mismo `l10n_es` con la `amount` correspondiente — Odoo los tendrá si
+`l10n_es` está actualizado, si no crear manualmente.
+
+Recargo Equivalencia, ISP, Adq.Intracom. UE: `l10n_es` los cubre.
+Confirmar matching por `key` durante el ETL.
+
+### Cuentas de gasto (`expensesaccount.jsonl`)
+
+148 cuentas, todas con `accountNum` de **11 dígitos**. Distribución
+por prefijo de 3 dígitos:
+
+| Prefijo | n cuentas | Grupo PGCE |
+|---|---|---|
+| `621` | 39 | Arrendamientos y cánones |
+| `627` | 23 | Servicios bancarios y similares (incluye comisiones) |
+| `623` | 18 | Servicios profesionales independientes |
+| `640` | 9 | Sueldos y salarios |
+| `629` | 7 | Otros servicios |
+| `622` | 7 | Reparaciones y conservación |
+| `626` | 6 | Servicios bancarios |
+| `600` | 6 | Compras de mercaderías |
+
+Confirma decisión histórica de **colapsar a prefijo 4-7 dígitos**
+PGCE Pymes y mover granularidad (proveedor/centro de coste/contrato)
+a `account.analytic.account`. La granularidad real está en el `name`
+de la cuenta (ej. "ALQUILER FACTORIAL", "AMAZON AWS"), no en el código.
+
 ## Particularidades a resolver durante el ETL
 
 - **Códigos de cuenta de 11 dígitos en Holded** vs 4-8 dígitos en
