@@ -132,8 +132,8 @@ deferred_modules:
     options: "Self-port desde 18.0 (delta pequenyo, solo capa SEPA sobre pain_base)."
 
   - name: account_banking_sepa_direct_debit
-    reason: "Estado en 19.0 sin verificar (mismo repo OCA/bank-payment que credit_transfer, probable port pendiente). No critico para arranque B2B-only."
-    revisit_on: "Si se activa cobro por domiciliacion SEPA (B2C o suscripciones). Verificar disponibilidad 19.0 antes."
+    reason: "Disponible en 19.0 (v19.0.1.0.0), pero inpr3mium es B2B servicios profesionales sin cobro por domiciliacion (clientes pagan por transferencia). No instalar hasta que la operativa lo requiera."
+    revisit_on: "Si se activa cobro recurrente domiciliado (retainers SEPA, suscripciones, B2C)."
 
 # Modulos opcionales recomendados por sector y particularidades --------------
 
@@ -159,6 +159,10 @@ oca_repos:
   - web
   - queue
   - bank-payment
+  # Anyadidos 2026-05-11 (Fase 4.1) al descubrir deps transitivas durante install:
+  - reporting-engine                    # report_xlsx, report_xml, report_qweb_parameter
+  - server-ux                           # date_range (movido desde server-tools en v15+)
+  - community-data-files                # base_iso3166, base_bank_from_iban
 
 # Anyos fiscales a inicializar -----------------------------------------------
 # Estrategia: arrancamos con 2024+2025 para validar la migracion con datos

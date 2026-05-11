@@ -18,19 +18,21 @@ contexto entre conversaciones de Claude Code.
 ## Estado actual
 
 - **Última actualización**: 2026-05-11
-- **Última fase completada**: **Bloque B + auditoría OCA 19.0** de los
-  módulos en `expected_modules`. Resultado: `l10n_es_facturae` es el
-  único "missing" que está realmente disponible (19.0.1.0.0); el resto
-  se ha reclasificado. `expected_modules` de inpr3mium limpiado a la
-  lista efectivamente instalable hoy; los demás pasan a un nuevo
-  bloque `deferred_modules` con razón y `revisit_on`.
-- **Próximo paso**: **Bloque C — Fase 4.1** (instalación de módulos
-  OCA via `odoo-module-admin`) con la lista limpia. Bloqueante (b)
-  resuelto. Quedan pendientes (no bloquean Fase 4.1):
-  (a) bug `_json2` del cliente — workaround `ODOO_FORCE_XMLRPC=1`
-  estable;
-  (c) campos renombrados Odoo 19 (`groups_id` → `group_ids`) — se
-  arregla cuando aparezca en operativa de skills.
+- **Última fase completada**: **Bloque C — Fase 4.1 (instalación de
+  módulos OCA)**. 12/12 `expected_modules` con `state=installed` en DB
+  `inpr3mium_dev`; 0 módulos colgados; 75 módulos totales (12 explícitos
+  + 30 deps OCA transitivas + 33 deps core). Stack completo:
+  `l10n_es`, AEAT 303/347/349/390/111/115, `l10n_es_facturae`,
+  `account_financial_report`, `account_payment_mode`, `auditlog`,
+  `queue_job`. Aprendizajes capturados en memoria (gotchas doodba) y
+  en runbook compartido `.claude/skills/CLAUDE.md`.
+- **Próximo paso**: **Fase 4.2** — empresa + idiomas + settings via
+  `odoo-functional-admin`. Subtareas:
+  - `language_install --langs es_ES,ca_ES --activate`.
+  - `subsidiary_bootstrap.py --name "Inteligencia del negocio pr3mium
+    S.L." --vat ESB65758682 --chart-template l10n_es.l10n_es_pymes`.
+  - `settings_param` con `web.base.url`.
+  - Reasignar compañía del bot a la nueva.
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -105,6 +107,18 @@ ejecutable del agente, pero el agente lo necesita).
 **Objetivo**: con doodba arrancado y DB vacía, dejar la instancia
 **lista para facturar** en español. Es el primer uso real del agente.
 
+- ✅ **4.1** Instalación de módulos completada (12/12 `expected_modules`
+  con state=installed, 75 módulos totales en DB). Aprendizajes: 3 repos
+  OCA "ocultos" hubo que añadir (`reporting-engine`, `server-ux`,
+  `community-data-files`); `addons.yaml` debe listar TODA la cadena
+  transitiva (doodba `addons init` no sigue `depends`); 5 pip pkgs
+  añadidos a `pip.txt` (`pycountry`, `xmlsig`, `xlsxwriter`, `xlrd`,
+  `schwifty==2024.4.0`); workaround `PGDATABASE=devel` con
+  `docker compose run --rm -e PGDATABASE=<db>`; chown filestore para
+  alinear UID entre `exec` y `run --rm`. Todo capturado en memoria
+  `project_odoo19_doodba_gotchas.md` y runbook
+  `.claude/skills/CLAUDE.md`.
+
 - ✅ **4.0** `profile.yaml` de inpr3mium relleno. Decisiones tomadas:
   PGCE Pymes (justificado por análisis del cuadro de cuentas Holded),
   EDI stack OCA, sociedad única, sector servicios profesionales con
@@ -112,9 +126,6 @@ ejecutable del agente, pero el agente lo necesita).
   intracomunitario UE, servicios extra-UE USA), bot user
   `bot.contable@inpr3mium.com`, años fiscales 2024-2026, scope
   migración histórico completo con validación 24-25.
-- ⏸ **4.1** Instalación de módulos vía `odoo-module-admin`
-  (`repos_aggregate`, `addons_pull`, `module_install` con la lista
-  `expected_modules` del profile).
 - ⏸ **4.2** Empresa, idiomas y settings vía `odoo-functional-admin`
   (`language_install --langs es_ES,ca_ES`, `settings_param`,
   `subsidiary_bootstrap` con datos del profile).
@@ -187,7 +198,7 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 
 ### Bloque C — Bootstrap funcional (primer uso real del agente)
 
-11. ⏸ Fase 4.1 (instalación de módulos)
+11. ✅ Fase 4.1 (instalación de módulos)
 12. ⏸ Fase 4.2 (empresa + idiomas + settings)
 13. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales)
 14. ⏸ Fase 4.4 (bot user + permisos + record rules)
@@ -217,7 +228,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-10 | Bloque B paso 7 (Fase 3) | Runbook `doodba-bootstrap.md` con Modo A (Docker local) + Modo B (gcloud). Añadidos `infra/README.md` y `infra/secrets.md`. |
 | 2026-05-10 | Lateral (no roadmap) | `docs/infra/scaling.md` — guía de buenas prácticas de escalado Odoo 19 (workers, gevent, cron dedicado, Nginx, PG bajo carga, filestore externo, multi-nodo, `queue_job`, monitorización). Agnóstica al tenant; referencia para `fedefarma`. `Próximo paso` no cambia. |
 | 2026-05-10 | Bloque B pasos 8-10 | Modo A ejecutado end-to-end: doodba 9.5.0 + Odoo 19 + PG16 corriendo, DB `inpr3mium_dev`, bot uid=8 con API key, `.env` configurado. `/onboard`: 5🟢 3🟡 1🔴 — agente conectado. Bloqueantes para Bloque C identificados (bug `_json2`, campos renombrados Odoo 19, 6 módulos OCA missing). |
-| 2026-05-11 | Bloque C pre-flight | Auditoría OCA 19.0 de los 6 módulos missing vía `oca-module-scout` (paralelo). Solo `l10n_es_facturae` (19.0.1.0.0) está disponible. `l10n_es_aeat_sii_oca` eliminado del profile (inpr3mium no es gran empresa; fedefarma sí lo necesitará — memoria guardada). `mod232`, `verifactu_oca` (obligatorio 2027, no 2026), `mis_builder`, `sepa_credit_transfer`, `sepa_direct_debit` movidos a nuevo bloque `deferred_modules` con razón y `revisit_on`. Template de tenant actualizado con la convención. |
+| 2026-05-11 | Bloque C pre-flight | Auditoría OCA 19.0 de los 6 módulos missing vía `oca-module-scout` (paralelo). Solo `l10n_es_facturae` (19.0.1.0.0) está disponible. `l10n_es_aeat_sii_oca` eliminado del profile (inpr3mium no es gran empresa; fedefarma sí lo necesitará — memoria guardada). `mod232`, `verifactu_oca` (obligatorio 2027, no 2026), `mis_builder`, `sepa_credit_transfer`, `sepa_direct_debit` movidos a nuevo bloque `deferred_modules` con razón y `revisit_on`. Template de tenant actualizado con la convención. Commit `ddfde7ddb`. |
+| 2026-05-11 | Bloque C Fase 4.1 | Install de los 12 `expected_modules` completado (state=installed). Camino largo: descubrir 3 repos OCA faltantes (`reporting-engine`, `server-ux`, `community-data-files`), 9 módulos adicionales en `addons.yaml` para cerrar closure de `depends`, 5 pip pkgs en `pip.txt`, `invoke img-build` para rebuild image, chown del filestore (UID mismatch `exec` vs `run --rm`). DB final: 75 módulos installed, 0 colgados. Gotchas en memoria, runbook actualizado, profile/addons.yaml/pip.txt persistidos. |
 
 ---
 

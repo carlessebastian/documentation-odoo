@@ -130,27 +130,46 @@ values. The narrative examples ("Acme S.L.", `ESB99999999`) are
 
 ### 1. Install OCA repos and base modules — `odoo-module-admin`
 
+**Antes de tirar `-i`** — flujo obligatorio aprendido en Fase 4.1
+inpr3mium (gotchas completos en
+`~/.claude/projects/-Users-carles-Documents-code-odoo-agent/memory/project_odoo19_doodba_gotchas.md`):
+
+1. **Calcular el closure transitivo de `__manifest__.depends`** desde
+   `expected_modules`. `addons.yaml` debe listar TODOS los módulos
+   no-core del closure, no solo los explícitos — `addons init` no
+   sigue `depends` automáticamente.
+2. **Auditar `external_dependencies` del closure completo** y añadir
+   los pip pkgs faltantes a `odoo/custom/dependencies/pip.txt`.
+3. **Repos OCA frecuentemente faltantes** en `repos.yaml` default:
+   - `reporting-engine` — `report_xlsx`, `report_xml`,
+     `report_qweb_parameter`.
+   - `server-ux` — `date_range` (movido desde server-tools en v15+).
+   - `community-data-files` — `base_iso3166`, `base_bank_from_iban`.
+
 ```bash
-# Configure repos.yaml + addons.yaml (use assets/ as templates)
-# Then:
-.claude/skills/odoo-module-admin/scripts/repos_aggregate.sh apply
-.claude/skills/odoo-module-admin/scripts/addons_pull.sh
+# Configurar repos.yaml + addons.yaml + pip.txt (closure completo)
+cd $DOODBA_PROJECT_DIR
+invoke git-aggregate              # sincroniza repos a 19.0
+invoke img-build                  # rebuild image: lee pip.txt + regen auto/addons
 
-# Install l10n_es and AEAT modules
-.claude/skills/odoo-module-admin/scripts/module_install.py \
-  --names l10n_es,l10n_es_aeat_mod303,l10n_es_aeat_mod347,\
-l10n_es_aeat_mod349,l10n_es_aeat_mod390,\
-l10n_es_aeat_sii_oca,l10n_es_facturae
+# Install — el CSV es expected_modules del profile. NO usar invoke install
+# si la DB del tenant != "devel" (devel.yaml hardcodea PGDATABASE=devel).
+docker compose stop odoo
+docker compose run --rm -e PGDATABASE=<TENANT_DB> odoo \
+  odoo --stop-after-init --no-http -d <TENANT_DB> \
+  -i <CSV_DE_expected_modules>
+docker compose start odoo
 
-# OCA tooling for accounting reports
-.claude/skills/odoo-module-admin/scripts/module_install.py \
-  --names mis_builder,account_financial_report,\
-account_payment_mode,account_banking_sepa_direct_debit,\
-auditlog,queue_job
+# Refrescar apps list y verificar via RPC
+.claude/skills/odoo-module-admin/scripts/module_status.py \
+  --names <CSV_DE_expected_modules>
 ```
 
-The exact module list comes from `expected_modules` in the tenant
-profile.
+La lista exacta sale de `expected_modules` en el profile del tenant.
+NO confiar en el ejemplo: ese subset depende del tenant (gran empresa
+añadirá `l10n_es_aeat_sii_oca`; B2C necesitará SEPA direct debit;
+etc.). Ver `profile.yaml -> deferred_modules` para entender lo que
+deliberadamente NO se instala.
 
 ### 2. Languages and base settings — `odoo-functional-admin`
 

@@ -108,12 +108,62 @@ Se actualiza con cada hito relevante (creación, migraciones, cutover).
 ### Próximos pasos (Bloque C)
 
 1. Arreglar `_json2` en `odoo_client.py` y sincronizar a las 3 skills.
-2. Revisar `profile.yaml.expected_modules` contra disponibilidad
-   real OCA 19.0; añadir repo `mis-builder` a `repos.yaml` si se
-   confirma que existe rama 19.0.
-3. Auditar scripts de `odoo-functional-admin` por usos de
+2. Auditar scripts de `odoo-functional-admin` por usos de
    `groups_id`, `category_id`, `full_name` (renombrados o eliminados
    en Odoo 19).
-4. Instalar módulos del profile (Fase 4.1).
-5. Configurar la company "Inteligencia del negocio pr3mium S.L." y
+3. Configurar la company "Inteligencia del negocio pr3mium S.L." y
    reasignar al bot (Fase 4.2-4.3).
+
+## Fase 4.1 — Instalación de módulos OCA (2026-05-11)
+
+12/12 `expected_modules` instalados (`state=installed`); 75 módulos
+totales en DB tras cerrar closure de dependencias; 0 módulos colgados.
+
+### Camino largo (todo en memoria
+`project_odoo19_doodba_gotchas.md` para futuros tenants):
+
+1. **Auditoría OCA del estado real en 19.0** vía `oca-module-scout`
+   (6 scouts paralelos). Solo `l10n_es_facturae` (19.0.1.0.0)
+   estaba disponible de los 6 inicialmente "missing". `sii_oca`
+   eliminado (no aplica al tamaño de inpr3mium); `mod232`,
+   `verifactu_oca` (obligatorio 2027), `mis_builder`,
+   `sepa_credit_transfer`, `sepa_direct_debit` → `deferred_modules`.
+2. **Descubrir 3 repos OCA faltantes** al cerrar closure de
+   `__manifest__.depends`:
+   - `OCA/reporting-engine` → `report_xlsx`, `report_xml`,
+     `report_qweb_parameter`.
+   - `OCA/server-ux` → `date_range` (movido desde server-tools v15+).
+   - `OCA/community-data-files` → `base_iso3166`, `base_bank_from_iban`.
+3. **Listar 9 módulos extra en `addons.yaml`** (transitivas que
+   `addons init` no symlinkea automáticamente): `l10n_es_aeat`,
+   `l10n_es_partner`, `account_tax_balance`, los 6 de los 3 repos
+   nuevos.
+4. **5 pip pkgs añadidos a `pip.txt`** auditando
+   `external_dependencies` de TODO el closure (no solo los 12
+   explícitos):
+   - `pycountry` (`l10n_es_facturae`, `base_iso3166`)
+   - `xmlsig` (`l10n_es_facturae` — firma XML)
+   - `xlsxwriter`, `xlrd` (`report_xlsx`)
+   - `schwifty==2024.4.0` (`base_bank_from_iban`)
+5. **Workaround `PGDATABASE=devel`**: `invoke install` apunta al
+   DB hardcoded en devel.yaml. Usar
+   `docker compose run --rm -e PGDATABASE=inpr3mium_dev odoo
+   odoo --stop-after-init -d inpr3mium_dev -i <CSV>`.
+6. **`chown` del filestore**: `docker compose exec` corre como
+   uid=1000 (odoo image), pero `run --rm` mapea a uid=501 (host).
+   Filestore creado en bootstrap quedó uid=1000; install via
+   `run --rm` fallaba con `PermissionError`. Fix:
+   `docker compose exec -T -u root odoo chown -R 501:20
+   /var/lib/odoo/filestore/inpr3mium_dev`.
+7. **`invoke img-build`** tras tocar `pip.txt` para que la imagen
+   incluya los nuevos pip pkgs (afecta solo a `run --rm`; el
+   container running tenía `pip install --user` aplicado).
+
+### Estado al cierre
+
+- `expected_modules` reducido a 12 efectivos. 5 en `deferred_modules`
+  con `revisit_on`.
+- `oca_repos` ahora 11 (los 8 originales + 3 nuevos).
+- `addons.yaml` con 21 módulos OCA listados (closure completo).
+- `pip.txt` doodba con 7 entradas (3 originales + 5 nuevos).
+- DB `inpr3mium_dev`: 75 módulos installed, ready para Fase 4.2.
