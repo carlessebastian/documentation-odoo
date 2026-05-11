@@ -72,20 +72,43 @@ sociedades hermanas.
 
 ## ETL — pasos previstos
 
-1. **Export Holded** — usar la API REST, paginando, persistir en JSON
-   plano en `docs/tenants/inpr3mium/migrations/<YYYY-MM-DD>/`.
-2. **Transformación** — script Python que lee el JSON, normaliza VATs
+1. **Export Holded** — usar la skill `holded-export` (read-only):
+
+   ```bash
+   # Preflight: cuantos contactos / docs / asientos hay
+   python3 .claude/skills/holded-export/scripts/holded_inspect.py
+
+   # Dump completo (todos los resources + PDFs originales escaneados)
+   python3 .claude/skills/holded-export/scripts/holded_export.py \
+     --output-dir docs/tenants/inpr3mium/holded-export/$(date +%F) \
+     --include-pdfs
+
+   # Validar manifest + counts
+   python3 .claude/skills/holded-export/scripts/dump_summary.py \
+     --dir docs/tenants/inpr3mium/holded-export/$(date +%F)
+   ```
+
+   Output: directorio `docs/tenants/inpr3mium/holded-export/<YYYY-MM-DD>/`
+   con JSONL por resource, `numbering_series.json`, `contact_groups.json`,
+   `manifest.json`, `errors.jsonl` y `pdfs/{invoice,purchase}/<id>.pdf`.
+   El directorio está **gitignored** (datos personales/financieros).
+
+2. **Transformación** — script Python que lee los JSONL, normaliza VATs
    (formato `ES...`), deduplica, mapea cuentas e impuestos, y escribe
    un dataset listo para Odoo.
+
 3. **Carga en Odoo** — vía JSON-2 / `ext_id_upsert.py` (idempotente),
    un modelo a la vez en orden de dependencias: partners → productos →
    plan contable → asientos de apertura → (opcional) facturas
-   históricas.
+   históricas. Por hacer: posible 5ª skill `holded-to-odoo` si se
+   complica.
+
 4. **Validación** — conteo, cuadre de balance, spot-check con un
    partner real, primer cierre mensual.
 
-Si el ETL crece más allá de un par de scripts, considerar abrir un
-cuarto skill `odoo-data-migration`. Decisión diferida al momento.
+La skill `holded-export` cubre el **lado lectura** de Fase 4.2.1 y
+deja Fase 5 con el material listo para transformar. Solo emite GETs;
+no puede modificar nada en la cuenta Holded.
 
 ## Cutover
 

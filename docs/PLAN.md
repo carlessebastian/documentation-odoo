@@ -18,29 +18,44 @@ contexto entre conversaciones de Claude Code.
 ## Estado actual
 
 - **Última actualización**: 2026-05-11
-- **Última fase completada**: **Bloque C — Fase 4.2 (empresa, idiomas,
-  chart template)**. Company id=1 renombrada a "Inteligencia del
-  negocio pr3mium S.L." con NIF ESB65758682, EUR, Spain/Barcelona,
-  dirección y contacto del profile. Chart template `es_pymes` cargado
-  (646 cuentas PGCE Pymes). Idiomas activos: es_ES + ca_ES. Bot ya en
-  la company correcta (id=1 simplemente cambio de metadatos), tz
-  Europe/Madrid, grupos extendidos con `account.group_account_manager`
-  + `base.group_partner_manager` (conserva group_system de bootstrap).
-  `web.base.url.freeze = True`. Aprendizaje gotcha: chart template
-  codes en Odoo 19 son strings cortos (`es_pymes`, no
-  `l10n_es.l10n_es_pymes`); `try_loading` via XML-RPC tiene bug con
-  segundo arg positional — usar `odoo shell` directo.
-- **Próximo paso**: **Fase 4.2.1** — Skill `odoo-data-migration` MVP
-  solo-lectura para dumpear Holded antes de configurar
-  diarios/secuencias (Fase 4.3). Subtareas:
-  - Crear estructura del skill (`SKILL.md`, `scripts/`, etc.).
-  - Endpoint Holded `Get Company Info` (cross-check de datos legales).
-  - Endpoint `Get Numeration Series` (CRÍTICO para 4.3).
-  - Endpoint `List Accounts` (mapeo Holded → PGCE Pymes).
-  - Endpoint `List Contacts`.
-  - Endpoint `List Documents` (sample).
-  - Dump JSON a `docs/tenants/inpr3mium/holded-export/`.
-  - Añadir `HOLDED_API_KEY` a `.env.example`.
+- **Última fase completada**: **Bloque C — Fase 4.2.1 (skill
+  `holded-export` MVP solo-lectura)**. 4ª skill creada con:
+  - `SKILL.md` con triggers ("exportar holded", "dump holded",
+    "facturas recibidas escaneadas", ...) y garantía read-only.
+  - Cliente HTTP `holded_client.py` con whitelist de 28 endpoints GET,
+    backoff 429/5xx (respeta `Retry-After`), masking de API key en logs.
+    Garantía read-only verificada por test
+    (`test_no_write_verbs_in_public_api`).
+  - `scrape_holded_docs.py` vendorizó 59 `.md` de
+    `developers.holded.com/reference` en `references/holded-api/`.
+  - `holded_inspect.py` (preflight), `holded_export.py` (dump JSONL +
+    PDFs originales escaneados via `getdocumentpdf` base64, idempotente
+    y resumible), `dump_summary.py` (post-mortem).
+  - Tests offline: 68/68 ok.
+  - `.env.example` con `HOLDED_API_KEY` + `HOLDED_API_BASE`.
+  - `.gitignore` excluye `docs/tenants/*/holded-export/`.
+  - Decisión: la skill se llama **`holded-export`** (no
+    `odoo-data-migration` como reservaba el plan original). Una skill
+    por origen externo; `fedefarma` tendrá `axional-export`.
+- **Próximo paso**: ejecutar el **dump real de Holded** ahora que la
+  API key está rotada y configurada en `.env` local
+  (`HOLDED_API_KEY=...`). Subtareas concretas para la próxima sesión
+  (ver detalle en **Fase 4.2.2 — Ejecutar el dump** más abajo):
+  1. Validar conexión con un probe minimal (1 GET a `/contacts`,
+     `--limit 1`).
+  2. Lanzar `holded_inspect.py` para dimensionar.
+  3. Confirmar plan con el operador (resources, rango de fechas,
+     PDFs sí/no, espacio en disco estimado).
+  4. Ejecutar `holded_export.py` con `--include-pdfs` apuntando a
+     `docs/tenants/inpr3mium/holded-export/$(date +%F)/`.
+  5. Validar con `dump_summary.py`; revisar `errors.jsonl`.
+  6. Inspección humana de `numbering_series.json` y `taxes.jsonl` →
+     anotar formato de secuencias y mapeo IVA en
+     `migration-from-holded.md` para alimentar Fase 4.3.
+  7. Commit del bloque (skill + actualizaciones cross-skill ya
+     hechas; el dump NO se commitea — está gitignored).
+  8. Abrir **Fase 4.3** (diarios, secuencias, posiciones fiscales)
+     informada por los outputs anteriores.
 - **Tenant activo**: `inpr3mium`. Instancia Odoo 19 viva en
   `~/Documents/code/odoo-instances/inpr3mium-local` (Docker local).
   Secrets en `~/Documents/code/odoo-instances/inpr3mium-local.SECRETS.txt`.
@@ -140,23 +155,159 @@ ejecutable del agente, pero el agente lo necesita).
   `es_pymes` cargado (646 cuentas PGCE Pymes). Bot reconfigurado (tz
   Europe/Madrid + grupos account/partner manager). `web.base.url.freeze`
   activado.
-- ⏸ **4.2.1** **Skill `odoo-data-migration` MVP (solo lectura Holded)**.
-  Objetivo: poder hacer una radiografía completa de la instancia Holded
-  origen antes de tocar la configuración Fase 4.3. Outputs:
-  - SKILL.md + scripts/ (`holded_export.py`, `holded_inspect.py`).
-  - Endpoints relevantes para configuración: empresa, plan de cuentas,
-    contactos, diarios y series de numeración (CRÍTICO: el formato
-    real de secuencia condiciona Fase 4.3).
-  - Dump JSON local en `docs/tenants/inpr3mium/holded-export/` con
-    snapshot 2024 + 2025 + año en curso.
-  - **Sin escritura a Odoo todavía** (esa mitad se completa en Fase 5).
-  - Credenciales Holded: añadir `HOLDED_API_KEY` a `.env.example` con
-    apuntador a `https://developers.holded.com/`.
+- ✅ **4.2.1** **Skill `holded-export` MVP (solo lectura Holded)**.
+  Creada como 4ª skill del agente, read-only (solo verbos HTTP GET,
+  whitelist de 28 endpoints, masking de API key, test que asserta
+  ausencia de métodos de escritura). Outputs entregados:
+  - `SKILL.md` con frontmatter read-only + triggers + workflow.
+  - `scripts/holded_client.py` cliente HTTP con backoff 429/5xx,
+    paginación heterogénea (page=N para `dailyledger`, lista única
+    para el resto), helpers `iter_*` por resource y `download_pdf`
+    para originales escaneados.
+  - `scripts/scrape_holded_docs.py` vendorizó 59 `.md` en
+    `references/holded-api/` (376 KB offline, sha256 indexado).
+  - `scripts/holded_inspect.py` (preflight counts),
+    `scripts/holded_export.py` (dump completo a JSONL + PDFs + manifest,
+    idempotente y resumible), `scripts/dump_summary.py` (post-mortem).
+  - 4 `references/*.md` (api-overview, endpoint-coverage,
+    pdf-attachments, dump-layout).
+  - Tests offline: 68/68 ok (incluido `test_no_write_verbs`).
+  - `.env.example` con `HOLDED_API_KEY` + `HOLDED_API_BASE`.
+  - `.gitignore` excluye `docs/tenants/*/holded-export/`.
+  - **Sin escritura a Odoo** (Fase 5).
+  - **Pendiente operativo**: ejecutar el dump real contra inpr3mium
+    cuando el operador configure `HOLDED_API_KEY` en `.env`.
+- ⏸ **4.2.2** **Ejecutar el dump real de Holded**. Subfase operativa
+  (no de código). El skill ya está construida; aquí se usa.
+
+  **Pre-requisitos** (confirmar antes de empezar):
+  - `HOLDED_API_KEY` presente en `.env` y rotada (no la compartida
+    en chat el 2026-05-11).
+  - `ODOO_AGENT_TENANT=inpr3mium` en `.env` (resuelve el output dir).
+  - `docs/tenants/inpr3mium/holded-export/` está gitignored
+    (verificado en `.gitignore`).
+  - 1-2 GB libres en disco (estimación: ~500 MB JSONL + ~150-300 MB
+    PDFs para una empresa media; ajustar tras inspect).
+
+  **Paso 1 — Smoke test de conectividad** (no toca disco):
+
+  ```bash
+  python3 .claude/skills/holded-export/scripts/holded_export.py \
+    --output-dir /tmp/holded-smoke \
+    --resources numbering_series \
+    --no-pdfs --no-confirm \
+    --limit 1
+  ```
+
+  Verifica: el script termina con exit 0, crea
+  `/tmp/holded-smoke/numbering_series.json` con datos reales, sin
+  `errors.jsonl`. Borrar tras la prueba (`rm -rf /tmp/holded-smoke`).
+  Si falla con `401/403`: la API key está mal o no tiene scope para
+  invoicing. Si falla con `429` repetido: Holded está limitando;
+  reintentar más tarde.
+
+  **Paso 2 — Inspect (dimensionado)**:
+
+  ```bash
+  python3 .claude/skills/holded-export/scripts/holded_inspect.py
+  ```
+
+  Output esperado: tabla con counts por resource. Anotar
+  aproximadamente: nº de contactos, nº de docs por type (especial
+  atención a `purchase` e `invoice`), nº de asientos en
+  `dailyledger`. Esto define el tiempo y disco que necesitará el
+  dump completo.
+
+  **Paso 3 — Confirmar plan con el operador** (texto a mostrar):
+
+  ```
+  Plan del dump:
+    - Output:    docs/tenants/inpr3mium/holded-export/<YYYY-MM-DD>/
+    - Resources: todos (contactos, productos, docs por type,
+                 dailyledger, taxes, treasury, numbering_series, ...)
+    - Doc types: todos los 10 (invoice, purchase, creditnote, ...)
+    - Fechas:    sin filtro (histórico completo)
+    - PDFs:      sí (invoice + purchase originales escaneados)
+    - Tiempo:    ~N min según counts de inspect
+    - Tamaño:    ~M MB estimado
+  ```
+
+  **Paso 4 — Dump completo**:
+
+  ```bash
+  python3 .claude/skills/holded-export/scripts/holded_export.py \
+    --output-dir docs/tenants/inpr3mium/holded-export/$(date +%F) \
+    --include-pdfs \
+    --no-confirm   # si el plan ya está acordado interactivamente
+  ```
+
+  Notas:
+  - Si se corta a mitad: relanzar con `--resume` (mismo
+    `--output-dir`). El manifest se actualiza tras cerrar cada
+    resource, así que como mucho se rehace un resource.
+  - Para limitar a 2024-2025 primero (subset de validación —
+    recomendado para el primer pase si hay >5 años de histórico):
+    añadir `--start-date 2024-01-01 --end-date 2025-12-31`.
+
+  **Paso 5 — Validar el dump**:
+
+  ```bash
+  python3 .claude/skills/holded-export/scripts/dump_summary.py \
+    --dir docs/tenants/inpr3mium/holded-export/$(date +%F)
+  ```
+
+  Exit code 0 = OK. Exit code 1 = warnings (revisar). Verificar:
+  - `errors.jsonl` vacío o con razones documentadas.
+  - PDFs no-cero en `pdfs/invoice/` y `pdfs/purchase/`.
+  - Items en manifest ≈ items en disco para cada `.jsonl`.
+
+  **Paso 6 — Inspección humana para alimentar Fase 4.3**:
+
+  Examinar manualmente (NO programáticamente):
+
+  ```bash
+  jq . docs/tenants/inpr3mium/holded-export/$(date +%F)/numbering_series.json
+  jq . docs/tenants/inpr3mium/holded-export/$(date +%F)/taxes.jsonl | head
+  jq -r '.code' docs/tenants/inpr3mium/holded-export/$(date +%F)/expensesaccount.jsonl | sort -u | head -20
+  ```
+
+  Anotar en `docs/tenants/inpr3mium/migration-from-holded.md` (sección
+  "Particularidades a resolver durante el ETL"):
+  - Formato real de secuencias por type (ej. `FAC-{YYYY}-NNNN`,
+    `COMP-2024-001`, etc.). Crítico para `ir.sequence` en 4.3.
+  - Lista de tipos de IVA realmente usados (21/10/4/0, IRPF
+    profesionales, RE) → mapeo a `account.tax` de `l10n_es`.
+  - Códigos de cuenta más usados (sample top-20) → mapeo PGCE Pymes.
+
+  **Paso 7 — Commit del bloque 4.2.1 + 4.2.2**:
+
+  ```bash
+  git add .claude/skills/holded-export/ .env.example .gitignore \
+          CLAUDE.md .claude/skills/CLAUDE.md docs/PLAN.md \
+          docs/tenants/inpr3mium/migration-from-holded.md
+  git status   # confirmar que NO se commitea docs/tenants/.../holded-export/
+  ```
+
+  Mensaje sugerido (estilo existente):
+  ```
+  [ADD] holded-export: skill read-only + dump inicial de inpr3mium
+
+  - Skill `holded-export` (4ª del agente): cliente HTTP solo-GET,
+    whitelist de 28 endpoints, scraper de doc, exporter idempotente.
+  - 68/68 tests offline ok (incluye test_no_write_verbs).
+  - 59 .md vendorizados de developers.holded.com/reference.
+  - Dump real de inpr3mium ejecutado: <N> contactos, <N> facturas
+    emitidas, <N> recibidas (con <N> PDFs originales escaneados),
+    <N> asientos en dailyledger.
+  ```
+
+  Tras esto, Fase 4.2.2 se marca ✅ y pasamos a **Fase 4.3**.
+
 - ⏸ **4.3** Plan contable, diarios (incluidos COMI / COMX / QONT del
   profile), secuencias con prefijo de año, posiciones fiscales
   (intracom UE, ISP servicios extra-UE). **Informado por el dump de
-  Holded de 4.2.1** — preservar continuidad de numeración y mapear
-  cuentas/diarios reales en uso.
+  Holded de 4.2.1 + 4.2.2** — preservar continuidad de numeración y
+  mapear cuentas/diarios reales en uso.
 - ⏸ **4.4** Bot user + permisos + record rules + `audit_admin_state`.
 - ⏸ **4.5** EDI: certificado digital + entornos test/prod en módulos
   AEAT. Pasos manuales documentados en `edi-setup.md`.
@@ -172,11 +323,13 @@ completo + año en curso. Validación previa con subset 2024-2025.
 - ⏸ **5.1** Diseño ETL detallado en `migration-from-holded.md`
   (ya con esqueleto; detalle pendiente). El esqueleto debe basarse en
   el dump real obtenido en 4.2.1.
-- ✅ **5.2** *(decisión tomada anticipadamente en Fase 4.2.1)* — Sí se
-  abre el skill `odoo-data-migration`. Inicialmente solo lado de
-  lectura (4.2.1); completar con lado escritura (Odoo create/write
-  vía RPC) en 5.3+. Beneficio adicional: ya útil para futuros tenants
-  que migren desde otros sistemas (`fedefarma`/Axional, etc.).
+- ✅ **5.2** *(decisión tomada anticipadamente en Fase 4.2.1)* — Sí
+  se abre una skill dedicada. Renombrada de `odoo-data-migration` a
+  **`holded-export`** (una skill por origen externo: más simple
+  trigger-wise). Inicialmente solo lado lectura (4.2.1); la carga a
+  Odoo (create/write vía RPC) se hará en 5.3+ con scripts ad-hoc o
+  con una skill futura `holded-to-odoo`. Para `fedefarma` vendrá una
+  skill paralela `axional-export`.
 - ⏸ **5.3** Validación con subset 2024+2025: ETL + cuadre balance +
   conteo partners.
 - ⏸ **5.4** Histórico completo + año en curso tras OK del subset.
@@ -189,9 +342,9 @@ completo + año en curso. Validación previa con subset 2024-2025.
 Axional. No tocar hasta que `inpr3mium` esté en producción.
 
 - ⏸ **6** `docs/tenants/fedefarma/{profile.yaml,
-  migration-from-axional.md}`. Reusar las 4 skills tal cual (incluido
-  `odoo-data-migration` ya creado en Fase 4.2.1, que necesitará una
-  segunda fuente "axional" además de "holded").
+  migration-from-axional.md}`. Reusar las 3 skills Odoo + crear una
+  skill paralela `axional-export` (gemela de `holded-export` para
+  Axional).
 
 ---
 
@@ -230,26 +383,29 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 
 11. ✅ Fase 4.1 (instalación de módulos)
 12. ✅ Fase 4.2 (empresa + idiomas + chart template)
-13. ⏸ Fase 4.2.1 (skill `odoo-data-migration` MVP solo-lectura + dump
-    de Holded) — desbloquea 4.3
-14. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales — informado
-    por el dump)
-15. ⏸ Fase 4.4 (bot user + permisos + record rules)
-16. ⏸ Fase 4.5 (EDI: certificado + entornos)
-17. ⏸ Fase 4.6 (smoke test: primera factura)
-18. ⏸ Fase 4.7 (commit + bitácora)
+13. ✅ Fase 4.2.1 (skill `holded-export` MVP solo-lectura)
+14. ⏸ **Fase 4.2.2 (próximo paso) — Ejecutar el dump real de Holded**.
+    Ver detalle paso a paso en Fase 4.2.2 arriba (7 pasos: smoke test
+    → inspect → confirmar plan → dump completo → validar → inspección
+    humana → commit).
+15. ⏸ Fase 4.3 (diarios, secuencias, posiciones fiscales — informado
+    por el dump de 4.2.2)
+16. ⏸ Fase 4.4 (bot user + permisos + record rules)
+17. ⏸ Fase 4.5 (EDI: certificado + entornos)
+18. ⏸ Fase 4.6 (smoke test: primera factura)
+19. ⏸ Fase 4.7 (commit + bitácora)
 
 ### Bloque D — Migración de datos
 
-19. ⏸ Fase 5.1 (diseño ETL Holded → Odoo, basado en el dump de 4.2.1)
-20. ⏸ Fase 5.3 (validación con 2024+2025; completar lado escritura
-    del skill `odoo-data-migration`)
-21. ⏸ Fase 5.4 (histórico completo + año en curso)
-22. ⏸ Fase 5.5 (cutover día D)
+20. ⏸ Fase 5.1 (diseño ETL Holded → Odoo, basado en el dump de 4.2.2)
+21. ⏸ Fase 5.3 (validación con 2024+2025; lado escritura: scripts
+    ad-hoc o nueva skill `holded-to-odoo`)
+22. ⏸ Fase 5.4 (histórico completo + año en curso)
+23. ⏸ Fase 5.5 (cutover día D)
 
 ### Bloque E — Futuro
 
-23. ⏸ Fase 6 (fedefarma) — diferida.
+24. ⏸ Fase 6 (fedefarma) — diferida.
 
 ---
 
@@ -266,6 +422,8 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 | 2026-05-11 | Bloque C Fase 4.1 | Install de los 12 `expected_modules` completado (state=installed). Camino largo: descubrir 3 repos OCA faltantes (`reporting-engine`, `server-ux`, `community-data-files`), 9 módulos adicionales en `addons.yaml` para cerrar closure de `depends`, 5 pip pkgs en `pip.txt`, `invoke img-build` para rebuild image, chown del filestore (UID mismatch `exec` vs `run --rm`). DB final: 75 módulos installed, 0 colgados. Gotchas en memoria, runbook actualizado, profile/addons.yaml/pip.txt persistidos. |
 | 2026-05-11 | Restructura plan | Insertada Fase 4.2.1 entre 4.2 y 4.3: skill `odoo-data-migration` MVP solo-lectura para dumpear Holded antes de configurar diarios/secuencias. Decisión diferida en Fase 5.2 (`¿abrir cuarto skill?`) resuelta anticipadamente: SÍ, ahora en 4.2.1 lado-lectura; 5.3 completa lado-escritura. Numeración del Bloque C/D ajustada. Commit `99e0e7ea0`. |
 | 2026-05-11 | Bloque C Fase 4.2 | Company id=1 reconfigurada con datos legales reales (Inteligencia del negocio pr3mium S.L., NIF, Spain/Barcelona, dirección y contacto). Chart `es_pymes` cargado (51 generic_coa → 646 PGCE Pymes). Idiomas es_ES + ca_ES activos. Bot tz Europe/Madrid + grupos account/partner manager (group_system conservado para 4.3). `web.base.url.freeze=True`. Gotchas nuevos: chart template codes en Odoo 19 son strings cortos (`es_pymes`), no XML-IDs; `try_loading` via XML-RPC tiene bug en arg posicional — usar `odoo shell`. |
+| 2026-05-11 | Bloque C Fase 4.2.1 | Skill `holded-export` creada (renombrada desde `odoo-data-migration` para mejor encaje multi-origen: una skill por origen externo). Cliente HTTP read-only con whitelist de 28 endpoints GET, backoff 429/5xx, masking de API key, test que asserta ausencia de verbos de escritura. Scraper vendoriza 59 `.md` de developers.holded.com (376 KB offline). Scripts `inspect/export/dump_summary` end-to-end. 68/68 tests offline ok. `.env.example` ampliado con `HOLDED_API_KEY` + `HOLDED_API_BASE`. `.gitignore` excluye `docs/tenants/*/holded-export/`. Dump real pendiente de configuración local de la API key. |
+| 2026-05-11 | Bloque C Fase 4.2.2 (preparado) | API key de Holded rotada por el operador tras incidente menor (key compartida en chat → revocada en Holded → Settings → Developers, generada nueva, persistida en `.env` local). Skill lista para ejecutar el dump. Plan de ejecución documentado paso a paso en `Fase 4.2.2` (7 pasos: smoke test → inspect → confirmar plan → dump completo → validar → inspección humana → commit). Próxima sesión puede retomar leyendo solo `docs/PLAN.md`. |
 
 ---
 
@@ -274,9 +432,10 @@ Axional. No tocar hasta que `inpr3mium` esté en producción.
 - **Multi-tenant**: cada cliente/sociedad tiene su perfil bajo
   `docs/tenants/<slug>/`. El tenant activo se selecciona con la env
   var `ODOO_AGENT_TENANT`.
-- **Skills agnósticas**: las 3 skills (`odoo-accounting-es`,
-  `odoo-functional-admin`, `odoo-module-admin`) no contienen datos
-  específicos del cliente — todo viene del `profile.yaml`.
+- **Skills agnósticas**: las 4 skills (`odoo-accounting-es`,
+  `odoo-functional-admin`, `odoo-module-admin`, `holded-export`) no
+  contienen datos específicos del cliente — todo viene del
+  `profile.yaml` (skills Odoo) o de variables de entorno (`holded-export`).
 - **Vendor docs**: la documentación oficial de Odoo está en
   `vendor/odoo-docs/` como referencia de solo lectura. Buscar ahí con
   Grep/Read antes de WebFetch.

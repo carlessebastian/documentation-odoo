@@ -1,0 +1,132 @@
+{
+  "skill": "holded-export",
+  "description": "Should-trigger / should-not-trigger / handoff cases para el skill de export read-only de Holded.",
+  "cases": [
+    {
+      "id": "trigger-01",
+      "prompt": "Necesito exportar todos los datos de Holded para preparar la migracion a Odoo.",
+      "should_trigger": true,
+      "expected_action": "holded_export.py --output-dir docs/tenants/$ODOO_AGENT_TENANT/holded-export/$(date +%F) --include-pdfs"
+    },
+    {
+      "id": "trigger-02",
+      "prompt": "Hazme un dump de Holded antes de configurar los diarios en Odoo.",
+      "should_trigger": true,
+      "expected_action": "holded_inspect.py primero; despues holded_export.py"
+    },
+    {
+      "id": "trigger-03",
+      "prompt": "Necesito saber el formato real de las series de numeracion de Holded.",
+      "should_trigger": true,
+      "expected_action": "holded_export.py --resources numbering_series --no-pdfs"
+    },
+    {
+      "id": "trigger-04",
+      "prompt": "Descarga los PDFs originales de todas las facturas recibidas de Holded.",
+      "should_trigger": true,
+      "expected_action": "holded_export.py --resources documents --doc-types purchase --include-pdfs --pdf-doc-types purchase"
+    },
+    {
+      "id": "trigger-05",
+      "prompt": "Necesito el dailyledger de Holded para 2024 y 2025.",
+      "should_trigger": true,
+      "expected_action": "holded_export.py --resources dailyledger --start-date 2024-01-01 --end-date 2025-12-31"
+    },
+    {
+      "id": "trigger-06",
+      "prompt": "Cuantos contactos y facturas tengo en Holded?",
+      "should_trigger": true,
+      "expected_action": "holded_inspect.py"
+    },
+    {
+      "id": "trigger-07",
+      "prompt": "Refresca la doc de developers.holded.com en references/holded-api.",
+      "should_trigger": true,
+      "expected_action": "scrape_holded_docs.py --output references/holded-api/"
+    },
+    {
+      "id": "trigger-08",
+      "prompt": "El dump de Holded se corto. Reanudalo sin volver a bajar lo que ya tengo.",
+      "should_trigger": true,
+      "expected_action": "holded_export.py --output-dir <existing> --resume"
+    },
+    {
+      "id": "trigger-09",
+      "prompt": "Valida que el dump de Holded que hicimos ayer esta integro.",
+      "should_trigger": true,
+      "expected_action": "dump_summary.py --dir <path>"
+    },
+    {
+      "id": "trigger-10",
+      "prompt": "Quiero un snapshot de Holded para el subset 2024.",
+      "should_trigger": true,
+      "expected_action": "holded_export.py --output-dir ./holded-export/2024-only --start-date 2024-01-01 --end-date 2024-12-31"
+    },
+    {
+      "id": "no-trigger-01",
+      "prompt": "Crea una factura en Odoo para el cliente Acme por 1500 EUR.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-accounting-es."
+    },
+    {
+      "id": "no-trigger-02",
+      "prompt": "Configurame los diarios en Odoo con prefijo FAC-2025-.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-functional-admin (informado por el dump generado previamente)."
+    },
+    {
+      "id": "no-trigger-03",
+      "prompt": "Instala l10n_es_aeat_mod303.",
+      "should_trigger": false,
+      "expected_action": "Handoff a odoo-module-admin."
+    },
+    {
+      "id": "no-trigger-04",
+      "prompt": "Crea un contacto nuevo en Holded.",
+      "should_trigger": false,
+      "expected_action": "Esta skill es read-only. Rechazar y explicar; sugerir hacerlo en la UI de Holded."
+    },
+    {
+      "id": "no-trigger-05",
+      "prompt": "Postea esta factura recibida en Holded.",
+      "should_trigger": false,
+      "expected_action": "Esta skill es read-only. Rechazar."
+    },
+    {
+      "id": "no-trigger-06",
+      "prompt": "Sube este PDF como adjunto de la factura X en Holded.",
+      "should_trigger": false,
+      "expected_action": "Esta skill es read-only. Rechazar."
+    },
+    {
+      "id": "no-trigger-07",
+      "prompt": "Como configuro nginx delante de Odoo?",
+      "should_trigger": false,
+      "expected_action": "Sysadmin generico, fuera de scope."
+    },
+    {
+      "id": "no-trigger-08",
+      "prompt": "Importa el dump JSON en Odoo via RPC.",
+      "should_trigger": false,
+      "expected_action": "Fase 5 (carga). Hoy se hace ad-hoc; posible skill futura holded-to-odoo. NO esta skill."
+    },
+    {
+      "id": "handoff-01",
+      "prompt": "Exporta Holded y luego monta los diarios en Odoo segun el formato real.",
+      "should_trigger": true,
+      "expected_action": "Export aqui; configuracion de diarios via odoo-functional-admin tras inspeccion manual de numbering_series.json."
+    },
+    {
+      "id": "handoff-02",
+      "prompt": "Necesito el dump 2024-2025 y luego cargar el saldo de apertura en Odoo.",
+      "should_trigger": true,
+      "expected_action": "holded_export.py --start-date 2024-01-01 --end-date 2025-12-31; carga manual / scripts ad-hoc usando odoo-accounting-es (Fase 5)."
+    },
+    {
+      "id": "handoff-03",
+      "prompt": "Quiero migrar de Holded a Odoo. Por donde empiezo?",
+      "should_trigger": true,
+      "expected_action": "Plan: (1) /onboard del agente, (2) holded_inspect.py para dimensionar, (3) holded_export.py dump completo, (4) handoff a odoo-functional-admin (diarios, secuencias informados por dump) + odoo-accounting-es (carga)."
+    }
+  ]
+}

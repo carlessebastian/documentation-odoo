@@ -1,0 +1,428 @@
+{
+  "base": "https://developers.holded.com",
+  "scraped_at": "2026-05-11T13:22:28+00:00",
+  "total_attempted": 59,
+  "found": 59,
+  "not_found": 0,
+  "errors": 0,
+  "new": 2,
+  "updated": 57,
+  "skipped": 0,
+  "entries": [
+    {
+      "slug": "authentication",
+      "path": "authentication.md",
+      "bytes": 93,
+      "sha256": "e67ce3c3965335af7ffc584f2487f143ffbeda726e09a38170d29a78f59db0e8",
+      "fetched_at": "2026-05-11T13:22:23+00:00"
+    },
+    {
+      "slug": "bookings",
+      "path": "bookings.md",
+      "bytes": 12,
+      "sha256": "4a12726cddced2d6e0d4bb3b576560135309ae8be0028d942153721825697a49",
+      "fetched_at": "2026-05-11T13:22:28+00:00"
+    },
+    {
+      "slug": "create-contact-1",
+      "path": "create-contact-1.md",
+      "bytes": 11712,
+      "sha256": "76c3e9772ed724d3c1cfd49dd13988878b893d647341756f56b3b253df9ebd6d",
+      "fetched_at": "2026-05-11T13:20:30+00:00"
+    },
+    {
+      "slug": "create-document-1",
+      "path": "create-document-1.md",
+      "bytes": 13399,
+      "sha256": "4e415eea29af219f681e8529682415d98e917d891184d051690f2c3c2b3240ca",
+      "fetched_at": "2026-05-11T13:20:35+00:00"
+    },
+    {
+      "slug": "create-payment-1",
+      "path": "create-payment-1.md",
+      "bytes": 2945,
+      "sha256": "050c10c3d8e0c74dbd5519a46cf7c56b98dcb3762514e1253950b1b802bac831",
+      "fetched_at": "2026-05-11T13:21:04+00:00"
+    },
+    {
+      "slug": "create-product-1",
+      "path": "create-product-1.md",
+      "bytes": 4791,
+      "sha256": "479255fa6bfc6e40de67e54731c585ea631500ffa3bf5de46071395d49c2bf64",
+      "fetched_at": "2026-05-11T13:20:55+00:00"
+    },
+    {
+      "slug": "create-project",
+      "path": "create-project.md",
+      "bytes": 2536,
+      "sha256": "40cc1492fccb467222c9cb52621384052dfcc1db4e6a86ae8899e29aff9025ac",
+      "fetched_at": "2026-05-11T13:22:12+00:00"
+    },
+    {
+      "slug": "create-sales-channel-1",
+      "path": "create-sales-channel-1.md",
+      "bytes": 2819,
+      "sha256": "698798d8647e718583f14816f24fc1ff8f92ff3c326ab0d81fc93c5008abcbb2",
+      "fetched_at": "2026-05-11T13:22:08+00:00"
+    },
+    {
+      "slug": "create-service",
+      "path": "create-service.md",
+      "bytes": 2116,
+      "sha256": "27fdeb0a3e40015f46f64719ad276cf27b5cc78ab81e01d2de421892eceda194",
+      "fetched_at": "2026-05-11T13:20:58+00:00"
+    },
+    {
+      "slug": "create-task",
+      "path": "create-task.md",
+      "bytes": 2848,
+      "sha256": "1fb3404400632eea8a683f0f30fc8f6ce0e89c3d3e508fa9370b90be95bcc411",
+      "fetched_at": "2026-05-11T13:22:17+00:00"
+    },
+    {
+      "slug": "delete-contact-1",
+      "path": "delete-contact-1.md",
+      "bytes": 2238,
+      "sha256": "601172c431e64597963c4a4801b025e919992d9c06e1d5513598965e06647242",
+      "fetched_at": "2026-05-11T13:20:32+00:00"
+    },
+    {
+      "slug": "delete-contact-group",
+      "path": "delete-contact-group.md",
+      "bytes": 2136,
+      "sha256": "988c18017ebe92c038f6207d71c46c164528c8f78f1ba2d3ca39654cbc000f59",
+      "fetched_at": "2026-05-11T13:20:34+00:00"
+    },
+    {
+      "slug": "delete-document-1",
+      "path": "delete-document-1.md",
+      "bytes": 2022,
+      "sha256": "949a5469c4c3116681be1a336c487e871a3e8f2db07250f3263b8bb2b46ee2af",
+      "fetched_at": "2026-05-11T13:20:52+00:00"
+    },
+    {
+      "slug": "delete-payment-1",
+      "path": "delete-payment-1.md",
+      "bytes": 2191,
+      "sha256": "6a59b02fb66ab19b74aafd7ab2a4096b1824bcfd66a4bfad5ede4a1f773b23b0",
+      "fetched_at": "2026-05-11T13:21:26+00:00"
+    },
+    {
+      "slug": "delete-product-1",
+      "path": "delete-product-1.md",
+      "bytes": 2189,
+      "sha256": "dd2988709e49073feff0b99c6b2d5ce4d27ebbd79765f0a2b4fd3162422e4ceb",
+      "fetched_at": "2026-05-11T13:20:57+00:00"
+    },
+    {
+      "slug": "delete-project",
+      "path": "delete-project.md",
+      "bytes": 2246,
+      "sha256": "9b1c58051d8dc82b136f618ddfe79a25752d757f29c2851a24f3b42c3f700474",
+      "fetched_at": "2026-05-11T13:22:16+00:00"
+    },
+    {
+      "slug": "delete-sales-channel-1",
+      "path": "delete-sales-channel-1.md",
+      "bytes": 2242,
+      "sha256": "974253967bd9754b568f92b1834d3e2656f5a17fbf61fdfd715d469698912c61",
+      "fetched_at": "2026-05-11T13:22:10+00:00"
+    },
+    {
+      "slug": "delete-service",
+      "path": "delete-service.md",
+      "bytes": 1307,
+      "sha256": "fbe8ebe5deed05d32baf9a84be68b59f1d0d1e82926d0c63c81ad708be24f164",
+      "fetched_at": "2026-05-11T13:20:59+00:00"
+    },
+    {
+      "slug": "delete-task",
+      "path": "delete-task.md",
+      "bytes": 2216,
+      "sha256": "0a97950744e6c419d6cb5c0d34e89e8f5a81786e9a756e621ddea4928184900a",
+      "fetched_at": "2026-05-11T13:22:18+00:00"
+    },
+    {
+      "slug": "delete-warehouse",
+      "path": "delete-warehouse.md",
+      "bytes": 2179,
+      "sha256": "d44bc0062fbdf19dd94747b40e03dd93c91b0d160b0041bbfd84e58e542499c1",
+      "fetched_at": "2026-05-11T13:21:01+00:00"
+    },
+    {
+      "slug": "expenses-accounts",
+      "path": "expenses-accounts.md",
+      "bytes": 21,
+      "sha256": "b498b3b0229c50c03a8809e7357f3b715c418adc28c66684d3ac746ba7810e5e",
+      "fetched_at": "2026-05-11T13:22:28+00:00"
+    },
+    {
+      "slug": "get-contact-1",
+      "path": "get-contact-1.md",
+      "bytes": 13273,
+      "sha256": "8a8b8eb179dc097ceff0034332482d77fc2eff6519c7088c55f4b686028a2989",
+      "fetched_at": "2026-05-11T13:20:31+00:00"
+    },
+    {
+      "slug": "get-numbering-series-1",
+      "path": "get-numbering-series-1.md",
+      "bytes": 2945,
+      "sha256": "776dfbc316b0181adf6d51d3104be7e977b3950f9712b30c57087aea7c0eb837",
+      "fetched_at": "2026-05-11T13:21:03+00:00"
+    },
+    {
+      "slug": "get-payment-1",
+      "path": "get-payment-1.md",
+      "bytes": 2770,
+      "sha256": "136073be28c3301daf7fea9e55c440a264a9642fa3119c1402026b3a863d4e27",
+      "fetched_at": "2026-05-11T13:21:04+00:00"
+    },
+    {
+      "slug": "get-product",
+      "path": "get-product.md",
+      "bytes": 1635,
+      "sha256": "17a964f73335aeac0a3c1e770dedbc501493698baa2faf8cda98ca579d24ed93",
+      "fetched_at": "2026-05-11T13:20:56+00:00"
+    },
+    {
+      "slug": "get-project",
+      "path": "get-project.md",
+      "bytes": 14231,
+      "sha256": "01f85f5f6980846768641f7bcf1ece9188beaf7eb9d3a6c1fe607311be1892cc",
+      "fetched_at": "2026-05-11T13:22:13+00:00"
+    },
+    {
+      "slug": "get-sales-channel-1",
+      "path": "get-sales-channel-1.md",
+      "bytes": 2518,
+      "sha256": "eae1d8589443a22fe06b2bf627dd0436c3b9285cd5e1dc7593ae25daa3e353f5",
+      "fetched_at": "2026-05-11T13:22:09+00:00"
+    },
+    {
+      "slug": "get-service",
+      "path": "get-service.md",
+      "bytes": 1295,
+      "sha256": "52a840aef5cdcd6a7e4a3dc44f04ecfd45571b3b903e94e12f72112148630c8b",
+      "fetched_at": "2026-05-11T13:20:58+00:00"
+    },
+    {
+      "slug": "get-task",
+      "path": "get-task.md",
+      "bytes": 5369,
+      "sha256": "db3f40649fd86e7e46f6698086d320e14b19ae4099181f863a9dfc20dde9f8f2",
+      "fetched_at": "2026-05-11T13:22:17+00:00"
+    },
+    {
+      "slug": "get-treasury-1",
+      "path": "get-treasury-1.md",
+      "bytes": 3029,
+      "sha256": "21c3559ec68a972f26933448c888fac23f2ae25b67c540393a8761367f2a6338",
+      "fetched_at": "2026-05-11T13:21:02+00:00"
+    },
+    {
+      "slug": "get-warehouse-1",
+      "path": "get-warehouse-1.md",
+      "bytes": 4065,
+      "sha256": "614b7b7f252c8c7b9fb89a25cb6be854e8d3f0477f1c5d38805a570f95415e28",
+      "fetched_at": "2026-05-11T13:21:00+00:00"
+    },
+    {
+      "slug": "getdocumentpdf",
+      "path": "getdocumentpdf.md",
+      "bytes": 2300,
+      "sha256": "91826d42fdd0c6122771c4809a9ee6ba8b1d70337f2a500a4600b8aae9e60691",
+      "fetched_at": "2026-05-11T13:20:54+00:00"
+    },
+    {
+      "slug": "gettaxes",
+      "path": "gettaxes.md",
+      "bytes": 2922,
+      "sha256": "256702d7a6efeecb0552e4dd408646e3423cf1e1045a1df3a104ce0a65cb73d1",
+      "fetched_at": "2026-05-11T13:21:02+00:00"
+    },
+    {
+      "slug": "getting-started",
+      "path": "getting-started.md",
+      "bytes": 94,
+      "sha256": "2ed9c85ff6adeed31e828d946151097491db2a2c46e3317d1065222a6a2af0f5",
+      "fetched_at": "2026-05-11T13:22:23+00:00"
+    },
+    {
+      "slug": "list-contact-groups",
+      "path": "list-contact-groups.md",
+      "bytes": 1831,
+      "sha256": "1b79ee10aaae07e48e03e739fbbc308ea4fc321f9f3448174ebfbd042d4d9f9c",
+      "fetched_at": "2026-05-11T13:20:33+00:00"
+    },
+    {
+      "slug": "list-contacts-1",
+      "path": "list-contacts-1.md",
+      "bytes": 14856,
+      "sha256": "1e0cb06cc404feb130e565c47551f6d399e553ce28e4000cffd217a6bf22acd0",
+      "fetched_at": "2026-05-11T13:20:30+00:00"
+    },
+    {
+      "slug": "list-documents-1",
+      "path": "list-documents-1.md",
+      "bytes": 9366,
+      "sha256": "7ce33e822d8ac7f21f9a9e698f7e1716529f0c9719d92678d909902e84281b98",
+      "fetched_at": "2026-05-11T13:20:35+00:00"
+    },
+    {
+      "slug": "list-payments-1",
+      "path": "list-payments-1.md",
+      "bytes": 3966,
+      "sha256": "e241e631ff762786db0fe632b40fc26f566babcaf31e57fa0c53ddbf876f8f20",
+      "fetched_at": "2026-05-11T13:21:03+00:00"
+    },
+    {
+      "slug": "list-products-1",
+      "path": "list-products-1.md",
+      "bytes": 11049,
+      "sha256": "59eff0ff43e42fc520ba152c0fa9c6eb9dd1cf7bdccc19b8486c107219e62623",
+      "fetched_at": "2026-05-11T13:20:54+00:00"
+    },
+    {
+      "slug": "list-projects",
+      "path": "list-projects.md",
+      "bytes": 12792,
+      "sha256": "0bac2794e8fce4995af2c0a98d8108304c4fa2b4d013c877866f9e9deec6b152",
+      "fetched_at": "2026-05-11T13:22:12+00:00"
+    },
+    {
+      "slug": "list-remittances",
+      "path": "list-remittances.md",
+      "bytes": 1396,
+      "sha256": "f17944572bbc4d84e42bdddd1de5e0ad9c44167aabc62884bcfd3809e6b26622",
+      "fetched_at": "2026-05-11T13:21:48+00:00"
+    },
+    {
+      "slug": "list-sales-channels-1",
+      "path": "list-sales-channels-1.md",
+      "bytes": 2783,
+      "sha256": "926d14a23b3879e604eabf58ffdb37575cae95d47640dbb9c78368cec54fb3b5",
+      "fetched_at": "2026-05-11T13:22:07+00:00"
+    },
+    {
+      "slug": "list-services",
+      "path": "list-services.md",
+      "bytes": 2308,
+      "sha256": "fb63b181f8a08b2cb435aa3f9fef9a123fa4b778e03ce126b6403bb1ed3f15b1",
+      "fetched_at": "2026-05-11T13:20:57+00:00"
+    },
+    {
+      "slug": "list-tasks",
+      "path": "list-tasks.md",
+      "bytes": 5487,
+      "sha256": "e4d5025d27d1b69cf809ff1e05e2ccf5aa433ec3499fc04feba70cef0addf64d",
+      "fetched_at": "2026-05-11T13:22:16+00:00"
+    },
+    {
+      "slug": "list-treasuries",
+      "path": "list-treasuries.md",
+      "bytes": 3457,
+      "sha256": "b431c443612c426058ebb607886ae5940c766610f98597acb6789b9482f494ef",
+      "fetched_at": "2026-05-11T13:21:02+00:00"
+    },
+    {
+      "slug": "list-warehouses-1",
+      "path": "list-warehouses-1.md",
+      "bytes": 5709,
+      "sha256": "53290eba043cca60f1fc7e5e6e875ecf40aabf7e8929354002ef7373fc636e38",
+      "fetched_at": "2026-05-11T13:21:00+00:00"
+    },
+    {
+      "slug": "listdailyledger",
+      "path": "listdailyledger.md",
+      "bytes": 2231,
+      "sha256": "b540bf2d0ecbfee66f7a631cd257af98709199900978397a6342422286a167a2",
+      "fetched_at": "2026-05-11T13:22:11+00:00"
+    },
+    {
+      "slug": "numbering-series",
+      "path": "numbering-series.md",
+      "bytes": 20,
+      "sha256": "be7b8678b106813820cd8c0a015b5dd28941f1ba3b81f6e21be136a92032fd79",
+      "fetched_at": "2026-05-11T13:22:27+00:00"
+    },
+    {
+      "slug": "taxes",
+      "path": "taxes.md",
+      "bytes": 9,
+      "sha256": "66b1b197c448cab350fbe75732346b665670147cc3e5e741a5aff72fea9076dc",
+      "fetched_at": "2026-05-11T13:22:27+00:00"
+    },
+    {
+      "slug": "update-contact-1",
+      "path": "update-contact-1.md",
+      "bytes": 10492,
+      "sha256": "14c46e74d24b4ee343a538a40bd84abee1a54d7a0edeb93d7f2f0774194ea374",
+      "fetched_at": "2026-05-11T13:20:32+00:00"
+    },
+    {
+      "slug": "update-contact-group",
+      "path": "update-contact-group.md",
+      "bytes": 2338,
+      "sha256": "ee11ee14a34465f0b1b907c3145ca183e79c809da6788e7e0649b5ddc58eb5e3",
+      "fetched_at": "2026-05-11T13:20:34+00:00"
+    },
+    {
+      "slug": "update-document-1",
+      "path": "update-document-1.md",
+      "bytes": 6431,
+      "sha256": "356e488ca702e575c18f80ff552e3c7d4e83099c7bc66a7dd2a579a95119932c",
+      "fetched_at": "2026-05-11T13:20:36+00:00"
+    },
+    {
+      "slug": "update-employee",
+      "path": "update-employee.md",
+      "bytes": 6914,
+      "sha256": "a555f95f5e388846e851b3f470353eee8aee530a2c5fcfa22c7b4bf5dfe9a5c7",
+      "fetched_at": "2026-05-11T13:22:18+00:00"
+    },
+    {
+      "slug": "update-payment-1",
+      "path": "update-payment-1.md",
+      "bytes": 3226,
+      "sha256": "6f35151b20539ab6b3b0ac827a8ffa5d4a7c0524fabfe31e56bba0a37f886c00",
+      "fetched_at": "2026-05-11T13:21:26+00:00"
+    },
+    {
+      "slug": "update-product-1",
+      "path": "update-product-1.md",
+      "bytes": 3778,
+      "sha256": "a5da95eb4257d622106e93f968c0b79c0edc5e40dbf16d08ddcd11e0346ac739",
+      "fetched_at": "2026-05-11T13:20:56+00:00"
+    },
+    {
+      "slug": "update-project",
+      "path": "update-project.md",
+      "bytes": 6652,
+      "sha256": "f7a901121e2e2d3a5631f38aa1992cacf53c433af3c7ca551c794163eb6c17d3",
+      "fetched_at": "2026-05-11T13:22:15+00:00"
+    },
+    {
+      "slug": "update-sales-channel-1",
+      "path": "update-sales-channel-1.md",
+      "bytes": 3031,
+      "sha256": "e3971d11e096cace27d272b76729f7c3601ffb2ad140f49b0eb9fe2553839fda",
+      "fetched_at": "2026-05-11T13:22:10+00:00"
+    },
+    {
+      "slug": "update-service",
+      "path": "update-service.md",
+      "bytes": 4064,
+      "sha256": "6658ab79567de76ed3a3374ee272b40b6e23673bf7cd9a2aeae1bc34ecfcf11a",
+      "fetched_at": "2026-05-11T13:20:59+00:00"
+    },
+    {
+      "slug": "update-warehouse-1",
+      "path": "update-warehouse-1.md",
+      "bytes": 5499,
+      "sha256": "13433db021a32d739feb30fb1ec411f850490d98a84434806440db1e2384bbf1",
+      "fetched_at": "2026-05-11T13:21:01+00:00"
+    }
+  ],
+  "missing_slugs": [],
+  "error_details": []
+}

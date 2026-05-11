@@ -1,9 +1,11 @@
-# Odoo 19 admin skills
+# Odoo 19 admin skills (+ origen externo)
 
-This directory hosts three cooperating Claude Agent Skills for managing
-self-hosted Odoo 19 Community deployments. Spanish/Catalan locale,
-doodba (Tecnativa) Docker deployment. The skills are **tenant-agnostic**
-— per-tenant configuration lives in `docs/tenants/<slug>/profile.yaml`,
+This directory hosts four cooperating Claude Agent Skills. Three for
+managing self-hosted Odoo 19 Community deployments (Spanish/Catalan
+locale, doodba/Tecnativa Docker). The fourth (`holded-export`) is a
+**read-only** exporter for an external source (Holded SaaS) used as
+input for migration to Odoo. The Odoo skills are **tenant-agnostic**
+— per-tenant config lives in `docs/tenants/<slug>/profile.yaml`,
 selected via the `ODOO_AGENT_TENANT` env var.
 
 ## Skills
@@ -13,6 +15,7 @@ selected via the `ODOO_AGENT_TENANT` env var.
 | `odoo-accounting-es` | Daily accounting and tax filing | factura, asiento, conciliacion, modelo 303, SII, Veri*Factu | RPC, MCP |
 | `odoo-functional-admin` | Users, groups, ACLs, multi-company, journals, sequences, fiscal positions, ir.cron, settings | crear usuario, regla de registro, nueva empresa, diario nuevo, posicion fiscal, ir.cron | RPC, MCP |
 | `odoo-module-admin` | Module install/upgrade/uninstall, addons.yaml, repos.yaml, gitaggregate, doodba, OpenUpgrade | instalar modulo, OCA, addons_path, doodba, migrar version | RPC, **SSH + Docker** |
+| `holded-export` | **Read-only** export desde Holded SaaS → dump JSONL + PDFs + manifest. Insumo para Fase 5 (migracion) | exportar holded, dump holded, migrar de holded, facturas recibidas escaneadas | HTTP GET only |
 
 The split is deliberate:
 
@@ -46,12 +49,14 @@ All three skills consume:
 
 | Variable | Used by | Purpose |
 |----------|---------|---------|
-| `ODOO_AGENT_TENANT` | All three | Active tenant slug (subdir of `docs/tenants/`) |
-| `ODOO_URL`, `ODOO_DB`, `ODOO_USER`, `ODOO_API_KEY` | All three | RPC / JSON-2 auth |
-| `ODOO_FORCE_XMLRPC` | All three | Optional XML-RPC fallback |
+| `ODOO_AGENT_TENANT` | All four | Active tenant slug (subdir of `docs/tenants/`) |
+| `ODOO_URL`, `ODOO_DB`, `ODOO_USER`, `ODOO_API_KEY` | 3 Odoo skills | RPC / JSON-2 auth |
+| `ODOO_FORCE_XMLRPC` | 3 Odoo skills | Optional XML-RPC fallback |
 | `DOODBA_SSH_HOST`, `DOODBA_PROJECT_DIR` | module-admin only | SSH target |
 | `DOODBA_COMPOSE_SERVICE`, `DOODBA_DB_NAME` | module-admin only | docker compose service name + DB |
 | `OPENUPGRADE_PATH` | module-admin (`openupgrade_run.py` only) | OpenUpgrade clone path on host |
+| `HOLDED_API_KEY` | holded-export only | Header `key:` para `api.holded.com` |
+| `HOLDED_API_BASE` | holded-export only | Override base URL (raro) |
 
 Full template in repo-root `.env.example`.
 
@@ -74,10 +79,14 @@ agnostic — the tenant profile is the user-supplied parameter source.
 
 `scripts/_common.py`, `scripts/odoo_client.py`, `tests/conftest.py`,
 `tests/test_common.py`, `tests/test_odoo_client_helpers.py` are
-**verbatim duplicates** across the three skills. This is intentional:
-Anthropic skills are designed as self-contained portable bundles; a
-user must be able to copy a skill directory to another project and
-have it work without external links.
+**verbatim duplicates** across the three Odoo skills. This is
+intentional: Anthropic skills are designed as self-contained portable
+bundles; a user must be able to copy a skill directory to another
+project and have it work without external links.
+
+`holded-export` duplica solo `scripts/_common.py`, `tests/conftest.py`
+y `tests/test_common.py` (no toca Odoo, asi que no necesita
+`odoo_client.py`).
 
 **Bug-fix policy**: when fixing `_common.py` or `odoo_client.py` in
 one skill, sync the change to the other two. A quick check:
@@ -97,7 +106,7 @@ Per-skill, since each `tests/conftest.py` injects only its own
 `scripts/` into `sys.path`:
 
 ```bash
-for skill in odoo-accounting-es odoo-functional-admin odoo-module-admin; do
+for skill in odoo-accounting-es odoo-functional-admin odoo-module-admin holded-export; do
   echo "=== $skill ==="
   (cd .claude/skills/$skill && python3 -m pytest tests/ -q)
 done
@@ -253,4 +262,5 @@ trigger SII/Veri*Factu pipelines.
 - `odoo-accounting-es/SKILL.md` — daily accounting operations.
 - `odoo-functional-admin/SKILL.md` — admin configuration (no SSH).
 - `odoo-module-admin/SKILL.md` — module lifecycle (SSH + Docker).
+- `holded-export/SKILL.md` — read-only export desde Holded (insumo Fase 5).
 - `docs/tenants/README.md` — multi-tenant model and how to add a tenant.

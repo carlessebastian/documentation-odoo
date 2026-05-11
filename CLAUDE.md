@@ -51,16 +51,20 @@ odoo-agent/
 
 ## Capacidades del agente
 
-Tres skills cooperativas, cada una con triggers explícitos y handoffs a
-las otras dos. **Detalle completo, runbook de bootstrap y políticas
+Cuatro skills cooperativas: tres operan sobre la instancia Odoo
+self-hosted; la cuarta (`holded-export`) es un exportador **read-only**
+sobre un origen externo (Holded SaaS) usado como input para la
+migración a Odoo. Cada una con triggers explícitos y handoffs a las
+otras. **Detalle completo, runbook de bootstrap y políticas
 compartidas en `.claude/skills/CLAUDE.md`** — cárgalo cuando vayas a
-trabajar con cualquiera de los tres dominios.
+trabajar con cualquiera de los cuatro dominios.
 
 | Skill | Dominio | Privilegios |
 |-------|---------|-------------|
 | `odoo-accounting-es` | Operativa contable y fiscal ES diaria: facturas, pagos, conciliación, IVA/IRPF/RE, SII/Veri\*Factu/FacturaE, modelos AEAT 303/347/349/390/111/115/130/369/232/720, cierres, reporting | RPC + MCP |
 | `odoo-functional-admin` | Configuración funcional vía RPC: usuarios, grupos, ACLs, record rules, multi-company, diarios, secuencias, posiciones fiscales, idiomas, `ir.cron`, parámetros | RPC + MCP |
 | `odoo-module-admin` | Ciclo de vida de módulos: install/upgrade/uninstall, `addons.yaml`, `repos.yaml`, `gitaggregate`, doodba, OpenUpgrade, reinicios | RPC + **SSH + Docker** |
+| `holded-export` | **Read-only** export desde Holded SaaS (API REST con header `key:`): contactos, productos, documentos, asientos, PDFs originales escaneados. Dump JSONL + PDFs + manifest en `docs/tenants/<slug>/holded-export/<YYYY-MM-DD>/`. Insumo para Fase 5 (migración) | HTTP GET only |
 
 Subagentes:
 
@@ -87,6 +91,7 @@ Compartidas por las tres skills (plantilla completa en `.env.example`):
 | `ODOO_FORCE_XMLRPC` | fallback opcional a XML-RPC |
 | `DOODBA_SSH_HOST`, `DOODBA_PROJECT_DIR`, `DOODBA_COMPOSE_SERVICE`, `DOODBA_DB_NAME` | solo `odoo-module-admin` |
 | `OPENUPGRADE_PATH` | solo migraciones con OpenUpgrade |
+| `HOLDED_API_KEY` | solo `holded-export` |
 
 Mantén las claves en un `.env` local; nunca las commitees.
 
@@ -104,14 +109,17 @@ los grupos los asigna `odoo-functional-admin`.
 
 `scripts/_common.py`, `scripts/odoo_client.py`, `tests/conftest.py`,
 `tests/test_common.py`, `tests/test_odoo_client_helpers.py` están
-**duplicados verbatim** en las tres skills (es intencional: las skills
-son bundles portables). Cuando arregles uno de estos archivos, sincroniza
-los otros dos (instrucciones en `.claude/skills/CLAUDE.md`).
+**duplicados verbatim** en las tres skills Odoo (es intencional: las
+skills son bundles portables). Cuando arregles uno de estos archivos,
+sincroniza los otros dos (instrucciones en `.claude/skills/CLAUDE.md`).
+
+`holded-export` solo duplica `_common.py` + `conftest.py` +
+`test_common.py` — no toca Odoo, no necesita `odoo_client.py`.
 
 ## Tests
 
 ```bash
-for skill in odoo-accounting-es odoo-functional-admin odoo-module-admin; do
+for skill in odoo-accounting-es odoo-functional-admin odoo-module-admin holded-export; do
   echo "=== $skill ==="
   (cd .claude/skills/$skill && python3 -m pytest tests/ -q)
 done
