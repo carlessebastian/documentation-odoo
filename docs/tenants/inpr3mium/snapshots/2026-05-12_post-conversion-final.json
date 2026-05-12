@@ -1,0 +1,86 @@
+{
+  "phase": "5.1-post-conversion-final",
+  "tenant": "inpr3mium",
+  "company_id": 1,
+  "date": "2026-05-12",
+  "summary": "Cierre exitoso conversión 776 docs con signo invertido. Journal ACC- nuevo (id=23) aísla los convertidos. Posted: 23 out_invoice + 720 out_refund = 743 / 776. Names: ACC-/2026/NNNNN (invoices), RACC-/2026/NNNNN (refunds, R añadido por Odoo). ref preserva docNumber Holded literal. 750 PDFs re-asignados al new move_id. Narration marker buscable.",
+  "decision_operator": {
+    "date": "2026-05-12",
+    "quote": "Tendremos que almacenarlo como rectificativas, no obstante, deberemos almacenar el pdf original. En las notas (o mejor en algun campo buscable por buscador) deberíamos almacenar la numeración original. Generar una serie 'Propia' (tipo ACC-) para estos conflictos.",
+    "implementation": [
+      "Journal ACC- creado (id=23, type=sale, code=ACC-)",
+      "ref = docNumber Holded (campo standard buscable)",
+      "name = ACC-/YYYY/NNNNN o RACC-/YYYY/NNNNN (sequence Odoo dentro del journal ACC-)",
+      "narration con marker 'CONVERTIDO out_<X> -> out_<Y>' + docNumber Holded",
+      "PDFs reasignados con res_id new_move_id (preserva binario original)"
+    ]
+  },
+  "totals_before_after": {
+    "before_conversion": {
+      "out_invoice": {"draft": 813, "posted": 2610},
+      "out_refund": {"draft": 35, "posted": 644}
+    },
+    "after_conversion": {
+      "out_invoice": {"draft": 66, "posted": 2633, "total": 2699},
+      "out_refund": {"draft": 39, "posted": 1364, "total": 1403},
+      "GRAND_TOTAL": 4102,
+      "vs_dump_expected": 4100,
+      "diff_explained": "+2 = factura smoke Fase 4.6 (1 out_invoice posted) + creditnote smoke (1 out_refund posted) que estaban pre-existentes"
+    }
+  },
+  "journal_acc_breakdown": {
+    "journal_id": 23,
+    "code": "ACC-",
+    "name": "ACC- Conversiones carga histórica Holded",
+    "type": "sale",
+    "out_invoice": {"posted": 23, "draft": 3, "total": 26},
+    "out_refund": {"posted": 720, "draft": 30, "total": 750},
+    "TOTAL": 776,
+    "name_patterns": {
+      "out_invoice": "ACC-/2026/00001 .. ACC-/2026/00023",
+      "out_refund": "RACC-/2026/00001 .. RACC-/2026/00720 (R prefix añadido por Odoo al usar out_refund en journal sale)"
+    }
+  },
+  "draft_breakdown": {
+    "out_invoice_draft_66": "63 status=0 Holded (drafts en origen) + 2 dup losers L-000719/720 + 1 misc",
+    "out_refund_draft_39": "30 ACC- status=0 Holded + 5 status=3 (review en Holded, política conservadora no postear) + 1 AC-001135 (overlap docNumber con out_invoice posted, requiere decisión semántica) + 3 misc",
+    "operator_decision_needed": [
+      "5 docs status=3 review: AC-001793, AC-001794, AC-001795, AC-001796, AC-001800 — postear manualmente si revisión OK",
+      "1 doc AC-001135 (id 3442 en out_refund ACC- journal AC- original): el dump tiene 2 docs distintos con mismo docNumber AC-001135, ya posted como out_invoice (520€) y este draft (726€). Decidir si renombrar (e.g. AC-001135-bis) o cancelar.",
+      "2 dup losers L-000719/720: ya en draft con narration warn"
+    ]
+  },
+  "attachments": {
+    "total_pdfs_linked": 3422,
+    "orphan": 0,
+    "verification": "750 PDFs originalmente cargados como invoice attachments. 750 detached (res_id=0) durante limpieza. 750 re-asignados al new_move_id tras recarga. 0 huérfanos."
+  },
+  "search_demo": {
+    "by_ref": "domain [('ref','=','AC-001806')] -> 1 hit, RACC-/2026/00001 in journal ACC-",
+    "by_journal": "domain [('journal_id','=',23)] -> 776 hits (las 776 conversiones aisladas)",
+    "by_narration_marker": "domain [('narration','ilike','CONVERTIDO out_invoice')] -> 750 hits (refunds convertidos)",
+    "all_searches_work": true
+  },
+  "post_failures_one_doc": {
+    "doc": "AC-001135 (creditnote.jsonl id 62c5458bf9843fcbc307dc2f)",
+    "reason": "unique(name, journal_id) entre move_types: ya hay un out_invoice posted con name='AC-001135' en journal AC- (Holded duplicó el número entre invoice y creditnote, son 13 pares overlap detectados). Solo este 1 caso quedó draft sin postear porque su pareja out_invoice ya estaba posted.",
+    "action_needed": "Decisión operador: renombrar manualmente (e.g. AC-001135-bis) o button_cancel + recrear en ACC-. Operador decide.",
+    "context_13_overlaps": [
+      "AC-001135 / AC-001547 / AC-001780 / AC-001781 / AC-001788 / AC-001789 / AC-001790 / AC-001791 / AC-001792 / AC-001793 / AC-001794 / AC-001795 / AC-001796 — bug de modelado Holded: el operador inicial reutilizó docNumbers AC- entre invoice y creditnote endpoints"
+    ]
+  },
+  "decimal_mismatch_warns_explained": {
+    "count_during_post": 718,
+    "false_positives": true,
+    "explanation": "El check `|doc.tax_holded - move.amount_tax| > 0.02` compara signo directo. Para los converted (total<0 Holded → amount_total positivo Odoo), el check trigger warning. Los amounts ABSOLUTOS sí cuadran (verificado en sample). Fix futuro del loader: comparar abs() para conversiones."
+  },
+  "pending_next": [
+    "Sesión operador: revisar los 5 status=3 (AC-001793..800) y decidir post / cancel.",
+    "Sesión operador: AC-001135 — renombrar o cancelar.",
+    "Sesión operador: 63 invoices status=0 Holded — decidir si postear (estaban draft en origen).",
+    "tax_reclassification.yaml (bloquea loader 4 purchases).",
+    "Loader 4 purchases tras tax yaml.",
+    "Loader 8 dailyledger (asientos manuales).",
+    "Reconciliación payments ↔ moves (Fase 5.5 cutover)."
+  ]
+}

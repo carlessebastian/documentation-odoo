@@ -19,6 +19,8 @@ cualquier colaborador que clone el repo.
 - [EDI obligations](edi-obligations.md) — NO SII (no es gran empresa), Veri\*Factu post-2027, sin FACe hoy
 - [Dump analysis 2026-05-11](dump-analysis-2026-05-11.md) — volumen, concentración (BIDAFARMA+UNNEFAR+P&G=48%), distribución temporal 2018-2026, top clientes/proveedores, sales channels, expensesaccount, limitaciones dailyledger (solo manuales)
 - [Decisions log](decisions-log.md) — decisiones tomadas durante el bootstrap con su razón
+- [Edition evaluation plan](../edition-evaluation-plan.md) — plan A/B Community vs Enterprise (track paralelo a la migración; arranca post Fase 5.3; criterios C1-C10 + 6 fases E.0-E.6 + coste eval ~93-186€)
+- [Runbook migración Holded → Odoo](../runbook-migration-holded.md) — procedimiento ejecutable paso a paso para repetir Fase 5.1 desde cero; preflight + 11 loaders + bug-fixes incorporados + recovery scenarios
 
 ## Convención de actualización
 

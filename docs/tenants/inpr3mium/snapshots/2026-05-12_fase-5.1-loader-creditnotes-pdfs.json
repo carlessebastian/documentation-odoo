@@ -1,0 +1,128 @@
+{
+  "phase": "5.1-loader-creditnotes-pdfs",
+  "tenant": "inpr3mium",
+  "company_id": 1,
+  "date": "2026-05-12",
+  "summary": "Cierre Fase 5.1 ventas/abonos: patch name=docNumber + loader 5 creditnotes + loader 9 PDFs invoice + runbook completo. Total cargado en Odoo hoy: 3.422 out_invoice draft (con name=Holded) + 678 out_refund draft + 3.422 ir.attachment PDF (142.3 MB) enlazados a los moves correspondientes. Política operador: documentos importados NO pueden cambiar número de factura, estrategia de subida por cierre trimestral.",
+  "patch_name_doc_number": {
+    "policy": "Operador 2026-05-12: 'Todo aquello que se importa no puede modificarse el numero de factura. Seguiremos una estrategia de subida una vez se cierre un trimestre.' Implementacion: `account.move.name = doc.docNumber` literal antes del post; Odoo respeta name explicito en action_post.",
+    "impact_invoices_loader_3": {
+      "rerun_csv": "holded-export/2026-05-11/.etl_reports/invoices_run_20260512_112226.csv",
+      "updated_draft": 3421,
+      "skip_existing_posted": 1,
+      "dup_name_dropped": 2,
+      "errors": 0
+    },
+    "duplicate_handling": {
+      "pairs_detected": ["L-000719 (2 docs)", "L-000720 (2 docs)"],
+      "policy": "winner = doc con date mas reciente (preserva name=docNumber); loser = name='/' + narration warn",
+      "winners_in_odoo": [
+        {"id": 539, "name": "L-000720", "date": "2019-10-31", "total": 5867.18},
+        {"id": 534, "name": "L-000719", "date": "2019-10-31", "total": 1631.46}
+      ],
+      "losers_in_odoo": [
+        {"id": 586, "name": false, "ref": "L-000720", "date": "2019-08-31", "total": 17073.84, "note": "narration warn explica duplicado"},
+        {"id": 592, "name": false, "ref": "L-000719", "date": "2019-08-31", "total": 1103.31, "note": "narration warn"}
+      ]
+    },
+    "artifact_fixed_manually": {
+      "doc": "L-000837 id=913",
+      "issue": "Terminó en state='cancel' durante runs multiples (artifact, no bug loader)",
+      "fix": "button_draft + write name='L-000837' manualmente"
+    }
+  },
+  "loader_5_creditnotes": {
+    "csv_report": "holded-export/2026-05-11/.etl_reports/creditnotes_run_20260512_113752.csv",
+    "input_docs": 678,
+    "created": 678,
+    "updated": 0,
+    "skip_review_status_3_loaded_draft": 5,
+    "reversed_entry_linked": 232,
+    "reversed_entry_orphan": 1,
+    "standalone_refunds": 445,
+    "items_total": 1579,
+    "items_no_product": 26,
+    "items_orphan_channel": 3,
+    "tax_unresolved_lines": 0,
+    "multi_tax_lines": 0,
+    "errors": 0,
+    "design": "_creditnotes_lib.py reusa massive de _invoices_lib via imports (iter_jsonl, _build_line, build_index_by_id, lookup_*, parse_doc_prefix, search_ext_id). Diferencias propias: move_type=out_refund, journal=AC- fijo, reversed_entry_id lookup via __holded__.invoice_<id>, REFUND_PREFIXES={AC-}, STATUS_REVIEW=3 nunca posted.",
+    "status_3_docs": [
+      "AC-001793 / FED.FARMACEUTICA / -726",
+      "AC-001794 / GRUPO BIDAFARMA / -1051.24",
+      "AC-001795 / GRUPO BIDAFARMA / 1051.24",
+      "AC-001796 / GRUPO BIDAFARMA / 1051.24",
+      "AC-001800 / FED.FARMACEUTICA / -726"
+    ]
+  },
+  "loader_9_pdfs_invoice": {
+    "csv_report": "holded-export/2026-05-11/.etl_reports/pdfs_invoice_run_20260512_115620.csv",
+    "total_pdfs": 3430,
+    "created": 3419,
+    "skip_existing": 3,
+    "skip_no_move": 8,
+    "skip_not_found": 0,
+    "skip_too_large": 0,
+    "errors": 0,
+    "odoo_state": {
+      "ir_attachment_pdf_account_move": 3422,
+      "total_size_mb": 142.3,
+      "naming_convention": "<docNumber>.pdf (e.g. A-007566.pdf, AC-001842.pdf)"
+    },
+    "purchase_pdfs_deferred": "4.059 PDFs en pdfs/purchase/ (~801 MB) requieren loader 4 (purchases) primero. Bloqueado por sesion operador tax_reclassification.yaml."
+  },
+  "odoo_state_after": {
+    "out_invoice_total": 3423,
+    "out_invoice_draft": 3422,
+    "out_invoice_posted": 1,
+    "out_invoice_cancel": 0,
+    "out_invoice_with_explicit_name": 3420,
+    "out_invoice_name_false_dup_losers": 2,
+    "out_refund_total": 679,
+    "out_refund_draft": 679,
+    "out_refund_with_reversed_entry": 233,
+    "ir_attachment_pdf_account_move": 3422,
+    "ext_ids_holded_invoice": 3422,
+    "ext_ids_holded_creditnote": 678
+  },
+  "documentation_artifacts": [
+    "docs/tenants/inpr3mium/runbook-migration-holded.md (NEW, 5 secciones + 5 apendices, ~12 KB)",
+    "docs/tenants/inpr3mium/memory/decisions-log.md (+3 entradas: name=docNumber + status=3 review + duplicate handling implicit)",
+    "docs/tenants/inpr3mium/memory/MEMORY.md (index actualizado con runbook)",
+    "docs/PLAN.md (entrada cronologica + estado actual + proximos pasos refrescados)"
+  ],
+  "tests_status": {
+    "etl_total": 253,
+    "passing": 253,
+    "failing": 0,
+    "new_today": "1 fallback + 14 PDFs + 15 creditnotes + 3 name=docNumber + 2 tz_madrid"
+  },
+  "loader_7_payments_added_same_day": {
+    "csv_report": "holded-export/2026-05-11/.etl_reports/payments_run_20260512_121709.csv",
+    "input_docs": 708,
+    "created": 107,
+    "skip_doctype_unsupported": 595,
+    "skip_bank_unmapped": 6,
+    "errors": 0,
+    "breakdown_by_payment_type": {"inbound": 35, "outbound": 72},
+    "design": "MVP: filtra documentType in {invoice, creditnote} = 113 docs; los 6 con bankId=`616e8642d8426e21406558bb` (cuenta PGCE 555 'Partidas pendientes') quedan sin journal y skipped. Bug fix mid-run: account.payment Odoo 19 NO tiene campo `ref` (es del move generado) -> holded_id va al memo con marker `[holded:<id>]`. State=draft, NO reconciliado (Fase 5.5 cutover). Tests offline: 27 nuevos.",
+    "skipped_doctypes": {
+      "trans": 440,
+      "payroll": 105,
+      "creditnote_purchase_subset": "incluido (creditnote ya cargado)",
+      "purchase": 24,
+      "entry": 26
+    },
+    "skipped_purchase_unblock_after_loader_4": 24
+  },
+  "pending_next": [
+    "Sesion operador: revisar visualmente muestreo aleatorio (10-20 invoices + creditnotes + payments) + decidir sobre 6 R- + 5 status=3.",
+    "Postear invoices y creditnotes status=1 con --post.",
+    "Postear payments (mark as paid) tras invoices/creditnotes posted + reconciliar via wizard (Fase 5.5).",
+    "tax_reclassification.yaml (bloquea loader 4 purchases).",
+    "Loader 4 purchases (7.998) + purchaserefund (69) tras tax_reclassification.yaml.",
+    "Loader 7 --include-purchases (24 payments adicionales) tras loader 4.",
+    "Loader 9 PDFs purchase (4.059 PDFs ~801 MB) tras loader 4.",
+    "Loader 8 dailyledger (2.250 entries — filtrar solo manuales no cubiertos por loaders 3-7)."
+  ]
+}

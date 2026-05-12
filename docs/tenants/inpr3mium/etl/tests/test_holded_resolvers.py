@@ -211,6 +211,17 @@ class TestIsoFromUnix:
     def test_invalid(self, bad):
         assert iso_from_unix(bad) is None
 
+    def test_madrid_midnight_winter(self):
+        # 1546210800 = 2018-12-31 00:00 CET (Madrid winter, UTC+1)
+        # = 2018-12-30 23:00 UTC. UTC interpretation daria "2018-12-30",
+        # pero queremos "2018-12-31" (la fecha visible en la UI Holded).
+        assert iso_from_unix(1546210800) == "2018-12-31"
+
+    def test_madrid_midnight_summer(self):
+        # 1561932000 = 2019-07-01 00:00 CEST (Madrid summer, UTC+2)
+        # = 2019-06-30 22:00 UTC. UTC daria "2019-06-30"; queremos "2019-07-01".
+        assert iso_from_unix(1561932000) == "2019-07-01"
+
 
 # ---------------------------------------------------------------------------
 # HoldedResolvers (smoke: dataclass instancia con fake client)

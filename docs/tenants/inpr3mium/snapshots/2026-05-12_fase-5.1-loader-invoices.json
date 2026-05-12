@@ -1,0 +1,88 @@
+{
+  "phase": "5.1-loader-invoices",
+  "tenant": "inpr3mium",
+  "company_id": 1,
+  "date": "2026-05-12",
+  "summary": "ETL Fase 5.1 loader 3: 3.430 docs `documents/invoice.jsonl` Holded -> 3.422 `account.move` out_invoice draft en Odoo. Ext_id `__holded__.invoice_<id>`. 8 docs skipped (2 cancelled status=2 + 6 R- sin journal mapeado). Cuadre por journal en céntimos (diferencias < 0.5€ por 722 facturas). State=draft uniforme (no --post; revisión visual + tax_reclassification antes de postear).",
+  "input": {
+    "source": "docs/tenants/inpr3mium/holded-export/2026-05-11/documents/invoice.jsonl",
+    "total_docs": 3430,
+    "items_total": 15463
+  },
+  "totals_run_after_fix": {
+    "csv_report": "holded-export/2026-05-11/.etl_reports/invoices_run_20260512_101150.csv",
+    "created": 12,
+    "updated_draft": 3409,
+    "skip_cancelled_status_2": 2,
+    "skip_unmapped_prefix_R_": 6,
+    "skip_existing_posted": 1,
+    "errors": 0,
+    "items_no_product": 1779,
+    "items_orphan_channel": 6198,
+    "tax_unresolved_lines": 0,
+    "multi_tax_lines": 0,
+    "decimal_mismatch_warnings": "n/a (post=False)"
+  },
+  "fixes_applied_during_load": {
+    "timezone_iso_from_unix": {
+      "issue": "iso_from_unix usaba UTC; Holded guarda fechas como medianoche local (Madrid). Timestamp 1546210800 = 2018-12-31 00:00 CET / 2018-12-30 23:00 UTC -> interpretacion UTC daba '2018-12-30', fecha 1 dia antes que la UI Holded.",
+      "fix": "iso_from_unix usa ZoneInfo('Europe/Madrid'). Tests anyadidos en test_holded_resolvers.py (test_madrid_midnight_winter + summer).",
+      "impact": "Afecta a TODOS los loaders que usen iso_from_unix. Para inpr3mium 3.430 invoices: las facturas con date a medianoche CET (=23:00 UTC dia anterior) ahora cargan en la fecha correcta. CRITICO para fiscal year boundary."
+    },
+    "default_income_fallback": {
+      "issue": "12/3.430 docs fallaron con 'Missing required account on accountable line'. Causa: items con productId=None Y saleschannel huerfano -> ni product.account_income ni saleschannel resolvable -> Odoo no puede inferir cuenta.",
+      "fix": "Lookup `account.account.code='705000'` al inicio del orquestador. En `_build_line` si account_id=None Y product_id=None -> usar default_income_id. Test anyadido test_default_income_fallback.",
+      "impact": "Los 12 docs se crearon en re-run. Las 6.198 lineas con saleschannel huerfano que TENIAN product_id no cambian (Odoo infiere del product). Solo aplica al subset estricto sin ninguna pista."
+    }
+  },
+  "odoo_state_after": {
+    "ext_ids_holded_invoice": 3422,
+    "account_move_total": 3425,
+    "account_move_out_invoice_total": 3423,
+    "out_invoice_draft": 3421,
+    "out_invoice_posted": 1,
+    "note": "+1 out_invoice posted = factura smoke Fase 4.6 (A-/2026/00001, 1.210€); +2 docs sin contar como out_invoice corresponden al smoke Fase 4.6 (in_invoice + out_refund)."
+  },
+  "reconciliation_dump_vs_odoo": {
+    "method": "Sum agregado por prefijo docNumber (dump) vs journal_id (Odoo) tras filtrar -cancelled y -R-.",
+    "results_by_prefix": [
+      {"prefix": "A-",  "dump_count": 1697, "odoo_count": 1698, "dump_total": 15477067.03, "odoo_total": 15478277.60, "diff": 1210.57, "diff_explanation": "1 factura preexistente: A-/2026/00001 smoke Fase 4.6 (no tiene ext_id Holded)"},
+      {"prefix": "AC-", "dump_count": 722,  "odoo_count": 722,  "dump_total": -704750.54, "odoo_total": -704750.65, "diff": -0.11, "diff_explanation": "redondeo decimal acumulado en 722 docs"},
+      {"prefix": "AF-", "dump_count": 14,   "odoo_count": 14,   "dump_total": 45738.00,   "odoo_total": 45738.00,   "diff": 0.00},
+      {"prefix": "FVU-","dump_count": 11,   "odoo_count": 11,   "dump_total": 9947.14,    "odoo_total": 9947.15,    "diff": 0.01},
+      {"prefix": "KD-", "dump_count": 163,  "odoo_count": 163,  "dump_total": 143748.00,  "odoo_total": 143748.00,  "diff": 0.00},
+      {"prefix": "L-",  "dump_count": 815,  "odoo_count": 815,  "dump_total": 2427395.15, "odoo_total": 2427395.24, "diff": 0.09}
+    ],
+    "total_dump": 17399144.78,
+    "total_odoo": 17400355.34,
+    "diff_total": 1210.56,
+    "verdict": "Cuadre excelente: 100% match en counts (excepto +1 smoke preexistente); diffs por journal < 0.5€ por redondeo decimal sobre +700 docs."
+  },
+  "skipped_docs_for_operator_review": [
+    {"category": "status=2 (cancelado Holded)", "docs": ["68dcf62875878dac7f04c536 / A-008947 / VADEFARMA S.L. / 1991.72€",
+                                                          "69faf8bb13f1f2a2530d35fe / L-001308 / SORIA NATURAL S.A. / 2315€"]},
+    {"category": "R- prefix (sin journal mapeado)", "docs": [
+      "R-000004 / FED.FARMACEUTICA / -4818.96€ (2018-10-30)",
+      "R-000005 / GRUPO BIDAFARMA / -84.46€ (2018-12-31)",
+      "R-000006 / UNNEFAR / 907.5€ (2020-02-28)",
+      "R-000007 / FED.FARMACEUTICA / 9982.5€ (2020-02-28)",
+      "R-000008 / UNNEFAR / -907.5€ (2020-02-28)",
+      "R-000009 / FED.FARMACEUTICA / -9982.5€ (2020-02-28)"
+    ]}
+  ],
+  "design_decisions_logged_in_code": [
+    "SALES_PREFIXES = {A-, AC-, AF-, KD-, FVU-, L-}: 6 prefijos Holded out_invoice mapeados a journal codes de Fase 4.3. R- y otros prefijos rechazados.",
+    "should_skip_doc(): centraliza filtro {cancelled, no_contact, unmapped_prefix}. Aplica antes de cualquier RPC.",
+    "Idempotencia: existing draft -> rewrite (5,0,0)+lines; existing posted -> skip (status='exists_posted'). Para re-cargar posted, operador hace button_draft manual.",
+    "iso_from_unix con Europe/Madrid timezone (no UTC). Fix critico para preservar fecha visible UI Holded.",
+    "default_income_fallback: si item sin productId Y saleschannel huerfano -> account_id=acct 705000. 12 docs afectados.",
+    "post=False default (CLI --post opcional). Operador revisa visualmente antes de postear, especialmente las 6.198 lines con saleschannel huerfano caen a default empresa.",
+    "Decimal mismatch warning: si |dump.tax - move.amount_tax| > 0.02 tras action_post -> warning (no aborta hasta 1€)."
+  ],
+  "pending_next": [
+    "Postear los 3.422 invoices (--post flag) tras revisión visual operador.",
+    "Loader 5 (creditnotes 678 -> out_refund con reversed_entry_id). Estructura similar a loader 3.",
+    "Loader 4 (purchases 7.998 + purchaserefund 69) — bloqueado por tax_reclassification.yaml (sesión operador).",
+    "Sesión operador para R- (6 docs, ~10k€ total) — decidir si recrear como A- o ignorar."
+  ]
+}

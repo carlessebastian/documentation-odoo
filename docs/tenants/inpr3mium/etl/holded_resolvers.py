@@ -151,7 +151,16 @@ def partner_active_from_name(raw_name: Any) -> tuple[str, bool]:
 
 
 def iso_from_unix(ts: Any) -> str | None:
-    """Convierte un timestamp unix (s) a `YYYY-MM-DD`. Tolera None/0/"" -> None."""
+    """Convierte un timestamp unix (s) a `YYYY-MM-DD` en zona Europe/Madrid.
+
+    Holded guarda fechas como medianoche local (Madrid). Si interpretamos
+    en UTC, un timestamp como 1546210800 (2018-12-31 00:00 CET / 2018-12-30
+    23:00 UTC) se convertiria a "2018-12-30" — fiscal year incorrecto para
+    facturas de diciembre. Forzamos Europe/Madrid para preservar la fecha
+    visible en la UI Holded.
+
+    Tolera None/0/"" -> None.
+    """
     if ts is None or ts == "" or ts == 0:
         return None
     try:
@@ -160,7 +169,13 @@ def iso_from_unix(ts: Any) -> str | None:
         return None
     if n <= 0:
         return None
-    return dt.datetime.fromtimestamp(n, tz=dt.timezone.utc).date().isoformat()
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Madrid")
+    except Exception:
+        # Fallback defensivo: usar UTC si tzdata no disponible
+        tz = dt.timezone.utc
+    return dt.datetime.fromtimestamp(n, tz=tz).date().isoformat()
 
 
 # ---------------------------------------------------------------------------

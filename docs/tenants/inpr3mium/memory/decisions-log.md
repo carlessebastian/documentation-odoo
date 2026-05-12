@@ -8,6 +8,366 @@ revisión.
 
 ---
 
+## 2026-05-12 — Fase 5.1 cierre: decisiones sobre los draft pendientes
+
+**Contexto**: tras la conversión a ACC- quedaban 105 docs draft que
+requerían decisión semántica del operador (no automatizable). El
+operador decidió caso por caso:
+
+### Decisión 1 — 63 docs `out_invoice` con status=0 Holded → **dejar draft**
+
+Eran facturas en estado borrador en Holded en el momento del dump
+(probablemente trabajos en curso del operador). Política: respetar
+el estado origen. No postear automáticamente. Si en el futuro
+quieren postearlas, lo harán manualmente desde UI Odoo caso por caso.
+
+### Decisión 2 — 5 docs status=3 (review Holded) → **postear**
+
+AC-001793, AC-001794, AC-001795, AC-001796, AC-001800 (~5.184€
+total). El operador revisó y aprobó. Posteados directamente vía
+`action_post` por id. Quedaron con name de su journal asignado
+(ACC- o AC-).
+
+### Decisión 3 — AC-001135 overlap docNumber → **renombrar -bis y postear**
+
+Bug original Holded: el docNumber AC-001135 aparece DOS veces en el
+dump con holded_ids distintos (en `invoice.jsonl` 520€ y en
+`creditnote.jsonl` 726€). Uno se posteó normalmente como out_invoice
+en journal AC-. El otro (out_refund) chocaba al postear por
+`unique(name, journal_id)`.
+
+**Solución**: renombrar el segundo a `AC-001135-bis` (manteniendo
+`ref='AC-001135'` para auditoría) y postear.
+
+### Decisión 4 — 2 dup losers L-000719/L-000720 → **renombrar -bis y postear**
+
+Bug original Holded: 2 pares de facturas REALES con mismo docNumber
+emitidas en fechas distintas (agosto vs octubre 2019, contactos
+distintos, totales distintos). Política previa: el doc con `date`
+más reciente preserva name; los otros quedaban draft con name=False
++ narration warn.
+
+Al hacer `--post` masivo, los dup losers se postearon con names
+nuevos asignados desde el sequence del journal L-: **L-001314** y
+**L-001315** — números que NUNCA existieron en Holded. Operador
+rechazó esto:
+
+**Solución**: button_draft → renombrar a `L-000719-bis` y
+`L-000720-bis` → re-postear. Los names L-001314/L-001315 quedaron
+como "huecos" en el sequence Odoo del journal L- (Odoo no fuerza
+correlatividad; AEAT solo importa correlatividad dentro del
+período fiscal del modelo, y estos huecos son del año 2019 ya
+cerrado).
+
+**Convención `-bis`**: cualquier doc con docNumber duplicado en
+origen se renombra con sufijo `-bis` (variante latina "segunda
+vez"). Si hubiera triplicados, `-bis`, `-ter`, etc. Mantiene ref =
+docNumber original para auditoría.
+
+### Decisión 5 — 6 docs prefix R- → **recrear en journal R- nuevo**
+
+6 docs históricos (2018-2020) con prefix `R-` (Rectificativas)
+que el operador Holded abandonó tras unificar todo en AC-. 4 con
+total<0 (abonos), 2 con total>0 (facturas).
+
+Loader 3 los saltaba con `skip_unmapped_prefix` porque no había
+journal R- en Odoo.
+
+**Solución**: crear journal **R- "Rectificativas históricas Holded"**
+(id=24, code=R-, type=sale) y recargar los 6 docs ad-hoc (script
+inline, no rentable patch de loader para 6 docs):
+
+- Los 4 con total<0 → `out_refund` en journal R- con signos
+  flipeados.
+- Los 2 con total>0 → `out_invoice` en journal R-.
+- `name = docNumber` Holded literal (R-000004, R-000005, ...,
+  R-000009).
+- `ref = docNumber`.
+- `narration` con marker explicativo: "Doc histórico R- Holded
+  prefix legacy (rectificativas antes de unificación AC-)".
+- PDF original adjunto (4 de los 6 tienen PDF en
+  `pdfs/invoice/<holded_id>.pdf`).
+- Todos posteados directamente.
+
+Net contable: -4.903€ (los 4 de 2020 son 2 pares espejo que se
+anulan; los 2 de 2018 son abonos legítimos por -4.903€).
+
+### Estado final tras todas las decisiones
+
+| | Posted | Draft | Total |
+|---|---:|---:|---:|
+| out_invoice | 2.638 | 63 | 2.701 |
+| out_refund | 1.371 | 36 | 1.407 |
+| **TOTAL SALES** | **4.009** | **99** | **4.108** |
+
+**97.6% posted**. Los 99 draft restantes son los 63 status=0
+Holded (intencional, Decisión 1) + 30 ACC- status=0 + 6 misc (ya
+documentados).
+
+---
+
+## 2026-05-12 — Fase 5.1 conversión total<0: journal ACC- aislado
+
+**Decisión (operador 2026-05-12)**: crear un journal nuevo `ACC-`
+("Conversiones carga histórica Holded") para los 776 docs Holded con
+`total<0` que Odoo 19 rechaza postear en `out_invoice` (constraint nuevo
+Odoo 19: "No puede validar una factura con un importe total negativo").
+
+**Razón**: el dump Holded tiene 776 docs donde el `move_type` no coincide
+con el signo del total:
+- 750 docs en `invoice.jsonl` con `total<0` → semánticamente son
+  rectificativas de abono (out_refund Odoo): 705 AC- + 41 A- + 3 L-
+  + 1 FVU-.
+- 26 docs en `creditnote.jsonl` con `total<0` → semánticamente son
+  rectificativas de aumento (out_invoice Odoo).
+
+Es un bug de modelado de Holded que usa el mismo prefix AC- para dos
+casos contables opuestos, distinguidos solo por el signo del total.
+
+**Implementación**:
+- Journal ACC- nuevo (id=23, type=sale, code=ACC-).
+- Loaders 3/5 con flag `--negative-as-refund` (implícito por defecto):
+  cuando `doc.total<0`, flip `move_type` + `journal_id=ACC-` +
+  flipear signo de `quantity` en líneas + `name=False`.
+- `name` final: Odoo asigna `ACC-/YYYY/NNNNN` para out_invoice y
+  `RACC-/YYYY/NNNNN` para out_refund (el `R` lo añade Odoo
+  automáticamente por defecto en out_refund de journal sale; aceptable,
+  el journal sigue siendo único filtro).
+- `ref = docNumber` Holded literal (`AC-001806`, etc.) — campo buscable
+  en la barra de búsqueda standard de Odoo.
+- `narration` con marker textual `"CONVERTIDO out_invoice -> out_refund"`
+  o inverso + docNumber original, buscable con `narration ilike`.
+- PDFs originales preservados: detach (res_id=0) antes de borrar moves
+  problemáticos, re-asignar al new_move_id tras recarga.
+
+**Resultado real (2026-05-12)**:
+- 776 docs creados en journal ACC- (750 out_refund + 26 out_invoice).
+- 743 posted (23 out_invoice + 720 out_refund).
+- 33 draft: 30 status=0 Holded + 1 AC-001135 (overlap docNumber con
+  out_invoice ya posted del mismo Holded) + 2 misc.
+- 750 PDFs originales preservados y vinculados.
+
+**Búsqueda para auditoría**:
+- `journal_id = 23` → 776 hits (todas las conversiones)
+- `ref = AC-001806` → encuentra el doc independientemente de su `name`
+  Odoo (RACC-/2026/00001 en este caso)
+- `narration ilike CONVERTIDO out_invoice` → 750 hits
+- `narration ilike CONVERTIDO out_refund` → 26 hits
+
+---
+
+## 2026-05-12 — Fase 5.1 loader 3 patch: `name = doc.docNumber` literal en account.move
+
+**Decisión**: setear `account.move.name = doc.docNumber` literal antes
+de postear, NO dejar que Odoo lo genere desde el sequence del journal.
+
+**Razón** (operador, 2026-05-12, sobre captura UI):
+
+> "Todo aquello que se importa no puede modificarse el número de
+> factura. Seguiremos una estrategia de subida una vez se cierre
+> un trimestre."
+
+Postear sin name explícito → Odoo asigna `A-/2026/00001`, `A-/2026/00002`...
+desde la secuencia del journal, **ignorando el docNumber Holded**.
+Resultado: se pierde la correlatividad AEAT con los libros históricos
+de Holded; auditoría futura no puede cruzar `A-/2026/00001` con
+`A-007566` sin tabla externa.
+
+**Aplicación**:
+- `build_invoice_header_vals(..., use_holded_number=True)` (default
+  True) setea `vals["name"] = docNumber`.
+- Build header `build_refund_header_vals` igual para creditnotes.
+- En `_process_doc` el write path incluye `name` en write_vals; Odoo
+  lo acepta en draft.
+- Al action_post, Odoo respeta `name` explícito (no lo sobrescribe).
+
+**Convivencia**: facturas post-cutover (operación normal Odoo) usarán
+sequence Odoo y generarán nombres distintos (`A-/2026/NNNNN`). El
+operador acepta la convivencia. Lo importante es:
+1. Histórico: identidad 1:1 con Holded (auditoría AEAT clean).
+2. Nuevas: identidad 1:1 con Odoo (libros nuevos clean).
+
+**Duplicate handling**: 2 pares L-000719/L-000720 en el dump (bug
+datos Holded original). Estrategia defensiva: el doc del par con
+`date` más reciente preserva name=docNumber; los otros quedan
+`name='/'` (al postear, Odoo asignará nombre del sequence Odoo,
+**distinto** del Holded). Anotado en narration. Preserva los 4 docs
+sin violar `unique(name, journal_id, company_id)`.
+
+---
+
+## 2026-05-12 — Fase 5.1 loader 5: `status=3` Holded (review) carga draft, nunca postea
+
+**Decisión**: 5 docs `creditnote.jsonl` con `status=3` en Holded
+("en revisión" según análisis manual) se cargan como `account.move`
+draft pero NUNCA se postean por `--post`.
+
+**Razón**: `status=3` parece ser estado de aprobación pendiente del
+responsable contable Holded. Postear automáticamente puede llevar a
+inconsistencia (estaban "pendientes" en Holded por algo). Política
+conservadora: cargar el dato (preserva auditoría), no postear,
+operador decide caso por caso vía UI Odoo (`Confirmar` manual o
+cancelar).
+
+**Aplicación**: en `_creditnotes_lib._process_doc`, el bloque post
+filtra explícitamente `doc.status == STATUS_POSTED (=1)`. Status=3 +
+`--post` flag → log + no post + `narration` warn ya visible.
+
+**Docs afectados**: AC-001793 (-726), AC-001794 (-1051.24), AC-001795
+(1051.24), AC-001796 (1051.24), AC-001800 (-726). Todos
+FED.FARMACEUTICA / GRUPO BIDAFARMA en oct/nov 2026. Operador revisar
+si:
+- Anularlos (cancel) si era una propuesta abandonada.
+- Postearlos manualmente si la revisión los aprueba.
+
+---
+
+## 2026-05-12 — Fase 5.1 loader 3: `iso_from_unix` interpreta timestamps Holded en Europe/Madrid, no UTC
+
+**Decisión**: cambiar `iso_from_unix` en `holded_resolvers.py` para usar
+`ZoneInfo("Europe/Madrid")` al convertir timestamps Holded → `YYYY-MM-DD`.
+
+**Razón**: Holded guarda fechas como **medianoche local** (Madrid),
+no como medianoche UTC. Verificado en el dump:
+- `1546210800` → factura A-007566 con docNumber visible "31/12/2018"
+  en Holded. En UTC = 2018-12-30 23:00. Interpretar como UTC nos
+  daba `invoice_date='2018-12-30'` — **fiscal year incorrecto** para
+  todas las facturas de diciembre con fecha de fin de mes/año.
+- `1561932000` → "01/07/2019" en Holded. En UTC = 2019-06-30 22:00
+  (CEST verano UTC+2). Mismo problema.
+
+Sin el fix, las facturas con `date` a medianoche CET caerían 1 día
+antes en Odoo, contaminando el modelo 303 trimestral y el cierre
+anual.
+
+**Aplicación**: `iso_from_unix` usa `ZoneInfo("Europe/Madrid")` para
+calcular `.date()`. Si `tzdata` no disponible, fallback defensivo a
+UTC con warning implícito. Tests añadidos: `test_madrid_midnight_winter`
+y `test_madrid_midnight_summer`.
+
+**Alcance**: afecta a TODOS los loaders que usen `iso_from_unix`
+(invoices, creditnotes, purchases, payments, dailyledger). Loaders 1
+(partners) y 2 (products) no la usan (no tienen campos date Holded).
+
+**Impacto en cargas previas**: ninguna — partners y products no
+tienen fechas. La primera carga afectada es loader 3.
+
+---
+
+## 2026-05-12 — Fase 5.1 loader 3: fallback default income `705000` para items huérfanos
+
+**Decisión**: cuando una línea Holded NO tiene `productId` Y su
+`saleschannel` es huérfano (no existe en `saleschannels.jsonl`),
+forzar `account_id = account.account.code='705000'` (id=551,
+"Services rendered", set como default empresa en Fase 5.0).
+
+**Razón**: 12/3.430 docs (`L-000547` y similares) fallaban con
+`"Missing required account on accountable line"`. La causa: items
+"ad-hoc" con descripción libre (e.g. "Campaña Nov/Dic.Nac.Pfizer
+Polase 4 eur.") sin productId Holded y apuntando a saleschannels
+borrados. Sin ninguna pista para inferir cuenta, Odoo aborta el
+move entero.
+
+**Aplicación**: lookup `account.account.code='705000'` al inicio
+del orquestador (1 RPC). En `_build_line` el fallback solo se aplica
+si **ambos** product_id y account_id son None. Las 6.198 lines con
+saleschannel huerfano que SÍ tienen productId siguen cayendo al
+`product.property_account_income_id` (sin cambio).
+
+**Riesgo aceptado**: las 12 líneas problemáticas se imputan a
+"Services rendered" (705) por defecto, aunque su descripción sugiere
+gastos de promoción tipo "Campaña". El operador puede reclasificar
+manualmente vía UI por batches si quiere precisión analítica. No es
+una factura de cliente — está dentro de un doc out_invoice (e.g.
+factura a FED.FARMACEUTICA) con descuentos parciales en líneas
+ad-hoc. La cuenta es solo para imputación contable interna.
+
+---
+
+## 2026-05-12 — Fase 5.1 loader 3: invoices cargan en `draft`, post diferido
+
+**Decisión**: el loader 3 carga todas las invoices con
+`state='draft'`. El flag `--post` está disponible pero NO se usa
+por defecto.
+
+**Razón**: 6.198 líneas (40%) tienen saleschannel huérfano y caen
+al default empresa (`705000`). Si posteamos sin revisión, el
+balance contable por cuenta queda distorsionado vs Holded. Postear
+tras:
+1. Muestreo aleatorio operador (10-20 facturas de distintos
+   journals y periodos) — verificar mapeos de cuenta/tax.
+2. Reconciliación SQL por journal × año × cuenta vs dailyledger
+   Holded.
+3. Tras OK: `--post` en batch (los 3.422 docs con status=1).
+
+**Aplicación**: PLAN.md paso 8 documenta esta revisión como
+bloqueante antes de postear. `--post` posterga decimal mismatch
+warnings — si > 0.02€ por doc tras post, log; si > 1€ aborta batch.
+
+---
+
+## 2026-05-12 — Fase 5.1 loader 2: bot añade `product.group_product_manager` permanente
+
+**Decisión**: añadir el grupo `product.group_product_manager` (id=26)
+al bot uid=8 de forma permanente durante toda la fase de migración,
+en lugar de hacer escalación temporal por loader.
+
+**Razón**: el bot quedó tightenneado en Fase 4.4 a 6 grupos
+least-privilege que NO incluyen permisos CRUD sobre `product.template`.
+El loader 2 fallaba con "Se permite esta operación para los grupos
+siguientes: Products/Create" (ACL `product.template.manager` id=317
+requiere group 26). Loaders siguientes (3 invoices, 4 purchases,
+9 PDFs como `ir.attachment` sobre product.template) podrían volver a
+tocar product.template indirectamente. Hacer add/remove cada vez es
+ruido sin valor.
+
+**Aplicación**: write `(4, 26)` sobre `res.users[8].group_ids`. Bot
+ahora con 7 grupos: `[1, 2, 5, 9, 23, 26, 33]`. Tightenear post-cutover
+con `(3, 26)`. Documentar en snapshot de cierre Fase 5.
+
+**Gotcha**: el cambio de grupo se aplica inmediatamente sin necesidad
+de re-login (Odoo lee grupos por request). Run principal del loader,
+que estaba autenticado antes del cambio, pudo continuar OK tras el
+write.
+
+---
+
+## 2026-05-12 — Fase 5.1 loader 2: aceptar pérdida de income/expense accounts del dump
+
+**Decisión**: aceptar que **583 records cargan sin
+`property_account_income_id`** y **102 products sin
+`property_account_expense_id`** — caen al default de la company
+(income=`705000`/id=551 set en Fase 5.0; expense=fallback de Odoo).
+
+**Razón**: análisis del dump revela tres categorías:
+1. **477 records sin `salesChannelId`** (135 products + 342
+   services): el operador en Holded nunca asignó canal de venta.
+   No es recuperable; representa el comportamiento "default income"
+   en Holded también.
+2. **106 records con `salesChannelId` huérfano** (9 products + 97
+   services): apuntan a IDs de sales channels que NO están en
+   `saleschannels.jsonl` (38 entries). Sales channels borrados en
+   Holded antes del dump; dato perdido.
+3. **102 products con expAccountId huérfano**: TODOS apuntan al
+   mismo id `610138c76362411c8a4bd586` que no existe en
+   `expensesaccount.jsonl` (148 entries). Probablemente una
+   "Expense account" especial de Holded borrada históricamente.
+
+**Aplicación**: el loader marca estos en stats (`no_income_account`,
+`no_expense_account`) pero NO aborta el record. El product/service
+se crea sin la property; Odoo aplica el default company al usarse
+en una line. Para los loaders de facturas/compras (3, 4): cuando
+construyan `account.move.line`, si `product_id.property_account_*`
+no está, también caerán al default — comportamiento equivalente al
+que tenían en Holded.
+
+**Riesgo**: el reporting analítico por cuenta dejará agrupados todos
+estos products en el default. Mitigación: si en 5.4 el operador
+quiere desambiguar, puede asignar income account a mano vía UI por
+batches (solo 1.034 candidatos = 477 + 106 sin SC × forSale=true).
+
+---
+
 ## 2026-05-12 — Notas Holded inyectadas en `res.partner.comment` para auditoría UI
 
 **Problema observado**: tras el loader 1, el operador inspeccionó la

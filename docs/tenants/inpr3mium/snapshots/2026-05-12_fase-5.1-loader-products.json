@@ -1,0 +1,86 @@
+{
+  "phase": "5.1-loader-products",
+  "tenant": "inpr3mium",
+  "company_id": 1,
+  "date": "2026-05-12",
+  "summary": "ETL Fase 5.1 loader 2: 1.569 products + 440 services Holded -> 2.009 product.template Odoo, todos con ext_id __holded__.{product|service}_<id>. Race condition entre run principal (16468) y un segundo run accidental (16689) cubrio los 543 records que fallaron en la primera tanda pre-ACL-fix; resultado neto = todos los 2.009 cargados con 0 huecos. Idempotencia validada con --limit 5 (10 updates / 0 creates / 0 errors).",
+  "input": {
+    "products_source": "docs/tenants/inpr3mium/holded-export/2026-05-11/products.jsonl",
+    "products_total": 1569,
+    "services_source": "docs/tenants/inpr3mium/holded-export/2026-05-11/services.jsonl",
+    "services_total": 440,
+    "saleschannels_index_size": 38,
+    "expensesaccount_index_size": 148
+  },
+  "acl_fix": {
+    "issue": "Bot uid=8 (least-privilege tras Fase 4.4) carecia del grupo 'Products/Create' (`product.group_product_manager`, id=26); product.template.create requiere ese grupo (ir.model.access id=317).",
+    "fix": "c.call('res.users','write',[[8],{'group_ids':[(4,26)]}]) — el bot tenia group_erp_manager pero ese no incluye product CRUD. Cambio inmediato sin restart.",
+    "bot_groups_now": [1, 2, 5, 9, 23, 26, 33],
+    "decision": "Mantener el grupo 26 permanente — los loaders siguientes (3 invoices, 4 purchases) crearan account.move.line con product_id referenciado y eventualmente loader 9 podria escribir property_account_*; ademas tightenear post-ETL es trivial via mismo write con (3, 26)."
+  },
+  "totals_run_main": {
+    "csv_report": "holded-export/2026-05-11/.etl_reports/products_run_20260512_083925.csv",
+    "rows_total": 2009,
+    "status_distribution": {
+      "product_create": 1026,
+      "service_create": 437,
+      "service_update": 3,
+      "error_pre_acl_fix": 543
+    },
+    "no_tax": 33,
+    "tax_unresolved": 0,
+    "multi_tax": 0,
+    "no_income_acct_reported": 583,
+    "no_expense_acct_reported": 102,
+    "sku_collision": 56,
+    "notes": "Los 543 'error' del CSV corresponden a los primeros 543 records (ids 0-542) procesados antes de añadir product.group_product_manager al bot. Un segundo run accidental (que se mato en seguida) creó esos 543 entre las 8:25:00-8:25:30. Net result: todos los 2.009 creados, sin huecos."
+  },
+  "odoo_state_after": {
+    "product_template_total": 2012,
+    "of_which_holded_product": 1569,
+    "of_which_holded_service": 440,
+    "of_which_pre_existing_l10n": 3,
+    "with_taxes_id": 2009,
+    "type_consu": 1569,
+    "type_service": 443
+  },
+  "data_quality_notes": {
+    "no_income_account_breakdown": {
+      "total": 583,
+      "products_without_salesChannelId": 135,
+      "products_with_orphan_salesChannelId": 9,
+      "services_without_salesChannelId": 342,
+      "services_with_orphan_salesChannelId": 97,
+      "comment": "Los 106 'huerfanos' apuntan a salesChannelIds que NO existen en saleschannels.jsonl (canales borrados antes del dump). Aceptable: Odoo cae al default income account 705000 (id=551, set en Fase 5.0)."
+    },
+    "no_expense_account_breakdown": {
+      "total": 102,
+      "all_point_to_single_orphan_id": "610138c76362411c8a4bd586",
+      "comment": "Los 102 products tienen TODOS el mismo expAccountId huérfano (no existe en expensesaccount.jsonl). Dato perdido del dump; aceptable: Odoo cae al default expense account."
+    },
+    "sku_collisions": {
+      "count": 56,
+      "comment": "default_code no es unique en product.template (Odoo lo permite). Sin impacto funcional."
+    },
+    "tax_mapping": {
+      "s_iva_21": "1.964 records (1.524 products + 440 services) -> account.tax id=6",
+      "s_iva_10": "5 products -> account.tax id=? (mapeo Fase 4.5b)",
+      "s_iva_4": "3 products -> account.tax id=? (mapeo Fase 4.5b)",
+      "s_iva_exento": "4 products -> account.tax id=109 (0% RC, mapeo ISP de Fase 4.5b)",
+      "no_tax": "33 products cargados sin taxes_id (caen al default empresa 21% S)"
+    }
+  },
+  "design_decisions_logged_in_code": [
+    "Schema real usa 'taxes' array (no 'tax' single como decia migration-from-holded.md). Refactor: extract_tax_key + multi_tax abort.",
+    "33 products sin tax NO abortan record; cargan sin taxes_id.",
+    "Variants ('attributes', 688 products): cargados plano como product.template, sin expandir a product.product.",
+    "Stock (hasStock/stock): ignorado en este paso; diferido a Fase 5.4.",
+    "income/expense accounts escritos directamente en create (Odoo 19 maneja company_dependent per-record).",
+    "Sin autocreate en resolve_account: si accountNum no existe, no se crea — paso 0a/0b ya precargo las 186 cuentas referenciables."
+  ],
+  "pending_next": [
+    "Sesion con operador para rellenar tax_reclassification.yaml (bloquea loader 4 purchases).",
+    "Loader 3 (invoices 3.430 out_invoice) — usa resolve_partner + resolve_tax + resolve_journal sobre documents/invoice.jsonl.",
+    "Considerar archivar el bot del grupo 26 cuando termine la migracion (write [[8],{'group_ids':[(3,26)]}])."
+  ]
+}
