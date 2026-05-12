@@ -8,6 +8,40 @@ revisión.
 
 ---
 
+## 2026-05-12 — Fase 5.1 paso 0: subcuentas Holded cargadas en Odoo
+
+**Hecho**: loaders 0a (`expensesaccount`) y 0b (`saleschannels`)
+ejecutados en real contra `inpr3mium_dev`. 186 `account.account`
+creados con ext_id `__holded__.account_<accountNum>`:
+
+- **148 cuentas 6XX** (expense): 131 `expense` + 11 `expense_other` +
+  6 `expense_depreciation`. Padre PGCE derivado por `derive_pgce_parent`
+  (fallback `<first3>000` cubre 60X/62X/63X/64X/65X/66X/67X/68X).
+- **38 cuentas 70X** (income): todas `account_type=income` heredado del
+  PGCE Pymes `700000`/`705000`/`709000` correspondiente.
+
+**Por qué importa para próximas fases**: el `resolve_account` de
+`holded_resolvers.py` ahora encuentra las 11-dig directas. Cualquier
+loader downstream (especialmente 3 invoices, 4 purchases, 8
+dailyledger) puede asumir que `__holded__.account_<accountNum>`
+resuelve sin autocreate para los `accountNum` presentes en
+`expensesaccount.jsonl`/`saleschannels.jsonl` del dump 2026-05-11.
+Solo se autocrearán las 11-dig que aparezcan en líneas de dailyledger
+pero no estén en ninguno de los dos catálogos (caso esperado:
+movimientos contra cuentas 4XX/5XX/47X — ya manejadas por Fase 4.5b /
+5.0 / PGCE base).
+
+**Reproducibilidad**: idempotencia probada con 2ª pasada inmediata
+(148 updated, 0 errors). CSV reports en
+`holded-export/2026-05-11/.etl_reports/`. Snapshot completo en
+`snapshots/2026-05-12_fase-5.1-paso0.json`.
+
+**Cómo afecta a la regla "no aplicar sequences pre-loading hasta
+cutover Fase 5.5"**: no la afecta. Las subcuentas no consumen
+`ir.sequence`; solo se materializan vía xml-id.
+
+---
+
 ## 2026-05-11 — Fase 5.1: scripts ETL ad-hoc en `etl/`, no skill nueva
 
 **Decisión**: los 11 loaders + `holded_resolvers.py` + `validate_etl.py`

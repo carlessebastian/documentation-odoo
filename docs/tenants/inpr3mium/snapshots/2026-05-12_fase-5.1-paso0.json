@@ -1,0 +1,91 @@
+{
+  "phase": "5.1-paso0",
+  "tenant": "inpr3mium",
+  "company_id": 1,
+  "date": "2026-05-12",
+  "summary": "ETL paso 0: subcuentas 6XX (148 expensesaccount) + 70X (38 saleschannels) cargadas con ext_id __holded__.account_<accountNum>",
+  "totals": {
+    "ext_ids_holded_account": 186,
+    "expensesaccount_loaded": 148,
+    "saleschannels_loaded": 38,
+    "account_type_distribution": {
+      "expense": 131,
+      "expense_other": 11,
+      "expense_depreciation": 6,
+      "income": 38
+    }
+  },
+  "samples": {
+    "expense_first5": [
+      {
+        "id": 752,
+        "code": "60000400001",
+        "name": "COMPRAS",
+        "account_type": "expense"
+      },
+      {
+        "id": 756,
+        "code": "60000400002",
+        "name": "COMPRAS PACKS BIENVENIDA",
+        "account_type": "expense"
+      },
+      {
+        "id": 753,
+        "code": "60000400003",
+        "name": "COMPRAS MATERIAL PACK IMAGEN 2020",
+        "account_type": "expense"
+      },
+      {
+        "id": 755,
+        "code": "60000400004",
+        "name": "COMPRAS MATERIAL PLV",
+        "account_type": "expense"
+      },
+      {
+        "id": 754,
+        "code": "60000400005",
+        "name": "COMPRAS MATERIAL PACK NEXTERA",
+        "account_type": "expense"
+      }
+    ],
+    "income_first5": [
+      {
+        "id": 902,
+        "code": "70000000000",
+        "name": "VENTAS",
+        "account_type": "income"
+      },
+      {
+        "id": 881,
+        "code": "70000111001",
+        "name": "CUOTA MENSUAL FARMAPREMIUM",
+        "account_type": "income"
+      },
+      {
+        "id": 877,
+        "code": "70000111002",
+        "name": "COSTE VARIABLE PUNTOS",
+        "account_type": "income"
+      },
+      {
+        "id": 889,
+        "code": "70000111003",
+        "name": "SALDO DE COMPENSACION",
+        "account_type": "income"
+      },
+      {
+        "id": 906,
+        "code": "70000111004",
+        "name": "VENTAS REDENCIONES NACIONAL FARMAPREMIUM",
+        "account_type": "income"
+      }
+    ]
+  },
+  "loader_reports": {
+    "expensesaccount": "holded-export/2026-05-11/.etl_reports/expensesaccount_run_20260512_062408.csv",
+    "saleschannels": "holded-export/2026-05-11/.etl_reports/saleschannels_run_20260512_062425.csv"
+  },
+  "idempotency_check": {
+    "second_run_expensesaccount": "148 updated, 0 errors (verified 2026-05-12 06:24)"
+  }
+}
