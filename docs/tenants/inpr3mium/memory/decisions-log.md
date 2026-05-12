@@ -8,6 +8,66 @@ revisión.
 
 ---
 
+## 2026-05-12 — Notas Holded inyectadas en `res.partner.comment` para auditoría UI
+
+**Problema observado**: tras el loader 1, el operador inspeccionó la
+ficha de proveedor de `AMAZON WEB SERVICES EMEA SARL` (id=25) en Odoo
+y no vio rastro del code/VAT original que tenía en Holded. La vista
+standard de proveedor de `l10n_es_pymes` no muestra `res.partner.ref`
+(donde guardamos el `code` Holded), y los partners cuyo VAT fue
+rechazado por `base_vat` (caso Capa 2 del fallback) ni siquiera tenían
+ref poblado — toda la traza del VAT original se había perdido.
+
+**Decisión**: inyectar la información en `res.partner.comment`
+("Notas internas") siempre que el `code` o el `vatnumber` Holded no
+acaben en el campo `vat` de Odoo. Es el campo visible más
+accesible sin tocar vistas, y es semánticamente correcto (es
+metadata del contacto, no un campo estructurado).
+
+**Dos puntos de inyección**:
+
+1. **Capa 1** en `build_partner_vals` (`_partners_lib.py`): cuando
+   `raw_code` está poblado pero no se promueve a `vat_val` (típico
+   caso non-ES con code='SENDGRID'/'EU372...'/etc.), añade
+   `<p>Código Holded (no validado como VAT): <code>X</code></p>`.
+2. **Capa 2** en `_upsert_with_vat_fallback`: cuando Odoo rechaza el
+   `vat` y reintentamos sin él (Amazon EMEA LU con `vatnumber='W0185696B'`
+   contra base_vat que exige 8 dígitos), añade
+   `<p>VAT rechazado por validación Odoo (conservado como referencia): <code>X</code></p>`.
+
+**Resultado final** (tras re-run del loader): 306 partners con nota
+Holded — **150 "Código Holded"** (mayormente non-ES con code populated)
++ **156 "VAT rechazado"** (mayormente ES con CIF/NIF que falla DC +
+algunos non-ES con vatnumber mal formateado).
+
+**Detección por sentinel textual, no por HTML comment marker**:
+intentamos primero envolver las notas en `<!-- holded.code:start --><p>X</p><!-- holded.code:end -->`
+pero Odoo sanitiza el field `comment` (es `Html` con cleaner activado)
+y stripa **asimétricamente** los comments: el de apertura desaparece,
+el de cierre persiste. Reproducción confirmada en este Odoo:
+`<!-- A --><p>X</p><!-- B -->` → round-trip a Odoo → leído como
+`<p>X</p><!-- B -->`. Cambiamos la detección a substring del texto
+humano (`"Código Holded (no validado como VAT)"` y
+`"VAT rechazado por validación Odoo"`) — robusto frente a
+sanitización y a la vez legible.
+
+**Política de re-runs**: el loader sobreescribe `comment` cada vez
+que el contact entra en una de las dos condiciones (determinístico,
+mismo input → mismo output). Notas manuales del operador en partners
+con código Holded **serán pisadas** en re-runs del loader; aceptable
+mientras estemos en fase de migración. Tras el cutover Fase 5.5 el
+loader no debería re-ejecutarse en producción.
+
+**Retro-fix**: `retrofit_holded_code_note.py` cubre solo el caso A
+(partners con `ref` truthy AND `vat` falsy AND ext_id
+`__holded__.contact_*` AND `comment` sin sentinel). Es one-shot e
+idempotente vía `has_holded_note()`; tras el re-run del loader queda
+sin nada que hacer (305/305 skipped). Conservado por si aparecen
+nuevos partners ref-only que el loader no procesa (improbable, pero
+defensivo).
+
+---
+
 ## 2026-05-12 — Fase 5.1 loader 1: partners Holded cargados en Odoo
 
 **Hecho**: `loader_partners.py` ejecutado en real contra `inpr3mium_dev`.

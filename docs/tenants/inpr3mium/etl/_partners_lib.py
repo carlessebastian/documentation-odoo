@@ -37,6 +37,7 @@ Decisiones de diseno (ver `migration-from-holded.md` seccion 5.1
 from __future__ import annotations
 
 import csv
+import html
 import json
 import re
 import sys
@@ -55,6 +56,52 @@ from holded_resolvers import (
 
 
 PLACEHOLDER_CODES = {"", "0", "00", "000", "0000"}
+
+# Sentinels textuales para detectar las notas inyectadas. Sobreviven la
+# sanitizacion HTML de Odoo (a diferencia de los comentarios `<!-- -->`,
+# que el cleaner descarta asimetricamente cuando aparecen al inicio del
+# fragmento -- bug constatado al probar `<!-- start --><p>X</p><!-- end -->`
+# y leer `<p>X</p><!-- end -->` tras el round-trip). Usar la frase humana
+# como discriminador es robusto y a la vez legible.
+HOLDED_CODE_NOTE_SENTINEL = "Código Holded (no validado como VAT)"
+HOLDED_VAT_REJECTED_SENTINEL = "VAT rechazado por validación Odoo"
+
+
+def _holded_code_note(code: str) -> str:
+    """Nota HTML cuando un `code` Holded no se promociona a `vat` Odoo.
+
+    Caso tipico: contact non-ES con `code` poblado (numero proveedor Amazon
+    'W0185696B', tax id US 'EU372041333', texto plano 'SENDGRID'). El code
+    queda en `ref` pero el campo no es visible en la vista standard de
+    proveedor de `l10n_es_pymes` -- por eso lo replicamos en `comment`.
+    """
+    return (
+        f"<p>{HOLDED_CODE_NOTE_SENTINEL}: "
+        f"<code>{html.escape(code)}</code></p>"
+    )
+
+
+def _holded_vat_rejected_note(vat: str) -> str:
+    """Nota HTML cuando Odoo rechaza el `vat` y lo dropamos via fallback.
+
+    Caso tipico: cc=LU con `vatnumber='W0185696B'` -- `base_vat` valida
+    el formato del pais (LU exige 8 digitos) y crashea. El vat original
+    se preserva en la nota para auditoria; el `code` Holded sigue en `ref`.
+    """
+    return (
+        f"<p>{HOLDED_VAT_REJECTED_SENTINEL} (conservado como referencia): "
+        f"<code>{html.escape(vat)}</code></p>"
+    )
+
+
+def has_holded_note(comment: str | None) -> bool:
+    """True si `comment` ya contiene cualquiera de las notas Holded."""
+    if not comment:
+        return False
+    return (
+        HOLDED_CODE_NOTE_SENTINEL in comment
+        or HOLDED_VAT_REJECTED_SENTINEL in comment
+    )
 
 
 @dataclass
@@ -102,8 +149,15 @@ def _upsert_with_vat_fallback(
         is_vat_error = ("vat" in msg or "iva" in msg) and "vat" in vals
         if not is_vat_error:
             raise
-        # Drop vat y reintenta
+        # Drop vat y reintenta; inyectamos la nota explicando el rechazo
+        # para que el operador pueda revisar el VAT original desde la UI.
+        # Sobrescribimos `comment` directamente: el caller (build_partner_vals)
+        # nunca pone una nota Holded cuando hay vat en vals, asi que cualquier
+        # comment previo en retry_vals lo trajo el dump (improbable hoy).
+        original_vat = vals.get("vat", "")
         retry_vals = {k: v for k, v in vals.items() if k != "vat"}
+        if original_vat:
+            retry_vals["comment"] = _holded_vat_rejected_note(original_vat)
         stats.vat_dropped += 1
         return upsert_fn(client, xmlid, "res.partner", retry_vals, noupdate=True)
 
@@ -271,6 +325,11 @@ def build_partner_vals(
         vals["ref"] = raw_code
     if vat_val:
         vals["vat"] = vat_val
+    # Si tenemos `code` Holded pero no lo promovemos a `vat`, replicamos el
+    # code en `comment` para que sea visible en la UI (Notas internas). El
+    # campo `ref` no aparece en la vista standard de proveedor de l10n_es_pymes.
+    if raw_code and not vat_val:
+        vals["comment"] = _holded_code_note(raw_code)
     email = (contact.get("email") or "").strip()
     if email:
         vals["email"] = email

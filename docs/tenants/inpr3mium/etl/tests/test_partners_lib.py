@@ -13,12 +13,15 @@ from pathlib import Path
 import pytest
 
 from _partners_lib import (
+    HOLDED_CODE_NOTE_SENTINEL,
+    HOLDED_VAT_REJECTED_SENTINEL,
     PartnerStats,
     _upsert_with_vat_fallback,
     aggregate_ranks,
     build_partner_vals,
     classify_rank,
     dedup_key,
+    has_holded_note,
     load_partners,
     normalize_province,
     parse_no_usar,
@@ -334,6 +337,16 @@ class TestBuildPartnerVals:
                                   customer_rank=0, supplier_rank=1)
         assert "vat" not in vals
         assert vals["ref"] == "SENDGRID"
+        assert "comment" in vals and "SENDGRID" in vals["comment"]
+
+    def test_es_with_valid_code_no_comment(self):
+        # ES con code valido -> se promueve a vat, no se inyecta nota.
+        contact = {"name": "Acme SL", "code": "B12345674",
+                   "billAddress": {"countryCode": "ES"}}
+        vals = build_partner_vals(contact, country_id=68, state_id=None,
+                                  customer_rank=1, supplier_rank=0)
+        assert vals.get("vat") == "ESB12345674"
+        assert "comment" not in vals
 
     def test_non_es_code_not_used_as_vat(self):
         # Regresion: Amazon EMEA LU con code='W0185696B' nos hizo crashear
@@ -346,6 +359,11 @@ class TestBuildPartnerVals:
                                   customer_rank=0, supplier_rank=1)
         assert "vat" not in vals
         assert vals["ref"] == "W0185696B"  # code preservado en ref
+        # Nota inyectada con el code Holded (no validado como VAT) para
+        # que sea visible en la UI (Notas internas).
+        assert "comment" in vals
+        assert "W0185696B" in vals["comment"]
+        assert HOLDED_CODE_NOTE_SENTINEL in vals["comment"]
 
     def test_non_es_uses_vatnumber_when_present(self):
         # Si Holded SI trae vatnumber para non-ES, lo usamos
@@ -455,6 +473,25 @@ class TestLoadPartnersDryRun:
         assert stats.would_link == 0
 
 
+class TestHasHoldedNote:
+    def test_empty_returns_false(self):
+        assert has_holded_note("") is False
+        assert has_holded_note(None) is False
+
+    def test_detects_code_sentinel(self):
+        assert has_holded_note(
+            f"<p>{HOLDED_CODE_NOTE_SENTINEL}: <code>X</code></p>"
+        ) is True
+
+    def test_detects_rejected_vat_sentinel(self):
+        assert has_holded_note(
+            f"<p>{HOLDED_VAT_REJECTED_SENTINEL} (...): <code>LUX</code></p>"
+        ) is True
+
+    def test_unrelated_comment_false(self):
+        assert has_holded_note("<p>Nota manual del operador</p>") is False
+
+
 class TestUpsertWithVatFallback:
     def test_no_error_passes_through(self):
         calls = []
@@ -494,6 +531,10 @@ class TestUpsertWithVatFallback:
         assert len(attempts) == 2
         assert "vat" in attempts[0]
         assert "vat" not in attempts[1]
+        # La nota inyectada conserva el VAT rechazado
+        assert "comment" in attempts[1]
+        assert "LUW0185696B" in attempts[1]["comment"]
+        assert HOLDED_VAT_REJECTED_SENTINEL in attempts[1]["comment"]
 
     def test_non_vat_error_propagates(self):
         def fake_upsert(c, xmlid, model, vals, noupdate=False):
