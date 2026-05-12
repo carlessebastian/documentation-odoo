@@ -75,6 +75,16 @@ entender una feature funcional o un módulo del core (cómo funciona
 `account.move`, qué hace `l10n_es_edi_*`, flujos de WMS, etc.), busca
 ahí con `Grep` o `Read`.
 
+Encima de esa doc oficial, el agente mantiene **mapas internos
+propios** en `docs/architecture/` — capa por archivo (ORM, security,
+RPC, accounting, ...). **No se cargan al inicio**: el agente abre
+[`docs/architecture/00-index.md`](docs/architecture/00-index.md)
+solo cuando una tarea requiere razonar sobre arquitectura interna,
+y de ahí salta a la capa relevante (ver tabla de triggers en el
+índice). El estado de las capas vive en ese índice, **no** en
+`docs/PLAN.md` (que sigue trackeando solo el roadmap de
+migración).
+
 ## Estructura del repo
 
 ```
@@ -88,6 +98,7 @@ odoo-agent/
 │   └── commands/                 # slash-commands (/onboard, /cierre-mensual, ...)
 ├── docs/                         # notas propias del proyecto
 │   ├── onboarding.md             # primer arranque del agente
+│   ├── architecture/             # mapas internos de Odoo (carga selectiva — ver abajo)
 │   ├── infra/                    # provisión doodba, host, secrets
 │   └── tenants/                  # un perfil por despliegue
 │       ├── _template/            # plantilla para crear nuevos tenants
