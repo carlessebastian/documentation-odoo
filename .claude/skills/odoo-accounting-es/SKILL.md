@@ -42,6 +42,24 @@ instalados: `account`, `l10n_es`, mas la localizacion EDI de Enterprise
 las equivalentes OCA (`l10n_es_aeat_sii_oca`, `l10n_es_verifactu_oca`,
 `l10n_es_facturae`, `l10n_es_aeat_mod303/347/349/390`).
 
+## Mental model antes de mass-operations: capa 6 (accounting)
+
+Para tareas de **mass-create / ETL / batch** sobre `account.move`
+(cargar históricos, regenerar facturas masivas, ETL desde sistema
+externo), **carga primero**
+[`docs/architecture/6-accounting.md`](../../../docs/architecture/6-accounting.md)
+del repo del agente. Es la mental map de cómo `account.move`
+interactúa con `move.line` / `journal` / `tax` + repartition /
+`payment` / `fiscal_position` por dentro: orden de prerequisitos,
+qué dispara `_compute` al crear líneas, cuándo postear, cómo el
+wizard de pagos rutea reconciliations, gotchas de Odoo 19. Ahorra
+debugging que de otra forma se descubre tras 200 líneas de
+traceback del ORM.
+
+Para operaciones unitarias (una factura, un pago, un refund) los
+scripts de la tabla de despacho son suficientes — no hace falta
+cargar la capa.
+
 ## Variables de entorno requeridas
 
 | Variable | Proposito |

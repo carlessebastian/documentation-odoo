@@ -43,6 +43,34 @@ on the user's request. Common patterns:
 - **"Migra de Odoo 18 a 19"** -> module-admin runs `openupgrade_run.py`
   on a staging DB; once green, the user does the cutover manually.
 
+## Architecture maps (`docs/architecture/`)
+
+Beyond per-skill operational knowledge, the agent maintains
+**internal architecture maps** of Odoo 19 in `docs/architecture/`
+— one file per layer (ORM, security, RPC, accounting, ...). These
+are *mental models*, not runbooks; they exist to help any of these
+skills reason about Odoo internals before performing risky or
+high-volume operations. Index:
+[`docs/architecture/00-index.md`](../../docs/architecture/00-index.md).
+
+**Loading is selective**: a skill should consult the relevant
+layer only when the task warrants it (mass-create, complex
+debugging, cross-model reasoning) — not for routine unitary
+operations. Current layer-to-skill matrix:
+
+| Skill | Layer to load when... |
+|-------|----------------------|
+| `odoo-accounting-es` | mass-create / ETL / batch over `account.move` → [`6-accounting.md`](../../docs/architecture/6-accounting.md) |
+| `odoo-functional-admin` | configuring journals/sequences/fiscal_positions that the runtime accounting will use → `6-accounting.md` (when relevant); record rules / multi-company → `3-security.md` (pending) |
+| `odoo-module-admin` | (no current layer; `1-boot.md` will land when next "module won't load" incident hits) |
+| `holded-export` | (read-only over Holded SaaS, doesn't touch Odoo internals) |
+
+The state of which layers exist (`placeholder` / `draft` /
+`done`) is tracked in `00-index.md`, **not** in `docs/PLAN.md`
+(which tracks only the migration roadmap). Adding or promoting a
+layer follows the protocol described in
+[`docs/architecture/README.md`](../../docs/architecture/README.md).
+
 ## Shared environment
 
 All three skills consume:
