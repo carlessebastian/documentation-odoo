@@ -43,15 +43,28 @@ Leer en este orden (regla en `CLAUDE.md`):
 Lo que la siguiente sesión necesita saber resumido aquí:
 
 - **Estado funcional**: instancia local Odoo 19 con fundaciones
-  financieras completas (Bloque D 5.0 cerrado) **+ diseño ETL
-  detallado (5.1 redactado) + scaffolding `etl/` entregado**.
-  `holded_resolvers.py` con 4 resolvers reales (no stubs) + cache +
-  helpers puros; **65/65 tests offline verdes**;
-  `tax_reclassification.yaml` esqueleto con schema comentado
-  (rellena operador). 12 bank/sale/purchase journals operativos.
-  Defaults company alineados con realidad inpr3mium
-  (services-heavy: 21% S + 705000). Lista para arrancar 5.3
-  (validación subset 2024+2025).
+  financieras completas (Bloque D 5.0 cerrado) + diseño ETL
+  detallado (5.1 redactado) + scaffolding `etl/` + **paso 0 + loader
+  1 partners ejecutados en producción**. Estado Odoo:
+  - 186 `account.account` Holded (148 expense + 38 income) con
+    ext_id `__holded__.account_<accountNum>`.
+  - 3.173 `res.partner` únicos + 190 dup_link + 1 placeholder
+    `__holded__.contact__unknown` (id=16). 3.364 ext_ids
+    `__holded__.contact_*`.
+  - 306 partners con nota Holded visible en `res.partner.comment`
+    ("Notas internas") — 150 "Código Holded" (non-ES con code no
+    promovible a VAT) + 156 "VAT rechazado" (vat rechazado por
+    `base_vat`, conservado como referencia). Capa 1 en
+    `build_partner_vals` + Capa 2 en `_upsert_with_vat_fallback`,
+    detección por sentinel textual.
+  - 12 bank/sale/purchase journals operativos. Defaults company
+    alineados con realidad inpr3mium (services-heavy: 21% S +
+    705000).
+  - **146/146 tests offline verdes** (etl/tests).
+  - `holded_resolvers.py` con 4 resolvers reales + cache + helpers
+    puros listos para los loaders 2-9.
+  - `tax_reclassification.yaml` esqueleto con schema comentado
+    (rellena operador en bloque #1 de pre-trabajo 5.3).
 - **Próxima acción**: pre-trabajo para **Fase 5.3**:
   1. ~~Run real del paso 0a + 0b~~ ✅ ejecutado 2026-05-12. 186 ext_ids
      `__holded__.account_*` viven en Odoo (148 expense + 38 income).
@@ -62,6 +75,13 @@ Lo que la siguiente sesión necesita saber resumido aquí:
      por marca `(NO USAR)`. Estructura de campos validada (incluye
      gotcha `res.partner.mobile` no existe en Odoo 19 → degradar a
      `phone`).
+  2.b ~~Notas Holded en `res.partner.comment`~~ ✅ ejecutado
+     2026-05-12. 306 partners con nota visible en UI (150 "Código
+     Holded" non-ES + 156 "VAT rechazado" capa 2). Patrón
+     reutilizable para loaders 2-9: detección por sentinel textual
+     (no HTML comment marker — Odoo sanitiza asimétricamente);
+     `_holded_code_note()`, `_holded_vat_rejected_note()`,
+     `has_holded_note()` en `_partners_lib.py`.
   3. Sesión con operador para rellenar
      `docs/tenants/inpr3mium/etl/tax_reclassification.yaml` con
      reglas catch-all `p_iva_exento` (sample 100 docs aleatorios
