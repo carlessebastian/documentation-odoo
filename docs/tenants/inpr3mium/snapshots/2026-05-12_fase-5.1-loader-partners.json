@@ -1,0 +1,48 @@
+{
+  "phase": "5.1-loader-partners",
+  "tenant": "inpr3mium",
+  "company_id": 1,
+  "date": "2026-05-12",
+  "summary": "ETL Fase 5.1 loader 1: 3.363 contacts Holded -> 3.173 res.partner unicos (2.976 canonical_create + 192 unique_create + 5 updates de runs prev) + 1 placeholder unknown. Dedup por (cc, code): 190 contacts dup linkados al canonical via ext_id. 3.364 ext_ids __holded__.contact_* totales (3.363 + 1 unknown).",
+  "input": {
+    "source": "docs/tenants/inpr3mium/holded-export/2026-05-11/contacts.jsonl",
+    "total_contacts": 3363
+  },
+  "totals_run": {
+    "canonical_create": 2976,
+    "canonical_update": 3,
+    "unique_create": 192,
+    "unique_update": 2,
+    "dup_link": 190,
+    "no_usar_inactive": 6,
+    "no_country": 0,
+    "no_state_es": 0,
+    "vat_dropped": "0 esperado (politica endurecida: non-ES sin code-as-vat)",
+    "errors": 0
+  },
+  "odoo_state_after": {
+    "res_partner_total": 3177,
+    "active_false": 7,
+    "customer_only": 2244,
+    "supplier_only": 793,
+    "both_ranks": 30,
+    "neither_rank": 110,
+    "with_vat": 2687,
+    "country_es": 3022,
+    "ext_ids_holded_contact": 3364,
+    "unknown_placeholder_id": 16
+  },
+  "idempotency_check": "limit=10 second pass: 7 canonical_update + 3 unique_update, 0 creates, 0 errors",
+  "loader_reports": {
+    "real_run": "holded-export/2026-05-11/.etl_reports/partners_run_20260512_070240.csv",
+    "idempotency_subset": "holded-export/2026-05-11/.etl_reports/partners_run_20260512_070340.csv"
+  },
+  "policies_applied": {
+    "dedup_key": "(countryCode, code.upper()) cuando code no vacio ni en {'','0','00','000','0000'}",
+    "vat_policy": "ES: usa code como vat (prefijado ES). non-ES: solo vatnumber explicito para evitar crashes de base_vat en formato LU/DE/etc.",
+    "vat_fallback": "Retry sin vat si Odoo rechaza por base_vat (0 ocurrencias en este run)",
+    "state_aliases": "Indexa por nombre Odoo + parte parentizada + cada lado de '/' + STATE_NAME_EXTRA_ALIASES (Baleares -> Illes Balears)",
+    "no_usar": "Strip marca y active=False (6 contacts en este dump)",
+    "mobile_field": "res.partner.mobile no existe en Odoo 19 -> degradar a phone si phone vacio"
+  }
+}

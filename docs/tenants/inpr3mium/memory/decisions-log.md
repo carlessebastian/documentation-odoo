@@ -8,6 +8,64 @@ revisión.
 
 ---
 
+## 2026-05-12 — Fase 5.1 loader 1: partners Holded cargados en Odoo
+
+**Hecho**: `loader_partners.py` ejecutado en real contra `inpr3mium_dev`.
+3.363 contacts Holded materializados como **3.173 `res.partner`
+únicos** + **1 placeholder `__holded__.contact__unknown`** (res_id=16,
+"Cliente historico no identificado") al que apuntarán los ~1.149
+docs con `contactId` no resoluble. 3.364 ext_ids
+`__holded__.contact_*` registrados; 190 de ellos son contacts
+duplicados que enlazan al partner canonical (aggregate de
+`customer_rank` + `supplier_rank` con OR lógico).
+
+**Política dedup**: clave `(countryCode, code.upper())`. El campo
+`code` (CIF/NIF) está populado en 3.173/3.363 contactos vs solo 18
+con `vatnumber` — dedup por `code` es lo correcto en este dump. 188
+codes con duplicados consolidados en un solo partner. Codes
+placeholder (`""`, `"0"`, `"00"`...) caen a `unique_partner` (cada
+contact = un partner propio).
+
+**Política VAT** (endurecida tras crash mid-run con Amazon EMEA LU):
+- ES → deriva `vat` desde `code` con prefijo `ES`. Odoo l10n_es
+  valida dígito de control; la mayoría de codes ES en el dump son
+  válidos.
+- non-ES → solo usar `vatnumber` explícito si Holded lo trae (18
+  contactos). Nunca el `code` (que para non-ES contiene cualquier
+  cosa: tax id Amazon `W0185696B`, `EU372041333`, `SENDGRID`).
+- Si Odoo aún rechaza por `base_vat`, `_upsert_with_vat_fallback`
+  reintenta sin `vat` y cuenta `stats.vat_dropped` (0 en este run).
+
+**Resolución país/estado** (state_name_aliases): indexa los 52
+estados ES por nombre completo + parte parentizada + cada lado de
+slash `X/Y` + sinónimo manual `Baleares` → `Illes Balears (Islas
+Baleares)`. `normalize_province` strip diacritics + casefold. Tras
+estos tunings: 0/2.572 provinces ES sin match (antes 806).
+
+**Estado Odoo post-load**:
+- `res.partner` total: 3.177 (3.169 nuevos + 7 pre-existentes + 1
+  placeholder)
+- 7 `active=False`: 6 contactos Holded con marca `(NO USAR)` en el
+  nombre + 1 baseline.
+- 2.687 con VAT (todos ES + 17 non-ES explícitos), 3.022 country=ES.
+- Distribución ranks: cust_only=2.244 / supp_only=793 / both=30 /
+  neither=110 (los 110 son contactos `type=''` o `lead` sin
+  `clientRecord`/`supplierRecord` populados — leads no convertidos
+  + la propia empresa cuyo contact en Holded no tiene rank).
+
+**Cómo afecta a `resolve_partner` para loaders downstream
+(invoices, purchases, etc.)**: ahora `resolve_partner({"id": <hid>})`
+hace lookup directo por ext_id `__holded__.contact_<hid>` y resuelve
+en O(1) cache. Los 1.149 docs con `contactId` ausente / no
+resoluble apuntarán al placeholder unknown (id=16) sin abortar el
+batch.
+
+**Reproducibilidad**: idempotencia probada con `--limit 10` segundo
+pase (10 updates, 0 creates, 0 errors). Snapshot completo en
+`snapshots/2026-05-12_fase-5.1-loader-partners.json`.
+
+---
+
 ## 2026-05-12 — Fase 5.1 paso 0: subcuentas Holded cargadas en Odoo
 
 **Hecho**: loaders 0a (`expensesaccount`) y 0b (`saleschannels`)
