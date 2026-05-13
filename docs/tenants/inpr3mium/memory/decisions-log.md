@@ -8,6 +8,62 @@ revisión.
 
 ---
 
+## 2026-05-13 — Fase 5.1 cierre: cobertura PDF SALES incompleta (creditnotes faltantes)
+
+**Contexto**: el operador detectó visualmente que algunas facturas a
+clientes (especialmente rectificativas tras el cierre 5.1) no tenían
+PDF en el chatter. Auditoría completa post-loader 9:
+
+| Bucket | Moves | Con PDF | Sin PDF |
+|---|---:|---:|---:|
+| out_invoice (todos) | 2.701 | 2.674 | 27 |
+| out_refund (todos) | 1.407 | 754 | 653 |
+| **TOTAL SALES** | **4.108** | **3.428** | **680** |
+
+**Causa raíz única**: el dump `2026-05-11` se generó con
+`--pdf-doc-types invoice,purchase` (default del skill `holded-export`
+en ese momento). Por tanto el dump no incluye `pdfs/creditnote/`
+ni `pdfs/purchaserefund/`. Loader 9 procesó lo que había
+(`pdfs/invoice/`) y reportó `0 errors` porque su lógica es
+"itera lo que encuentres" — no comprueba cobertura.
+
+**Distribución de los 680**:
+- 653 out_refund en journal AC- (loader 5 creditnotes): ext_id
+  `creditnote_<id>`, sin contraparte en dump.
+- 26 out_invoice en journal ACC- (operaciones flip total>0 cuyo
+  origen Holded es creditnote, posteadas en cierre 5.1 status=3): mismo
+  problema, ext_id `creditnote_<id>`.
+- 1 doc smoke test Fase 4.6 (id=2): irrelevante.
+
+**Verificado OK** (no necesitan acción):
+- L-000719-bis, L-000720-bis: tienen PDF (loader 9 procesó tras rename).
+- 6 R- históricos (R-000004..009): tienen PDF (ad-hoc script adjuntó).
+- 720 ACC- out_refund posted + 30 draft con ext_id `invoice_*`:
+  tienen PDF (vinieron de `pdfs/invoice/`, el res_id no cambió al
+  flipear el `move_type` así que el ir.attachment quedó válido).
+
+**Decisión**: subir los PDFs faltantes en una sesión dedicada,
+sin re-tocar el resto del dump. Procedimiento documentado en
+[runbook §Apéndice G](../runbook-migration-holded.md#apéndice-g-recovery--pdfs-creditnotepurchaserefund-faltantes)
+(5 pasos: re-dump creditnote PDFs → verificar → dry-run → run real
+→ re-auditar). `purchaserefund` se difiere a cuando se ejecute
+loader 4 (mismo dump del cutover, no este 2026-05-11).
+
+**Pitfall genérico** (cross-tenant) registrado en agent memory:
+todo dump Holded futuro debe lanzar `--pdf-doc-types` con los
+**cuatro doctypes que generan account.move en Odoo**
+(`invoice,purchase,creditnote,purchaserefund`), no solo los dos
+"obvios". Además, `loader_pdfs.py` necesita una assertion de
+cobertura post-load que falle si quedan moves SALES/PURCHASE
+sin attachment cuando se esperaba que tuvieran (track futuro,
+no bloqueante para inpr3mium).
+
+**No aplicable** (descartado tras inspección): no se trata de un
+bug del loader 9 ni de un problema de ext_id. Es estrictamente
+falta de input en el dump.
+
+---
+
 ## 2026-05-12 — Fase 5.1 cierre: decisiones sobre los draft pendientes
 
 **Contexto**: tras la conversión a ACC- quedaban 105 docs draft que

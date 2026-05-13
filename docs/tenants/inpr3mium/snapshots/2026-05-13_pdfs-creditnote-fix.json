@@ -1,0 +1,34 @@
+{
+  "date": "2026-05-13",
+  "phase": "5.1 — fix PDFs creditnote",
+  "totals": {
+    "sales_moves": 4108,
+    "with_pdf": 4106,
+    "without_pdf": 2,
+    "pdf_attachments": 4106
+  },
+  "by_type_state_with_pdf": {
+    "out_refund/draft": 36,
+    "out_invoice/draft": 63,
+    "out_refund/posted": 1370,
+    "out_invoice/posted": 2637
+  },
+  "residual_no_pdf": [
+    {
+      "id": 4,
+      "name": "AC-/2026/00001",
+      "ref": "Reversión de: A-/2026/00001, SMOKE-4.6 rectificativa test",
+      "move_type": "out_refund",
+      "state": "posted",
+      "journal": "Abonos Ventas"
+    },
+    {
+      "id": 2,
+      "name": "A-/2026/00001",
+      "ref": "SMOKE-OUT-001",
+      "move_type": "out_invoice",
+      "state": "posted",
+      "journal": "Facturas Ventas"
+    }
+  ]
+}

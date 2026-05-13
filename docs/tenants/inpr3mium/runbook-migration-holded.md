@@ -701,6 +701,17 @@ Doctypes soportados: `invoice`, `purchase`, `creditnote`,
 **Naming del attachment**: `<docnumber>.pdf` (e.g. `A-007566.pdf`)
 en lugar del id Holded — más legible en el chatter.
 
+> ⚠️ **PITFALL conocido** — `loader_pdfs.py` recorre los subdirectorios
+> `pdfs/<doctype>/` y reporta éxito silencioso si el subdir no existe.
+> El dump original `2026-05-11` se generó con `--pdf-doc-types
+> invoice,purchase` (el default del skill), así que **no hay PDFs
+> de `creditnote` ni `purchaserefund`**, aunque los moves correspondientes
+> sí se cargan en Odoo (loader 5 + futuro loader 6). Resultado: **680
+> moves SALES quedan sin PDF en la primera pasada** (validado
+> 2026-05-13). Procedimiento de recuperación en **Apéndice G**. Para
+> evitar el pitfall en nuevos dumps, lanza siempre:
+> `--include-pdfs --pdf-doc-types invoice,purchase,creditnote,purchaserefund`.
+
 ---
 
 ## 10. Loader 7: payments.jsonl → account.payment
@@ -1026,3 +1037,157 @@ Script completo de inpr3mium en
 | Listar refunds convertidos desde invoices | `Narración contiene CONVERTIDO out_invoice` |
 | Listar invoices convertidos desde refunds | `Narración contiene CONVERTIDO out_refund` |
 | Ver el PDF original Holded | Click 📎 del chatter de la factura |
+
+---
+
+## Apéndice G: Recovery — PDFs creditnote/purchaserefund faltantes
+
+**Síntoma detectado 2026-05-13** (post Fase 5.1 invoices/creditnotes/PDFs):
+
+Auditoría de cobertura PDF sobre `account.move` SALES (out_invoice +
+out_refund, 4.108 totales):
+
+| Bucket | Moves | Con PDF | Sin PDF |
+|---|---:|---:|---:|
+| out_invoice (todos los journals) | 2.701 | 2.674 | 27 |
+| out_refund (todos los journals) | 1.407 | 754 | 653 |
+| **TOTAL SALES** | **4.108** | **3.428** | **680** |
+
+Desglose por journal de los 680 sin PDF:
+
+| Journal | Move type | Sin PDF | Causa raíz |
+|---|---|---:|---|
+| AC- Abonos Ventas | out_refund | 653 | dump no incluye `pdfs/creditnote/` |
+| ACC- Conversiones | out_invoice | 26 | ext_id `creditnote_*` y dump no incluye `pdfs/creditnote/` |
+| Facturas Ventas | out_invoice | 1 | doc smoke test Fase 4.6 (id=2) — irrelevante |
+| AC- Abonos Ventas | out_refund (1) — AC-001135-bis | 0 | ext_id `creditnote_*` — incluido en los 653 |
+
+**Verificado OK** (no necesitan acción):
+- L-000719-bis, L-000720-bis: tienen PDF (loader 9 procesó tras rename)
+- 6 R- históricos (R-000004..009): tienen PDF (ad-hoc script los adjuntó)
+- 720 ACC- out_refund posted + 30 draft con ext_id `invoice_*`: tienen
+  PDF (vinieron de `pdfs/invoice/` y loader 9 los enganchó por res_id
+  antes/después de la conversión — se mantuvieron porque el res_id
+  no cambió, solo el `move_type`)
+
+### Causa raíz
+
+**Una sola causa, dos efectos**: el dump `2026-05-11` se generó
+con `--pdf-doc-types invoice,purchase` (default histórico del skill
+`holded-export`). Por tanto:
+
+1. **653 out_refund AC-** (loader 5 originales) → sus 653 PDFs nunca
+   se descargaron de Holded.
+2. **26 ACC- out_invoice** (operaciones flip total>0 cuyo origen
+   Holded era `creditnote` — status=3 review posteados en Fase 5.1
+   cierre) → mismo problema: su `holded_id` está en `creditnote.jsonl`
+   pero no en `pdfs/creditnote/<id>.pdf`.
+
+El loader 9 (`_pdfs_lib.py`) reportó `0 errors` porque su lógica es
+"itera lo que hay en `pdfs/<doctype>/`": si el subdir no existe, no
+hay PDFs que procesar y `total_pdfs=0` sin warning. **No hay
+assertion de cobertura post-load**.
+
+### Plan de subida (5 pasos)
+
+**Coste estimado**: 1 sesión (~1h). Sin riesgo: idempotente; si algo
+falla a mitad, re-run continúa donde quedó.
+
+#### Paso 1 — extender el dump con creditnote PDFs
+
+Re-lanzar `holded-export` sobre la misma fecha de dump
+(`2026-05-11`), restringido a creditnote, **solo bajada de PDFs**
+(los `.jsonl` ya están y son la fuente de verdad de holded_ids):
+
+```bash
+cd /Users/carles/Documents/code/odoo-agent/.claude/skills/holded-export
+python3 scripts/holded_export.py \
+  --output-root /Users/carles/Documents/code/odoo-agent/docs/tenants/inpr3mium \
+  --dump-date 2026-05-11 \
+  --include-pdfs \
+  --pdf-doc-types creditnote \
+  --skip-resources --skip-documents     # no re-bajar jsonl
+```
+
+Resultado esperado: `pdfs/creditnote/<holded_id>.pdf` × ~678 (~25 MB
+estimado, mismo tamaño medio que invoices).
+
+Idempotente: si re-corres, los `.pdf` existentes no se re-bajan.
+
+#### Paso 2 — verificar el dump
+
+```bash
+ls /Users/carles/Documents/code/odoo-agent/docs/tenants/inpr3mium/holded-export/2026-05-11/pdfs/creditnote/ | wc -l
+# esperado: 678 (o muy próximo si Holded tiene algunos creditnotes sin PDF)
+```
+
+Cross-check con `creditnote.jsonl`:
+
+```bash
+python3 - <<'PY'
+import json, os
+ids = [json.loads(l)["id"] for l in open(".../documents/creditnote.jsonl")]
+pdfs = {p[:-4] for p in os.listdir(".../pdfs/creditnote/")}
+missing = set(ids) - pdfs
+print(f"creditnote.jsonl: {len(ids)} docs, pdfs/: {len(pdfs)}, sin PDF en Holded: {len(missing)}")
+PY
+```
+
+Los que falten en Holded (creditnotes sin PDF en origen) son
+aceptables — se documentan y se acaba.
+
+#### Paso 3 — dry-run del loader 9 para creditnote
+
+```bash
+cd /Users/carles/Documents/code/odoo-agent/docs/tenants/inpr3mium/etl
+python3 loader_pdfs.py --doctype creditnote --dry-run
+```
+
+Resultado esperado del dry-run: ~653 `would_create` + ~25
+`skip_existing` (si alguno se llegó a colar por matching accidental
+de holded_id en `pdfs/invoice/` — sospechoso: investigar) + N
+`skip_no_move` para los que no tengan `__holded__.creditnote_<id>`
+ext_id (debería ser 0 si loader 5 corrió limpio).
+
+#### Paso 4 — run real
+
+```bash
+python3 loader_pdfs.py --doctype creditnote
+```
+
+ETA ~3-5 min (~25 MB sobre RPC). Reporte CSV en
+`.etl_reports/pdfs_creditnote_run_<ts>.csv`.
+
+#### Paso 5 — re-auditar y dejar evidencia
+
+Query de cierre (mismo script que detectó el problema):
+
+```python
+no_pdf = c.call("account.move","search_count",[[
+    ("move_type","in",["out_invoice","out_refund"]),
+    ("attachment_ids.mimetype","!=","application/pdf"),  # o lógica equivalente
+]])
+# esperado: 1 (solo el smoke test Fase 4.6 id=2)
+```
+
+Snapshot post-fix:
+`docs/tenants/inpr3mium/snapshots/2026-05-XX_pdfs-creditnote-fix.json`.
+
+Decisions-log: entrada nueva referenciando este apéndice + entrada
+en `MEMORY.md` del agente (cross-tenant).
+
+### Fase pendiente — purchaserefund (futuro)
+
+Cuando se ejecute el loader 4 (purchases bloqueado por
+`tax_reclassification.yaml`) habrá que repetir el mismo procedimiento
+para `pdfs/purchaserefund/` (69 PDFs esperados). Hacerlo en el
+**mismo dump** del cutover, no en este 2026-05-11 que ya está
+"congelado" como histórico.
+
+### Cómo NO repetir esto en futuros tenants
+
+Añadido al runbook (sección 9) + agent memory (cross-tenant):
+todo dump Holded futuro debe lanzarse con
+`--pdf-doc-types invoice,purchase,creditnote,purchaserefund`
+(los 4 doctypes que generan `account.move` en Odoo). Considerar
+también cambiar el default del skill a esos 4 (track separado).
